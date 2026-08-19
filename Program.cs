@@ -1,14 +1,15 @@
 using HikariLegalSRL.Data;
 using HikariLegalSRL.Models;
+using HikariLegalSRL.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -28,7 +29,10 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     options.Lockout.AllowedForNewUsers = true;
 
+    // Unicidad de correo
+    options.User.RequireUniqueEmail = true;
 })
+.AddErrorDescriber<SpanishIdentityErrorDescriber>() // Describir errores en español
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders(); // Agrega proveedores de tokens predeterminados para la recuperación de contraseña y la verificación de correo electrónico
 
@@ -41,12 +45,12 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 
-WebApplication app = builder.Build();
+var app = builder.Build();
 
 // Seed en la base de datos para crear el usuario administrador si no existe
-using (IServiceScope scope = app.Services.CreateScope())
+using (var scope = app.Services.CreateScope())
 {
-    IServiceProvider services = scope.ServiceProvider;
+    var services = scope.ServiceProvider;
     await DbInitializer.SeedAdminAsync(services);
 }
 
