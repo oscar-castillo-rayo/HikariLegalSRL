@@ -1,53 +1,258 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - HikariLegalSRL</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/HikariLegalSRL.styles.css" asp-append-version="true" />
+    <title>@ViewData["Title"] — Hikari Legal</title>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+    <style>
+            body { display: flex; min-height: 100vh; background: #f0f4f8; }
+
+            /* Sidebar */
+            #sidebar {
+                width: 240px;
+                min-height: 100vh;
+                background: #1F3864;
+                color: white;
+                flex-shrink: 0;
+                display: flex;
+                flex-direction: column;
+            }
+            #sidebar .brand {
+                padding: 1.5rem 1rem;
+                font-size: 1.1rem;
+                font-weight: 700;
+                border-bottom: 1px solid rgba(255,255,255,0.15);
+                text-align: center;
+                letter-spacing: 1px;
+            }
+            #sidebar .nav-link {
+                color: rgba(255,255,255,0.8);
+                padding: 0.65rem 1.2rem;
+                border-radius: 6px;
+                margin: 2px 8px;
+                font-size: 0.9rem;
+            }
+            #sidebar .nav-link:hover,
+            #sidebar .nav-link.active {
+                background: rgba(255,255,255,0.15);
+                color: white;
+            }
+            #sidebar .nav-section {
+                font-size: 0.7rem;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                color: rgba(255,255,255,0.4);
+                padding: 1rem 1.2rem 0.3rem;
+            }
+            #sidebar .logout-area {
+                margin-top: auto;
+                padding: 1rem;
+                border-top: 1px solid rgba(255,255,255,0.15);
+            }
+
+            /* Main content */
+            #main-content {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+            }
+            #topbar {
+                background: white;
+                padding: 0.75rem 1.5rem;
+                border-bottom: 1px solid #dee2e6;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            #page-content {
+                padding: 1.5rem;
+                flex: 1;
+            }
+    </style>
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">HikariLegalSRL</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Login">Login</a>
-                        </li>
-                    </ul>
-                </div>
+    @{
+        var controladorActual = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+        var accionActual = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+
+        string NavClass(string controlador) =>
+            controladorActual.Equals(controlador,
+                StringComparison.OrdinalIgnoreCase)
+            ? "nav-link active"
+            : "nav-link";
+    }
+    @* ── Sidebar ─────────────────────────────────────────── *@
+    <nav id="sidebar">
+        <div class="brand">
+            <img src="~/images/fulllogo.png"
+                 alt="Hikari Legal"
+                 style="max-width:50px; width:100%;" />
+            Hikari Legal
+        </div>
+
+        <div class="pt-2">
+
+            @* Dashboard — visible para todos *@
+            <div class="nav-section">General</div>
+            <a class="nav-link @(ViewContext.RouteData.Values["controller"]
+                                        ?.ToString() == "Dashboard" ? "active" : "")"
+               asp-controller="Dashboard" asp-action="Index">
+                <i class="bi bi-speedometer2 me-2"></i>Dashboard
+            </a>
+
+            @* Menú Administrador y Abogado/Asesor *@
+            @if (User.IsInRole("Administrador")
+                 || User.IsInRole("AbogadoAsesor")
+                 || User.IsInRole("Asistente"))
+            {
+                <div class="nav-section">Comercial</div>
+                <a class="@NavClass("Prospectos")" asp-controller="Prospectos" asp-action="Index">
+                    <i class="bi bi-person-plus me-2"></i>Prospectos
+                </a>
+                <a class="@NavClass("Clientes")" asp-controller="Clientes" asp-action="Index">
+                    <i class="bi bi-people me-2"></i>Clientes
+                </a>
+
+                @if (User.IsInRole("Administrador") || User.IsInRole("AbogadoAsesor"))
+                {
+                    <a class="@NavClass("Usuarios")" asp-controller="Usuarios" asp-action="Crear">
+                        <i class="bi bi-file-earmark-text me-2"></i>Propuestas
+                    </a>
+                }
+            }
+
+            @* Expedientes — Admin, Asesor y Colaborador (cada uno ve los suyos) *@
+            <div class="nav-section">Operaciones</div>
+            <a class="@NavClass("Expedientes")" asp-controller="Expedientes" asp-action="Index">
+                <i class="bi bi-folder2-open me-2"></i>Expedientes
+            </a>
+
+            @* Facturación y Pro Bono — NO para Colaborador Externo *@
+            @if (!User.IsInRole("ColaboradorExterno"))
+            {
+                <a class="@NavClass("Facturas")" asp-controller="Facturas" asp-action="Index">
+                    <i class="bi bi-receipt me-2"></i>Facturación
+                </a>
+                <a class="@NavClass("ProBono")" asp-controller="ProBono" asp-action="Index">
+                    <i class="bi bi-heart me-2"></i>Pro Bono
+                </a>
+                <a class="@NavClass("Usuarios")" asp-controller="Usuarios" asp-action="Create">
+                    <i class="bi bi-file-earmark-text me-2"></i>Usuarios
+                </a>
+            }
+
+            @* Administración — solo Admin *@
+            @if (User.IsInRole("Administrador"))
+            {
+                <div class="nav-section">Administración</div>
+                <a class="@NavClass("Usuarios")" asp-controller="Usuarios" asp-action="Index">
+                    <i class="bi bi-person-gear me-2"></i>Usuarios
+                </a>
+
+                <a class="@NavClass("Servicios")" asp-controller="Servicios" asp-action="Index">
+                    <i class="bi bi-grid me-2"></i>Catálogo Servicios
+                </a>
+                <a class="@NavClass("Reportes")" asp-controller="Reportes" asp-action="Index">
+                    <i class="bi bi-bar-chart me-2"></i>Reportes
+                </a>
+                <a class="@NavClass("Auditoria")" asp-controller="Auditoria" asp-action="Index">
+                    <i class="bi bi-journal-text me-2"></i>Auditoría
+                </a>
+            }
+        </div>
+
+        @* Logout *@
+        <div class="logout-area">
+            <div class="small text-white-50 mb-2">
+                <i class="bi bi-person-circle me-1"></i>
+                @User.Identity?.Name
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+            <form asp-controller="Account" asp-action="Logout" method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-sm btn-outline-light w-100">
+                    <i class="bi bi-box-arrow-left me-1"></i>Cerrar sesión
+                </button>
+            </form>
+        </div>
+    </nav>
+
+    @* ── Contenido principal ─────────────────────────────── *@
+    <div id="main-content">
+
+        <div id="topbar">
+            <span class="fw-semibold text-muted">@ViewData["Title"]</span>
+            <span class="badge" style="background:#1F3864;">
+                @(User.IsInRole("Administrador") ? "Administrador" :
+                  User.IsInRole("AbogadoAsesor") ? "Abogado / Asesor" :
+                  User.IsInRole("ColaboradorExterno") ? "Colaborador" : "Asistente")
+            </span>
+        </div>
+
+        <div id="page-content">
+            @* Alertas de éxito / error *@
+            @if (TempData["Exito"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>@TempData["Exito"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @* Token global para peticiones AJAX *@
+            @Html.AntiForgeryToken()
+            @* ── Mensajes de feedback globales ── *@
+            @if (TempData["Exito"] is string msgExito)
+            {
+                <div class="alert alert-success alert-dismissible fade show mx-3 mt-3 shadow-sm"
+                     role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    @msgExito
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["Error"] is string msgError)
+            {
+                <div class="alert alert-danger alert-dismissible fade show mx-3 mt-3 shadow-sm"
+                     role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    @msgError
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["Info"] is string msgInfo)
+            {
+                <div class="alert alert-info alert-dismissible fade show mx-3 mt-3 shadow-sm"
+                     role="alert">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    @msgInfo
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
             @RenderBody()
-        </main>
+        </div>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - HikariLegalSRL - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+
+<script>
+    setTimeout(() => {
+        document.querySelectorAll('.alert-dismissible').forEach(a => {
+            const bsAlert = bootstrap.Alert.getOrCreateInstance(a);
+            bsAlert.close();
+        });
+    }, 5000);
+</script>
