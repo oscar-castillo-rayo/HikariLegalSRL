@@ -4,10 +4,17 @@
     ViewData["Title"] = "Usuarios";
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/usuarios.css" />
+}
+
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="mb-0 fw-bold" style="color:#1f3864;">Usuarios</h4>
-    <a asp-controller="Usuarios" asp-action="Create" class="btn text-white" style="background:#1D6A3A;">
+    <h4 class="mb-0 fw-bold usuarios-titulo">Usuarios</h4>
+    <a asp-controller="Usuarios" asp-action="Create" class="btn text-white usuarios-btn-nuevo">
         <i class="bi bi-plus-lg me-1"></i>Nuevo usuario
+    </a>
+    <a asp-controller="Roles" asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-shield-lock me-1"></i>Gestionar roles
     </a>
 </div>
 
