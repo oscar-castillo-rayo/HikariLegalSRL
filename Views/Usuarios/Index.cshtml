@@ -10,7 +10,7 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="mb-0 fw-bold usuarios-titulo">Usuarios</h4>
-    <a asp-controller="Usuarios" asp-action="Create" class="btn text-white usuarios-btn-nuevo">
+    <a asp-controller="Usuarios" asp-action="Crear" class="btn text-white usuarios-btn-nuevo">
         <i class="bi bi-plus-lg me-1"></i>Nuevo usuario
     </a>
     <a asp-controller="Roles" asp-action="Index" class="btn btn-outline-secondary">
@@ -51,7 +51,7 @@
                             }
                         </td>
                         <td class="text-end pe-3">
-                            <a asp-controller="Usuarios" asp-action="Edit" asp-route-id="@usuario.Id"
+                            <a asp-controller="Usuarios" asp-action="Editar" asp-route-id="@usuario.Id"
                                class="btn btn-outline-secondary btn-sm">
                                 <i class="bi bi-pencil"></i>
                             </a>

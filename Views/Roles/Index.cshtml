@@ -6,19 +6,10 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="mb-0 fw-bold" style="color:#1f3864;">Roles</h4>
-    <a asp-controller="Roles" asp-action="Create" class="btn text-white" style="background:#1D6A3A;">
+    <a asp-controller="Roles" asp-action="Crear" class="btn text-white" style="background:#1D6A3A;">
         <i class="bi bi-plus-lg me-1"></i>Nuevo rol
     </a>
 </div>
-
-@if (TempData["Exito"] != null)
-{
-    <div class="alert alert-success">@TempData["Exito"]</div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger">@TempData["Error"]</div>
-}
 
 <div class="card shadow-sm border-0">
     <div class="card-body p-0">
@@ -57,7 +48,7 @@
                             <td class="text-end pe-3">
                                 @if (!rol.EsFijo)
                                 {
-                                    <a asp-controller="Roles" asp-action="Edit" asp-route-id="@rol.Id"
+                                    <a asp-controller="Roles" asp-action="Editar" asp-route-id="@rol.Id"
                                        class="btn btn-outline-secondary btn-sm">
                                         <i class="bi bi-pencil"></i>
                                     </a>
