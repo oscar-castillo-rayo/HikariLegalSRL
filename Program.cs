@@ -34,6 +34,7 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 })
 .AddErrorDescriber<SpanishIdentityErrorDescriber>() // Describir errores en español
 .AddEntityFrameworkStores<ApplicationDbContext>()
+.AddSignInManager<ApplicationSignInManager>() // Agrega el SignInManager personalizado
 .AddDefaultTokenProviders(); // Agrega proveedores de tokens predeterminados para la recuperación de contraseña y la verificación de correo electrónico
 
 // Configuración de la cookie de autenticación

@@ -1,5 +1,5 @@
 ﻿using HikariLegalSRL.Models;
-using HikariLegalSRL.ViewModels;
+using HikariLegalSRL.ViewModels.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -36,6 +36,12 @@ namespace HikariLegalSRL.Controllers
             if (result.Succeeded)
             {
                 return RedirectToAction("Index", "Home");
+            }
+
+            if (result.IsNotAllowed)
+            {
+                ModelState.AddModelError(string.Empty, "Esta cuenta está inactiva. Contacte al administrador.");
+                return View(model);
             }
 
             // Manejar el caso de inicio de sesión fallido

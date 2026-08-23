@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace HikariLegalSRL.ViewModels
+namespace HikariLegalSRL.ViewModels.Auth
 {
     public class LoginViewModel
     {

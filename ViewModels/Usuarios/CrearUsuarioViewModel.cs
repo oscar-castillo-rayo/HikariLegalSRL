@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 
-namespace HikariLegalSRL.ViewModels
+namespace HikariLegalSRL.ViewModels.Usuarios
 {
-    public class CreateUserViewModel
+    public class CrearUsuarioViewModel
     {
         [Required(ErrorMessage = "El nombre es obligatorio.")]
         [StringLength(150, ErrorMessage = "El nombre no puede superar los 150 caracteres.")]
@@ -28,6 +28,7 @@ namespace HikariLegalSRL.ViewModels
         [StringLength(100, ErrorMessage = "La especialidad no puede superar los 100 caracteres.")]
         public string? Especialidad { get; set; }
 
+        [Required(ErrorMessage = "Debe seleccionar un rol.")]
         public IEnumerable<SelectListItem> RolesDisponibles { get; set; } = new List<SelectListItem>();
     }
 }
