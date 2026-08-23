@@ -1,0 +1,17 @@
+﻿.usuarios-titulo {
+    color: #1F3864;
+}
+
+.usuarios-btn-nuevo {
+    background: #1D6A3A;
+    color: #fff;
+}
+
+    .usuarios-btn-nuevo:hover {
+        background: #17552e;
+        color: #fff;
+    }
+
+.usuarios-card-form {
+    max-width: 700px;
+}

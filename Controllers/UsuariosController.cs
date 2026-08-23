@@ -49,7 +49,7 @@ namespace HikariLegalSRL.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Edit(string id)
+        public async Task<IActionResult> Editar(string id)
         {
             var usuario = await _userManager.FindByIdAsync(id);
 
@@ -83,7 +83,7 @@ namespace HikariLegalSRL.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(EditarUsuarioViewModel model)
+        public async Task<IActionResult> Editar(EditarUsuarioViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -187,7 +187,7 @@ namespace HikariLegalSRL.Controllers
 
 
         [HttpGet]
-        public async Task<IActionResult> Create()
+        public async Task<IActionResult> Crear()
         {
             var model = new CrearUsuarioViewModel
             {
@@ -198,7 +198,7 @@ namespace HikariLegalSRL.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(CrearUsuarioViewModel model)
+        public async Task<IActionResult> Crear(CrearUsuarioViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -257,7 +257,7 @@ namespace HikariLegalSRL.Controllers
                 return View(model);
             }
             TempData["Exito"] = $"Usuario {nuevoUsuario.NombreCompleto} creado correctamente";
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction(nameof(Index));
         }
 
         private async Task<IEnumerable<SelectListItem>> ObtenerRolesActivosAsync()
