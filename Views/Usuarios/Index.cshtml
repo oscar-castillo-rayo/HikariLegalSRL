@@ -8,58 +8,65 @@
     <link rel="stylesheet" href="~/css/usuarios.css" />
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <h4 class="mb-0 fw-bold usuarios-titulo">Usuarios</h4>
-    <a asp-controller="Usuarios" asp-action="Crear" class="btn text-white usuarios-btn-nuevo">
-        <i class="bi bi-plus-lg me-1"></i>Nuevo usuario
-    </a>
-    <a asp-controller="Roles" asp-action="Index" class="btn btn-outline-secondary">
-        <i class="bi bi-shield-lock me-1"></i>Gestionar roles
-    </a>
+
+   
+    <div class="d-flex gap-2">
+        <a asp-controller="Roles" asp-action="Index" class="btn btn-gestion-role">
+            <i class="bi bi-shield-lock me-1"></i>Gestionar roles
+        </a>
+        <a asp-controller="Usuarios" asp-action="Crear" class="btn text-white usuarios-btn-nuevo">
+            <i class="bi bi-plus-lg me-1"></i>Nuevo usuario
+        </a>
+    </div>
 </div>
 
 <div class="card shadow-sm border-0">
     <div class="card-body p-0">
         <div class="table-responsive">
-        <table class="table align-middle mb-0">
-            <thead>
-                <tr>
-                    <th class="ps-3">Nombre</th>
-                    <th>Correo</th>
-                    <th>Rol</th>
-                    <th>Especialidad</th>
-                    <th>Estado</th>
-                    <th class="text-end pe-3">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var usuario in Model)
-                {
+            <table class="table align-middle mb-0">
+                <thead>
                     <tr>
-                        <td class="ps-3">@usuario.NombreCompleto</td>
-                        <td>@usuario.Correo</td>
-                        <td>@usuario.Rol</td>
-                        <td>@(usuario.Especialidad ?? "—")</td>
-                        <td>
-                            @if (usuario.Activo)
-                            {
-                                <span class="badge bg-success">Activo</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-secondary">Inactivo</span>
-                            }
-                        </td>
-                        <td class="text-end pe-3">
-                            <a asp-controller="Usuarios" asp-action="Editar" asp-route-id="@usuario.Id"
-                               class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                        </td>
+                        <th class="ps-3">Nombre</th>
+                        <th class="d-none d-md-table-cell">Correo</th>
+                        <th>Rol</th>
+                        <th class="d-none d-md-table-cell">Especialidad</th>
+                        <th>Estado</th>
+                        <th class="text-end pe-3">Acciones</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var usuario in Model)
+                    {
+                        <tr>
+                            <td class="ps-3">
+                                <div class="fw-bold">@usuario.NombreCompleto</div>
+                                <div class="text-muted small d-md-none">@usuario.Correo</div>
+                            </td>
+                            <td class="d-none d-md-table-cell">@usuario.Correo</td>
+                            <td>@usuario.Rol</td>
+                            <td class="d-none d-md-table-cell">@(usuario.Especialidad ?? "—")</td>
+                            <td>
+                                @if (usuario.Activo)
+                                {
+                                    <span class="badge bg-success">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                }
+                            </td>
+                            <td class="text-end pe-3">
+                                <a asp-controller="Usuarios" asp-action="Editar" asp-route-id="@usuario.Id"
+                                   class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
