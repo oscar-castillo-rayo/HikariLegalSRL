@@ -4,6 +4,10 @@
     ViewData["Title"] = "Editar Usuario";
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/usuarios.css" />
+}
+
 <div class="d-flex align-items-center mb-4">
     <a asp-controller="Usuarios" asp-action="Index" class="btn btn-outline-secondary btn-sm me-3">
         <i class="bi bi-arrow-left"></i>
@@ -48,13 +52,20 @@
                 </div>
             </div>
 
-            <div class="form-check form-switch mb-4">
-                <input asp-for="Activo" class="form-check-input" role="switch" />
-                <label asp-for="Activo" class="form-check-label fw-semibold"></label>
+            <div class="col-12">
+                <div class="p-3 rounded-3" style="background-color: #f8f9fa; border: 1px solid #e9ecef;">
+                    <div class="form-check form-switch mb-0 d-flex align-items-center">
+                        <input asp-for="Activo" class="form-check-input fs-5 mt-0 me-3" role="switch" style="cursor: pointer;" id="ActivoSwitch" />
+                        <div>
+                            <label asp-for="Activo" class="form-check-label fw-bold mb-0" for="ActivoSwitch" style="cursor: pointer; color: #1f3864;"></label>
+                            <div class="small text-muted">Habilita o deshabilita este usuario en el sistema.</div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="d-flex justify-content-end gap-2 mt-4">
-                <a asp-controller="Usuarios" asp-action="Index" class="btn btn-outline-secondary">
+                <a asp-controller="Usuarios" asp-action="Index" class="btn btn-outline-danger">
                     Cancelar
                 </a>
                 <button type="submit" class="btn text-white usuarios-btn-nuevo">

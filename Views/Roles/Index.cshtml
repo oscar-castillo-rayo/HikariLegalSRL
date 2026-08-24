@@ -9,7 +9,12 @@
 }
 
 <div class="d-flex justify-content-between align-items-center m-2 mb-lg-4">
-    <h4 class="mb-0 fw-bold roles-titulo">Roles y Permisos</h4>
+    <div class="d-flex">
+        <a asp-controller="Usuarios" asp-action="Index" class="btn btn-outline-secondary btn-sm me-3">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <h4 class="mb-0 fw-bold roles-titulo">Roles y Permisos</h4>
+    </div>
     <a asp-controller="Roles" asp-action="Crear" class="btn text-white roles-btn-nuevo">
         <i class="bi bi-plus-lg me-1"></i>Nuevo rol
     </a>
@@ -48,8 +53,17 @@
 
                 <div class="rp-detail">
                     <div class="rp-card">
-                        <h2>Datos del rol</h2>
-                        <div class="rp-fields">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="mb-0">Datos del rol</h2>
+                        @if (!rol.EsFijo)
+                        {
+                            <a asp-controller="Roles" asp-action="Editar" asp-route-id="@rol.Id"
+                               class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        }
+                    </div>
+                    <div class="rp-fields">
                             <div class="rp-field">
                                 <label>Nombre del rol</label>
                                 <input type="text" value="@rol.Nombre" disabled />

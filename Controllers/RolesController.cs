@@ -159,7 +159,7 @@ namespace HikariLegalSRL.Controllers
             }
 
             TempData["Exito"] = $"Rol {nuevoRol.Name} creado exitosamente.";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new { rolId = nuevoRol.Id });
 
         }
 
@@ -180,6 +180,7 @@ namespace HikariLegalSRL.Controllers
                 Id = rol.Id,
                 Nombre = rol.Name,
                 Descripcion = rol.Descripcion,
+                Activo = rol.Activo
             };
 
             return View(model);
@@ -209,6 +210,7 @@ namespace HikariLegalSRL.Controllers
 
             await _roleManager.SetRoleNameAsync(rol, model.Nombre);
             rol.Descripcion = model.Descripcion;
+            rol.Activo = model.Activo;
 
             var resultado = await _roleManager.UpdateAsync(rol);
             if (!resultado.Succeeded)

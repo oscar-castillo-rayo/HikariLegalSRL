@@ -15,3 +15,12 @@
 .usuarios-card-form {
     max-width: 700px;
 }
+
+.btn-gestion-role {
+    background: #1F3864;
+    color: #fff;
+}
+    .btn-gestion-role:hover {
+        background: #16294a;
+        color: #fff;
+    }

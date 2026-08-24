@@ -12,5 +12,6 @@ namespace HikariLegalSRL.ViewModels.Roles
 
         [StringLength(500, ErrorMessage = "La descripción no puede superar los 500 caracteres.")]
         public string? Descripcion { get; set; }
+        public bool Activo { get; set; }
     }
 }
