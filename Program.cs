@@ -2,12 +2,18 @@ using HikariLegalSRL.Data;
 using HikariLegalSRL.Models;
 using HikariLegalSRL.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+// Configuración de servicios para Identity y correo electrónico
+builder.Services.AddTransient<IEmailSender, EmailSender>();
+// Bindear configuración SMTP (sección 'Smtp' en appsettings)
+builder.Services.Configure<HikariLegalSRL.Services.SmtpSettings>(builder.Configuration.GetSection("Smtp"));
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -33,7 +39,7 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
     options.User.RequireUniqueEmail = true;
 })
 .AddErrorDescriber<SpanishIdentityErrorDescriber>() // Describir errores en español
-.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddEntityFrameworkStores<ApplicationDbContext>() // Agrega el contexto de la base de datos para Identity
 .AddSignInManager<ApplicationSignInManager>() // Agrega el SignInManager personalizado
 .AddDefaultTokenProviders(); // Agrega proveedores de tokens predeterminados para la recuperación de contraseña y la verificación de correo electrónico
 
