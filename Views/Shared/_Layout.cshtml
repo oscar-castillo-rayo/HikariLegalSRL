@@ -19,10 +19,14 @@
             controladorActual.Equals(controlador, StringComparison.OrdinalIgnoreCase)
             ? "nav-link active"
             : "nav-link";
+
+        var hideShell = (ViewData["HideShell"] as bool?) ?? false;
     }
 
     @* ── Sidebar ─────────────────────────────────────────── *@
-    <nav class="offcanvas-lg offcanvas-start" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarLabel">
+    @if (!hideShell)
+    {
+        <nav class="offcanvas-lg offcanvas-start" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarLabel">
         <div class="offcanvas-header d-lg-none">
             <h5 class="offcanvas-title text-white" id="sidebarLabel">Menú</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebarOffcanvas"></button>
@@ -91,21 +95,25 @@
             </div>
 
         </div>
-    </nav>
+        </nav>
+    }
 
     @* ── Contenido principal ─────────────────────────────── *@
     <div id="main-content">
-        <div id="topbar">
-            <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-outline-secondary d-lg-none"
-                        type="button"
-                        data-bs-toggle="offcanvas"
-                        data-bs-target="#sidebarOffcanvas">
-                    <i class="bi bi-list"></i>
-                </button>
-                <span class="fw-semibold text-muted">@ViewData["Title"]</span>
+        @if (!hideShell)
+        {
+            <div id="topbar">
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-outline-secondary d-lg-none"
+                            type="button"
+                            data-bs-toggle="offcanvas"
+                            data-bs-target="#sidebarOffcanvas">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <span class="fw-semibold text-muted">@ViewData["Title"]</span>
+                </div>
             </div>
-        </div>
+        }
 
         <div id="page-content">
             @if (TempData["Exito"] is string msgExito)
