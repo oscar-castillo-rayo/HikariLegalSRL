@@ -125,7 +125,7 @@ namespace HikariLegalSRL.Controllers
         }
 
         [HttpGet]
-        public IActionResult ResetPassword(
+        public async Task<IActionResult> ResetPassword(
             string email,
             string code)
         {
@@ -133,6 +133,13 @@ namespace HikariLegalSRL.Controllers
                 string.IsNullOrEmpty(code))
             {
                 return BadRequest();
+            }
+
+            var user = await _userManager.FindByEmailAsync(email);
+
+            if (user == null || !await IsPasswordResetTokenValidAsync(user, code))
+            {
+                return BadRequest("El enlace de restablecimiento ya no es válido o ha sido utilizado.");
             }
 
             var model = new ResetPasswordViewModel
@@ -158,6 +165,12 @@ namespace HikariLegalSRL.Controllers
             if (user == null)
             {
                 return RedirectToAction(nameof(ResetPasswordConfirmation));
+            }
+
+            if (!await IsPasswordResetTokenValidAsync(user, model.Code))
+            {
+                ModelState.AddModelError(string.Empty, "Este enlace ya fue utilizado o ha caducado.");
+                return View(model);
             }
 
             // Decodifica el token de restablecimiento de contraseña desde Base64 antes de usarlo.
@@ -186,5 +199,28 @@ namespace HikariLegalSRL.Controllers
         {
             return View();
         }
+         private async Task<bool> IsPasswordResetTokenValidAsync(ApplicationUser user, string code)
+        {
+            if (user == null || string.IsNullOrWhiteSpace(code))
+            {
+                return false;
+            }
+
+            try
+            {
+                var decodedCode = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code));
+
+                return await _userManager.VerifyUserTokenAsync(
+                    user,
+                    TokenOptions.DefaultProvider,
+                    "ResetPassword",
+                    decodedCode);
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
+        }
+
     }
 }
