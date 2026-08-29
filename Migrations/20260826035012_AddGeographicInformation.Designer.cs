@@ -4,6 +4,7 @@ using HikariLegalSRL.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HikariLegalSRL.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260826035012_AddGeographicInformation")]
+    partial class AddGeographicInformation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,54 +24,6 @@ namespace HikariLegalSRL.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("HikariLegalSRL.Controllers.BitacoraAuditoria", b =>
-                {
-                    b.Property<long>("BitacoraAuditoriaId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("BitacoraAuditoriaId"));
-
-                    b.Property<DateTime>("FechaHora")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ModuloAfectado")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("RegistroAfectadoId")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("TipoAccion")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("UsuarioId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ValorAnterior")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ValorNuevo")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("BitacoraAuditoriaId");
-
-                    b.HasIndex("FechaHora");
-
-                    b.HasIndex("UsuarioId");
-
-                    b.ToTable("BitacoraAuditoria", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_BitacoraAuditoria_TipoAccion", "[TipoAccion] IN ('crear', 'editar', 'eliminar', 'cambiar_estado', 'aprobar', 'rechazar')");
-                        });
-                });
 
             modelBuilder.Entity("HikariLegalSRL.Models.ApplicationRole", b =>
                 {
@@ -204,7 +159,7 @@ namespace HikariLegalSRL.Migrations
                     b.HasIndex("ProvinciaId", "Nombre")
                         .IsUnique();
 
-                    b.ToTable("Cantones", (string)null);
+                    b.ToTable("Cantones");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Direccion", b =>
@@ -225,13 +180,11 @@ namespace HikariLegalSRL.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("SenasExactas")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TipoUbicacion")
                         .IsRequired()
-                        .HasMaxLength(15)
-                        .HasColumnType("nvarchar(15)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("DireccionId");
 
@@ -239,10 +192,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("PaisId");
 
-                    b.ToTable("Direcciones", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_Direccion_TipoUbicacion", "[TipoUbicacion] IN ('nacional', 'extranjero')");
-                        });
+                    b.ToTable("Direcciones");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Distrito", b =>
@@ -265,7 +215,7 @@ namespace HikariLegalSRL.Migrations
                     b.HasIndex("CantonId", "Nombre")
                         .IsUnique();
 
-                    b.ToTable("Distritos", (string)null);
+                    b.ToTable("Distritos");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Pais", b =>
@@ -288,7 +238,7 @@ namespace HikariLegalSRL.Migrations
                     b.HasIndex("Nombre")
                         .IsUnique();
 
-                    b.ToTable("Paises", (string)null);
+                    b.ToTable("Paises");
 
                     b.HasData(
                         new
@@ -311,46 +261,39 @@ namespace HikariLegalSRL.Migrations
                         .HasColumnType("tinyint");
 
                     b.Property<string>("CedulaJuridica")
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Correo")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("DireccionId")
                         .HasColumnType("int");
 
                     b.Property<string>("Estado")
                         .IsRequired()
-                        .HasMaxLength(15)
-                        .HasColumnType("nvarchar(15)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("FechaCreacion")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("NombreContacto")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("NombreEmpresaPersona")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Observaciones")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Sector")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Telefono")
                         .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UsuarioCreadorId")
                         .IsRequired()
@@ -358,19 +301,11 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasKey("ProspectoId");
 
-                    b.HasIndex("Correo")
-                        .IsUnique();
-
                     b.HasIndex("DireccionId");
 
                     b.HasIndex("UsuarioCreadorId");
 
-                    b.ToTable("Prospectos", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_Prospecto_Calificacion", "[Calificacion] IS NULL OR ([Calificacion] BETWEEN 1 AND 5)");
-
-                            t.HasCheckConstraint("CK_Prospecto_Estado", "[Estado] IN ('activo', 'convertido', 'descartado')");
-                        });
+                    b.ToTable("Prospectos");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Provincia", b =>
@@ -393,7 +328,7 @@ namespace HikariLegalSRL.Migrations
                     b.HasIndex("PaisId", "Nombre")
                         .IsUnique();
 
-                    b.ToTable("Provincias", (string)null);
+                    b.ToTable("Provincias");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -502,17 +437,6 @@ namespace HikariLegalSRL.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("HikariLegalSRL.Controllers.BitacoraAuditoria", b =>
-                {
-                    b.HasOne("HikariLegalSRL.Models.ApplicationUser", "Usuario")
-                        .WithMany()
-                        .HasForeignKey("UsuarioId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Usuario");
-                });
-
             modelBuilder.Entity("HikariLegalSRL.Models.Canton", b =>
                 {
                     b.HasOne("HikariLegalSRL.Models.Provincia", "Provincia")
@@ -528,13 +452,12 @@ namespace HikariLegalSRL.Migrations
                 {
                     b.HasOne("HikariLegalSRL.Models.Distrito", "Distrito")
                         .WithMany()
-                        .HasForeignKey("DistritoId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("DistritoId");
 
                     b.HasOne("HikariLegalSRL.Models.Pais", "Pais")
                         .WithMany()
                         .HasForeignKey("PaisId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Distrito");
@@ -558,13 +481,13 @@ namespace HikariLegalSRL.Migrations
                     b.HasOne("HikariLegalSRL.Models.Direccion", "Direccion")
                         .WithMany()
                         .HasForeignKey("DireccionId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("HikariLegalSRL.Models.ApplicationUser", "UsuarioCreador")
                         .WithMany()
                         .HasForeignKey("UsuarioCreadorId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Direccion");

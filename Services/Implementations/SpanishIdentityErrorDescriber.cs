@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace HikariLegalSRL.Services
+namespace HikariLegalSRL.Services.Implementations
 {
     public class SpanishIdentityErrorDescriber : IdentityErrorDescriber
     {

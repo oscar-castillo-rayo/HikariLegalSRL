@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 
-namespace HikariLegalSRL.Services
+namespace HikariLegalSRL.Services.Implementations
 {
     public class ApplicationSignInManager : SignInManager<ApplicationUser>
     {
