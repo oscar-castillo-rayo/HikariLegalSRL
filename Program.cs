@@ -1,6 +1,7 @@
 using HikariLegalSRL.Data;
 using HikariLegalSRL.Models;
-using HikariLegalSRL.Services;
+using HikariLegalSRL.Services.Implementations;
+using HikariLegalSRL.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -13,13 +14,18 @@ builder.Services.AddControllersWithViews();
 // Configuración de servicios para Identity y correo electrónico
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 // Bindear configuración SMTP (sección 'Smtp' en appsettings)
-builder.Services.Configure<HikariLegalSRL.Services.SmtpSettings>(builder.Configuration.GetSection("Smtp"));
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
+
+//Interfaces and Services
+builder.Services.AddScoped<IBitacoraAuditoriaService, BitacoraAuditoriaService>();
+builder.Services.AddScoped<IGeografiaService, GeografiaService>();
+builder.Services.AddScoped<IProspectoService, ProspectoService>();
 
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 {

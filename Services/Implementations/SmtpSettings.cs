@@ -1,4 +1,4 @@
-namespace HikariLegalSRL.Services
+namespace HikariLegalSRL.Services.Implementations
 {
     public class SmtpSettings
     {
