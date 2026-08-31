@@ -33,7 +33,7 @@
                         <th>Rol</th>
                         <th class="d-none d-md-table-cell">Especialidad</th>
                         <th>Estado</th>
-                        <th class="text-end pe-3">Acciones</th>
+                        <th class="text-center pe-3">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -57,11 +57,23 @@
                                     <span class="badge bg-secondary">Inactivo</span>
                                 }
                             </td>
-                            <td class="text-end pe-3">
-                                <a asp-controller="Usuarios" asp-action="Editar" asp-route-id="@usuario.Id"
-                                   class="btn btn-outline-secondary btn-sm">
+                            <td class="text-center">
+                                <a asp-action="Editar" asp-route-id="@usuario.Id"
+                                   class="btn btn-sm btn-outline-secondary">
                                     <i class="bi bi-pencil"></i>
                                 </a>
+                                @if (usuario.Activo)
+                                {
+                                    <form asp-action="Desactivar" asp-route-id="@usuario.Id"
+                                          method="post" class="d-inline"
+                                          onsubmit="return confirm('¿Desactivar este usuario?')">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit"
+                                                class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-person-x"></i>
+                                        </button>
+                                    </form>
+                                }
                             </td>
                         </tr>
                     }

@@ -12,13 +12,11 @@ namespace HikariLegalSRL.Services.Implementations
     {
         private readonly ApplicationDbContext _context;
         private readonly IBitacoraAuditoriaService _bitacoraAuditoriaService;
-        private readonly ITransactionRunner _transactionRunner;
 
-        public ProspectoService(ApplicationDbContext context, IBitacoraAuditoriaService bitacoraAuditoriaService, ITransactionRunner transactionRunner)
+        public ProspectoService(ApplicationDbContext context, IBitacoraAuditoriaService bitacoraAuditoriaService)
         {
             _context = context;
             _bitacoraAuditoriaService = bitacoraAuditoriaService;
-            _transactionRunner = transactionRunner;
         }
 
         public async Task<int> Crear(ProspectoCreacionDTO dto, string usuarioActualId)
@@ -42,6 +40,12 @@ namespace HikariLegalSRL.Services.Implementations
                 throw new ReglaNegocioException("El país indicado no es válido");
             }
 
+            // Normalizar: DistritoId = 0 no es un ID válido, tratar como null
+            if (dto.Direccion.DistritoId is 0)
+            {
+                dto.Direccion.DistritoId = null;
+            }
+
             var esNacional = pais.EsPaisBase;
 
             if (esNacional && dto.Direccion.DistritoId is null)
@@ -49,8 +53,6 @@ namespace HikariLegalSRL.Services.Implementations
                 throw new ReglaNegocioException("Debe indicar provincia, cantón y distrito para una dirección nacional.");
             }
 
-            if (!esNacional && dto.Direccion.DistritoId is not null)
-                throw new ReglaNegocioException("Una dirección extranjera no debe indicar distrito de Costa Rica.");
             var direccion = new Direccion
             {
                 PaisId = dto.Direccion.PaisId,
@@ -75,23 +77,29 @@ namespace HikariLegalSRL.Services.Implementations
                 Direccion = direccion
             };
 
-            return await _transactionRunner.EjecutarAsync(async () =>
+            _context.Prospectos.Add(prospecto);
+
+
+            try
             {
-                _context.Prospectos.Add(prospecto);
                 await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new ReglaNegocioException(ex.Message);
+            }
 
-                await _bitacoraAuditoriaService.Registrar(
-                    usuarioId: usuarioActualId,
-                    tipoAccion: "crear",
-                    moduloAfectado: "Prospectos",
-                    registroAfectadoId: prospecto.ProspectoId.ToString(),
-                    valorNuevo: $"{prospecto.NombreEmpresaPersona} ({prospecto.Correo})");
+            await _bitacoraAuditoriaService.Registrar(
+                usuarioId: usuarioActualId,
+                tipoAccion: "crear",
+                moduloAfectado: "Prospectos",
+                registroAfectadoId: prospecto.ProspectoId.ToString(),
+                valorNuevo: $"{prospecto.NombreEmpresaPersona} ({prospecto.Correo})");
 
-                await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();  // guarda la entrada de bitácora
 
-                return prospecto.ProspectoId;
-            });
+            return prospecto.ProspectoId;
         }
     }
-
 }
+

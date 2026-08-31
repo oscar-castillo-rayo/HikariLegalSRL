@@ -1,185 +1,226 @@
-﻿@model HikariLegalSRL.ViewModels.Prospectos.ProspectoCreateViewModel
+@model HikariLegalSRL.ViewModels.Prospectos.ProspectoCreateViewModel
 
 @{
     ViewData["Title"] = "Nuevo prospecto";
 }
 
-<div class="d-flex align-items-center gap-2 mb-4">
-    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-arrow-left"></i>
-    </a>
-    <h2 class="fw-bold mb-0" style="color:#1F3864;">Nuevo prospecto</h2>
-</div>
+<h1>Nuevo prospecto</h1>
 
-<div class="card shadow-sm" style="max-width:750px;">
-    <div class="card-body p-4">
-        <form asp-action="Crear" method="post">
-            @Html.AntiForgeryToken()
+<form asp-action="Crear" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-3"></div>
-
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label asp-for="Prospecto.NombreEmpresaPersona" class="form-label fw-semibold"></label>
-                    <input asp-for="Prospecto.NombreEmpresaPersona" class="form-control" />
-                    <span asp-validation-for="Prospecto.NombreEmpresaPersona" class="text-danger small"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="Prospecto.NombreContacto" class="form-label fw-semibold"></label>
-                    <input asp-for="Prospecto.NombreContacto" class="form-control" />
-                    <span asp-validation-for="Prospecto.NombreContacto" class="text-danger small"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="Prospecto.CedulaJuridica" class="form-label fw-semibold"></label>
-                    <input asp-for="Prospecto.CedulaJuridica" class="form-control" />
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="Prospecto.Telefono" class="form-label fw-semibold"></label>
-                    <input asp-for="Prospecto.Telefono" class="form-control" />
-                    <span asp-validation-for="Prospecto.Telefono" class="text-danger small"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="Prospecto.Correo" class="form-label fw-semibold"></label>
-                    <input asp-for="Prospecto.Correo" type="email" class="form-control" />
-                    <span asp-validation-for="Prospecto.Correo" class="text-danger small"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="Prospecto.Sector" class="form-label fw-semibold"></label>
-                    <input asp-for="Prospecto.Sector" class="form-control" placeholder="Ej: Tecnología, Comercio, Salud..." />
-                </div>
-
-                <div class="col-12"><hr class="my-1" /><small class="text-muted fw-semibold">📍 Ubicación</small></div>
-
-                <div class="col-md-4 form-check ms-2">
-                    <input asp-for="EsNacional" class="form-check-input" id="esNacional" checked />
-                    <label class="form-check-label" for="esNacional">Dirección nacional (Costa Rica)</label>
-                </div>
-
-                <div class="col-12" id="bloqueNacional">
-                    <div class="row g-3">
-                        <input type="hidden" asp-for="Prospecto.Direccion.PaisId" id="paisIdNacional" />
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Provincia</label>
-                            <select id="selectProvincia" class="form-select">
-                                <option value="">— Seleccione —</option>
-                                @foreach (var p in Model.Provincias)
-                                {
-                                    <option value="@p.Id">@p.Nombre</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Cantón</label>
-                            <select id="selectCanton" class="form-select" disabled>
-                                <option value="">— Seleccione una provincia —</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Distrito</label>
-                            <select asp-for="Prospecto.Direccion.DistritoId" id="selectDistrito" class="form-select" disabled>
-                                <option value="">— Seleccione un cantón —</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6" id="bloqueExtranjero" style="display:none;">
-                    <label class="form-label fw-semibold">País</label>
-                    <select id="selectPaisExtranjero" class="form-select">
-                        <option value="">— Seleccione —</option>
-                        @foreach (var pais in Model.Paises)
-                        {
-                            <option value="@pais.Id">@pais.Nombre</option>
-                        }
-                    </select>
-                </div>
-
-                <div class="col-12">
-                    <label asp-for="Prospecto.Direccion.SenasExactas" class="form-label fw-semibold"></label>
-                    <textarea asp-for="Prospecto.Direccion.SenasExactas" class="form-control" rows="2"
-                              placeholder="Señas exactas (opcional)..."></textarea>
-                </div>
-
-                <div class="col-12"><hr class="my-1" /></div>
-
-                <div class="col-md-4">
-                    <label asp-for="Prospecto.Calificacion" class="form-label fw-semibold"></label>
-                    <select asp-for="Prospecto.Calificacion" class="form-select">
-                        <option value="">— Sin calificar —</option>
-                        @for (byte i = 5; i >= 1; i--)
-                        {
-                            <option value="@i">@i — @string.Concat(Enumerable.Repeat("⭐", i))</option>
-                        }
-                    </select>
-                </div>
-
-                <div class="col-12">
-                    <label asp-for="Prospecto.Observaciones" class="form-label fw-semibold"></label>
-                    <textarea asp-for="Prospecto.Observaciones" class="form-control" rows="3"
-                              placeholder="Observaciones generales del prospecto..."></textarea>
-                </div>
-            </div>
-
-            <div class="mt-4 d-flex gap-2">
-                <button type="submit" class="btn text-white fw-semibold px-4" style="background:#1F3864;">
-                    <i class="bi bi-check-lg me-1"></i>Guardar prospecto
-                </button>
-                <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
-            </div>
-        </form>
+    <div class="mb-3">
+        <label asp-for="Prospecto.NombreEmpresaPersona" class="form-label"></label>
+        <input asp-for="Prospecto.NombreEmpresaPersona" class="form-control" />
+        <span asp-validation-for="Prospecto.NombreEmpresaPersona" class="text-danger"></span>
     </div>
-</div>
 
-@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <div class="mb-3">
+        <label asp-for="Prospecto.NombreContacto" class="form-label"></label>
+        <input asp-for="Prospecto.NombreContacto" class="form-control" />
+        <span asp-validation-for="Prospecto.NombreContacto" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Prospecto.CedulaJuridica" class="form-label"></label>
+        <input asp-for="Prospecto.CedulaJuridica" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Prospecto.Telefono" class="form-label"></label>
+        <input asp-for="Prospecto.Telefono" class="form-control" />
+        <span asp-validation-for="Prospecto.Telefono" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Prospecto.Correo" class="form-label"></label>
+        <input asp-for="Prospecto.Correo" type="email" class="form-control" />
+        <span asp-validation-for="Prospecto.Correo" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Prospecto.Sector" class="form-label"></label>
+        <input asp-for="Prospecto.Sector" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Prospecto.Calificacion" class="form-label"></label>
+        <select asp-for="Prospecto.Calificacion" class="form-select">
+            <option value="">-- Sin calificar --</option>
+            @for (byte i = 1; i <= 5; i++)
+            {
+                <option value="@i">@i</option>
+            }
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Prospecto.Observaciones" class="form-label"></label>
+        <textarea asp-for="Prospecto.Observaciones" class="form-control" rows="3"></textarea>
+    </div>
+    <hr />
+    <h5>Dirección</h5>
+
+    <div class="mb-3 form-check">
+        <input asp-for="EsNacional" class="form-check-input" id="esNacional" checked />
+        <label class="form-check-label" for="esNacional">Dirección nacional (Costa Rica)</label>
+    </div>
+
+    <div id="bloqueNacional">
+        <!-- Cambia el id de paisIdNacional a paisIdOculto -->
+        <input type="hidden" asp-for="Prospecto.Direccion.PaisId" id="paisIdOculto" />
+
+        <div class="mb-3">
+            <label class="form-label">Provincia</label>
+            <select id="selectProvincia" class="form-select">
+                <option value="">-- Seleccione --</option>
+                @foreach (var p in Model.Provincias)
+                {
+                    <option value="@p.Id">@p.Nombre</option>
+                }
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Cantón</label>
+            <select id="selectCanton" class="form-select" disabled>
+                <option value="">-- Seleccione una provincia primero --</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Distrito</label>
+            <select asp-for="Prospecto.Direccion.DistritoId" id="selectDistrito" class="form-select" disabled>
+                <option value="">-- Seleccione un cantón primero --</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="bloqueExtranjero" style="display:none;">
+        <div class="mb-3">
+            <label class="form-label">País</label>
+            <select id="selectPaisExtranjero" class="form-select">
+                <option value="">-- Seleccione --</option>
+                @foreach (var pais in Model.Paises)
+                {
+                    <option value="@pais.Id">@pais.Nombre</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Prospecto.Direccion.SenasExactas" class="form-label"></label>
+        <textarea asp-for="Prospecto.Direccion.SenasExactas" class="form-control" rows="2"></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</form>
+
+
+       @section Scripts {
     <script>
         const PAIS_COSTA_RICA_ID = 1;
+        const inputPaisOculto = document.getElementById('paisIdOculto');
 
+        // 1. Inicialización al cargar la página
+        inputPaisOculto.value = PAIS_COSTA_RICA_ID;
+
+        // 2. Lógica de cambio entre Nacional y Extranjero
         document.getElementById('esNacional').addEventListener('change', function() {
             const esNacional = this.checked;
-            document.getElementById('bloqueNacional').style.display = esNacional ? '' : 'none';
-            document.getElementById('bloqueExtranjero').style.display = esNacional ? 'none' : '';
-            document.getElementById('paisIdNacional').value = esNacional ? PAIS_COSTA_RICA_ID : '';
+            document.getElementById('bloqueNacional').style.display = esNacional ? 'block' : 'none';
+            document.getElementById('bloqueExtranjero').style.display = esNacional ? 'none' : 'block';
+            
+            if (esNacional) {
+                inputPaisOculto.value = PAIS_COSTA_RICA_ID;
+                
+                // Si vuelve a Costa Rica y no hay provincia, volvemos a bloquear cantón y distrito
+                if(document.getElementById('selectProvincia').value === "") {
+                    document.getElementById('selectCanton').disabled = true;
+                    document.getElementById('selectDistrito').disabled = true;
+                }
+            } else {
+                inputPaisOculto.value = document.getElementById('selectPaisExtranjero').value;
+                
+                // Limpiamos los selects y los DESHABILITAMOS para que no envíen valores
+                // (campos disabled no se incluyen en el POST del formulario, así el model binder recibe null)
+                document.getElementById('selectProvincia').value = "";
+                document.getElementById('selectCanton').innerHTML = '<option value="">-- Seleccione una provincia primero --</option>';
+                document.getElementById('selectCanton').disabled = true;
+                document.getElementById('selectDistrito').innerHTML = '<option value="">-- Seleccione un cantón primero --</option>';
+                document.getElementById('selectDistrito').disabled = true;
+            }
         });
-        document.getElementById('paisIdNacional').value = PAIS_COSTA_RICA_ID;
 
+        // 3. Lógica para cuando eligen un país extranjero distinto
+        document.getElementById('selectPaisExtranjero').addEventListener('change', function() {
+            inputPaisOculto.value = this.value;
+        });
+
+        // 4. Cascada: Obtener Cantones al cambiar Provincia
         document.getElementById('selectProvincia').addEventListener('change', async function() {
             const provinciaId = this.value;
             const selectCanton = document.getElementById('selectCanton');
             const selectDistrito = document.getElementById('selectDistrito');
-            selectCanton.innerHTML = '<option value="">— Seleccione —</option>';
-            selectDistrito.innerHTML = '<option value="">— Seleccione un cantón —</option>';
-            selectDistrito.disabled = true;
-            if (!provinciaId) { selectCanton.disabled = true; return; }
 
+            selectCanton.innerHTML = '<option value="">-- Seleccione --</option>';
+            selectDistrito.innerHTML = '<option value="">-- Seleccione un cantón primero --</option>';
+            selectDistrito.disabled = true;
+
+            if (!provinciaId) {
+                selectCanton.disabled = true;
+                return;
+            }
+
+            // Llamada al backend
             const respuesta = await fetch(`/Prospectos/ObtenerCantones?provinciaId=${provinciaId}`);
             const cantones = await respuesta.json();
+
             cantones.forEach(c => {
                 const option = document.createElement('option');
                 option.value = c.id;
                 option.textContent = c.nombre;
                 selectCanton.appendChild(option);
             });
+
             selectCanton.disabled = false;
         });
 
+        // 5. Cascada: Obtener Distritos al cambiar Cantón
         document.getElementById('selectCanton').addEventListener('change', async function() {
             const cantonId = this.value;
             const selectDistrito = document.getElementById('selectDistrito');
-            selectDistrito.innerHTML = '<option value="">— Seleccione —</option>';
-            if (!cantonId) { selectDistrito.disabled = true; return; }
 
+            selectDistrito.innerHTML = '<option value="">-- Seleccione --</option>';
+
+            if (!cantonId) {
+                selectDistrito.disabled = true;
+                return;
+            }
+
+            // Llamada al backend
             const respuesta = await fetch(`/Prospectos/ObtenerDistritos?cantonId=${cantonId}`);
             const distritos = await respuesta.json();
+
             distritos.forEach(d => {
                 const option = document.createElement('option');
                 option.value = d.id;
                 option.textContent = d.nombre;
                 selectDistrito.appendChild(option);
             });
+
             selectDistrito.disabled = false;
+        });
+
+        // 6. Protección al enviar: si DistritoId es vacío o 0, eliminarlo del envío
+        document.querySelector('form').addEventListener('submit', function() {
+            const selectDistrito = document.getElementById('selectDistrito');
+            if (!selectDistrito.value || selectDistrito.value === '0') {
+                selectDistrito.disabled = true;
+            }
         });
     </script>
 }
+    

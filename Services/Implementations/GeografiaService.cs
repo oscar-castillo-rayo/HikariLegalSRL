@@ -1,4 +1,4 @@
-﻿using HikariLegalSRL.Data;
+using HikariLegalSRL.Data;
 using HikariLegalSRL.Models.DTOs;
 using HikariLegalSRL.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -36,7 +36,7 @@ namespace HikariLegalSRL.Services.Implementations
             return await _context.Distritos
                 .Where(d => d.CantonId == cantonId)
                 .OrderBy(d => d.Nombre)
-                .Select(d => new OpcionComboDTO { Id = d.CantonId, Nombre = d.Nombre })
+                .Select(d => new OpcionComboDTO { Id = d.DistritoId, Nombre = d.Nombre })
                 .ToListAsync();
         }
 
