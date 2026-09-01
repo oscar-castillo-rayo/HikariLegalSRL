@@ -335,4 +335,15 @@
         grid-template-columns: 1fr;
     }
 
+    .form-check-input[type="checkbox"] {
+        width: 3rem;
+        height: 1.5rem;
+        cursor: pointer;
+    }
+
+        .form-check-input[type="checkbox"]:checked {
+            background-color: #198754;
+            border-color: #198754;
+        }
+
 }

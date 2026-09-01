@@ -47,7 +47,30 @@
         else
         {
             var rol = Model.RolSeleccionado;
-            <form asp-controller="Roles" asp-action="GuardarPermisos" method="post" class="d-flex flex-column flex-grow-1">
+            
+            //Formulario para cambiar el stado con el toogle de rol
+            @if (!rol.EsFijo)
+            {
+                <form id="formEstadoRol"
+                      asp-controller="Roles"
+                      asp-action="@(rol.Activo ? "Desactivar" : "Activar")"
+                      asp-route-id="@rol.Id"
+                      method="post"
+                      class="d-none form-confirmar"
+                      data-titulo="@(rol.Activo ? "¿Desactivar este rol?" : "¿Activar este rol?")"
+                      data-texto="@(rol.Activo ? $"El rol {rol.Nombre} y sus permisos quedarán inhabilitados." : $"El rol {rol.Nombre} volverá a estar operativo.")"
+                      data-icono="@(rol.Activo ? "warning" : "info")"
+                      data-btn-confirmar="@(rol.Activo ? "Sí, desactivar" : "Sí, activar")">
+                    @Html.AntiForgeryToken()
+                </form>
+            }
+
+            <form asp-controller="Roles" asp-action="GuardarPermisos" 
+                class="form-confirmar d-flex flex-column flex-grow-1"
+                data-titulo="¿Guardar cambios?"
+                data-texto="¿Estás seguro de que deseas aplicar estas modificaciones?"
+                data-icono="question"
+                data-btn-confirmar="Sí, guardar">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="rolId" value="@rol.Id" />
 
@@ -70,6 +93,18 @@
                             </div>
                             <div class="rp-field">
                                 <label>Estado</label>
+                                <!-- Solo mostrar el botón si el rol NO es fijo -->
+                                @if (!rol.EsFijo)
+                                {
+                                    <label class="rp-toggle">
+                                        <input type="checkbox"
+                                        @(rol.Activo ? "checked" : "")
+                                               onclick="event.preventDefault(); document.getElementById('formEstadoRol').requestSubmit();" />
+
+                                        <div class="rp-toggle-track"></div>
+                                        <div class="rp-toggle-thumb"></div>
+                                    </label>
+                                }
                                 <div>
                                     <span class="badge @(rol.Activo ? "bg-success" : "bg-secondary")">
                                         @(rol.Activo ? "Activo" : "Inactivo")

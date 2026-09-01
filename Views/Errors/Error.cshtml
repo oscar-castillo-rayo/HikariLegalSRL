@@ -1,0 +1,41 @@
+﻿@{
+    ViewData["HideShell"] = true;
+    ViewData["Title"] = "Error";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/error.css" />
+}
+
+
+<div class="error-page">
+
+    <div class="error-card">
+
+        <div class="error-icon error-icon-server">
+            <i class="bi bi-exclamation-triangle"></i>
+        </div>
+
+        <div class="error-code">
+            500
+        </div>
+
+        <h1 class="error-title">
+            Ocurrió un error
+        </h1>
+
+        <p class="error-description">
+            Se produjo un error inesperado al procesar la solicitud.
+            Por favor, intenta nuevamente más tarde.
+        </p>
+
+        <a asp-controller="Dashboard"
+           asp-action="Index"
+           class="btn btn-error">
+            <i class="bi bi-house me-1"></i>
+            Ir al Dashboard
+        </a>
+
+    </div>
+
+</div>

@@ -1,7 +1,7 @@
 ﻿@model HikariLegalSRL.ViewModels.Auth.LoginViewModel
 @{
     ViewData["Title"] = "Iniciar sesión";
-    Layout = null; 
+    Layout = null;
 }
 
 <!DOCTYPE html>
@@ -33,7 +33,7 @@
                 </div>
             }
             <form asp-action="Login" asp-controller="Account" method="post">
-               
+
                 <div asp-validation-summary="All" class="alert alert-danger py-2 small"
                      style="display:@(ViewData.ModelState.IsValid ? "none" : "block")">
                 </div>
@@ -56,23 +56,21 @@
                     <span asp-validation-for="Contrasena" class="text-danger small"></span>
                 </div>
 
+               
+
                 <div class="mb-4 d-flex justify-content-between align-items-center">
                     <div class="form-check mb-0">
                         <input asp-for="RecordarSesion" class="form-check-input" />
                         <label asp-for="RecordarSesion" class="form-check-label">Recordarme</label>
                     </div>
+                    <a asp-action="ForgotPassword" class="text-decoration-none small fw-bold" style="color: #1F3864;">¿Olvidaste tu contraseña?</a>
                 </div>
 
-               <button type="submit" class="btn btn-primary">
-    Iniciar sesión
-</button>
+                <button type="submit" class="btn w-100 text-white fw-bold"
+                        style="background-color:#1F3864;">
+                    Iniciar sesión
+                </button>
 
-<div class="text-center mt-3">
-    <a asp-controller="Account"
-       asp-action="ForgotPassword">
-        ¿Olvidó su contraseña?
-    </a>
-</div>
             </form>
         </div>
 

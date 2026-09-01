@@ -5,8 +5,12 @@ using HikariLegalSRL.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
+using SweetAlert2;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// SweetAlert para notificaciones
+builder.Services.AddSweetAlert2();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -49,12 +53,27 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 .AddSignInManager<ApplicationSignInManager>() // Agrega el SignInManager personalizado
 .AddDefaultTokenProviders(); // Agrega proveedores de tokens predeterminados para la recuperación de contraseña y la verificación de correo electrónico
 
-// Configuración de la cookie de autenticación
+// Configuración de la cookie de autenticación y redirecciones por estado
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.ExpireTimeSpan = TimeSpan.FromHours(1);
-    options.SlidingExpiration = true; // Habilita la expiración deslizante para que la sesión se renueve con cada solicitud
+    options.SlidingExpiration = true;
     options.LoginPath = "/Account/Login";
+    options.AccessDeniedPath = "/Error/403";
+
+    options.Events.OnRedirectToLogin = context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        context.Response.Redirect(context.RedirectUri);
+        return Task.CompletedTask;
+    };
+
+    options.Events.OnRedirectToAccessDenied = context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        context.Response.Redirect(context.RedirectUri);
+        return Task.CompletedTask;
+    };
 });
 
 
@@ -71,7 +90,7 @@ using (var scope = app.Services.CreateScope())
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    app.UseExceptionHandler("/Error/500");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
@@ -81,6 +100,8 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseStatusCodePagesWithReExecute("/Error/{0}");
+
 
 app.MapStaticAssets();
 
