@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
-namespace HikariLegalSRL.Controllers
+namespace HikariLegalSRL.Controllers.Roles
 {
     [Authorize(Roles = "Administrador")]
     public class RolesController : Controller

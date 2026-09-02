@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using System.Text;
 
-namespace HikariLegalSRL.Controllers
+namespace HikariLegalSRL.Controllers.Account
 {
     public class AccountController : Controller
     {
@@ -45,7 +45,7 @@ namespace HikariLegalSRL.Controllers
 
             if (result.Succeeded)
             {
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction("Index", "Dashboard");
             }
 
             if (result.IsNotAllowed)

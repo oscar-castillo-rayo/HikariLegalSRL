@@ -1,4 +1,4 @@
-﻿using HikariLegalSRL.Controllers;
+﻿using HikariLegalSRL.Controllers.BitacoraAuditoria;
 using HikariLegalSRL.Models;
 using HikariLegalSRL.Models.Enums;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;

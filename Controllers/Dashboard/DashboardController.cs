@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace HikariLegalSRL.Controllers
+namespace HikariLegalSRL.Controllers.Dashboard
 {
     public class DashboardController : Controller
     {
