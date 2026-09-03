@@ -1,6 +1,6 @@
 ﻿using HikariLegalSRL.Models;
 
-namespace HikariLegalSRL.Controllers
+namespace HikariLegalSRL.Controllers.BitacoraAuditoria
 {
     public class BitacoraAuditoria
     {

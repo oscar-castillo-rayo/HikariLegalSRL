@@ -1,0 +1,53 @@
+﻿@{
+    ViewData["Title"] = "Acceso denegado";
+    ViewData["HideShell"] = true;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/error.css" />
+}
+
+
+<div class="error-page">
+
+    <div class="error-card">
+
+        <div class="error-icon">
+            <i class="bi bi-shield-lock"></i>
+        </div>
+
+        <div class="error-code">
+            403
+        </div>
+
+        <h1 class="error-title">
+            Acceso denegado
+        </h1>
+
+        <p class="error-description">
+            No tienes los permisos necesarios para acceder a esta página.
+            Si consideras que deberías tener acceso, comunícate con el administrador del sistema.
+        </p>
+
+        <div class="d-flex justify-content-center gap-2 flex-wrap">
+
+            <a asp-controller="Dashboard"
+               asp-action="Index"
+               class="btn btn-error">
+                <i class="bi bi-house me-1"></i>
+                Ir al Dashboard
+            </a>
+
+            <button type="button"
+                    onclick="history.back()"
+                    class="btn btn-secondary-error">
+                <i class="bi bi-arrow-left me-1"></i>
+                Regresar
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+

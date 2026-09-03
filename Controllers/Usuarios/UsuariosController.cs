@@ -272,5 +272,78 @@ namespace HikariLegalSRL.Controllers
                 })
                 .ToListAsync();
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Desactivar(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return NotFound();
+
+            var usuario = await _userManager.FindByIdAsync(id);
+            if (usuario == null) return NotFound();
+
+            var idUsuarioActual = _userManager.GetUserId(User);
+
+            // Validacion No puede desactivarse a sí mismo
+            if (usuario.Id == idUsuarioActual)
+            {
+                TempData["Error"] = "No puedes desactivarte a ti mismo.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Validacion No puede desactivar al último administrador activo
+            var rolesActuales = await _userManager.GetRolesAsync(usuario);
+            if (rolesActuales.Contains("Administrador"))
+            {
+                var admins = await _userManager.GetUsersInRoleAsync("Administrador");
+                var administradoresActivos = admins.Count(a => a.Activo && a.Id != usuario.Id);
+
+                if (administradoresActivos == 0)
+                {
+                    TempData["Error"] = "No es posible desactivar al último Administrador activo del sistema.";
+                    return RedirectToAction(nameof(Index));
+                }
+            }
+
+            // Ejecutar la desactivación
+            usuario.Activo = false;
+            var resultado = await _userManager.UpdateAsync(usuario);
+
+            if (resultado.Succeeded)
+            {
+                TempData["Exito"] = $"El usuario {usuario.NombreCompleto} fue desactivado correctamente.";
+            }
+            else
+            {
+                TempData["Error"] = "Ocurrió un error al intentar desactivar el usuario.";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Activar(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return NotFound();
+
+            var usuario = await _userManager.FindByIdAsync(id);
+            if (usuario == null) return NotFound();
+
+            // Ejecutar la activación
+            usuario.Activo = true;
+            var resultado = await _userManager.UpdateAsync(usuario);
+
+            if (resultado.Succeeded)
+            {
+                TempData["Exito"] = $"El usuario {usuario.NombreCompleto} ha sido reactivado correctamente.";
+            }
+            else
+            {
+                TempData["Error"] = "Ocurrió un error al intentar activar el usuario.";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
     }
 }

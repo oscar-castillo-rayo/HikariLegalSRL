@@ -17,8 +17,8 @@ namespace HikariLegalSRL.Controllers.Prospectos
         private readonly ILogger<ProspectosController> _logger;
 
         public ProspectosController(
-            IProspectoService prospectoService, 
-            IGeografiaService geografiaService, 
+            IProspectoService prospectoService,
+            IGeografiaService geografiaService,
             UserManager<ApplicationUser> userManager,
             ILogger<ProspectosController> logger)
         {
@@ -52,7 +52,7 @@ namespace HikariLegalSRL.Controllers.Prospectos
             {
                 var errores = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
                 _logger.LogWarning("ModelState inválido en Crear prospecto: {Errores}", string.Join(", ", errores));
-                
+
                 model.Provincias = await _geografiaService.ObtenerProvincias();
                 model.Paises = await _geografiaService.ObtenerPaises();
                 return View(model);
@@ -63,9 +63,9 @@ namespace HikariLegalSRL.Controllers.Prospectos
             try
             {
                 _logger.LogInformation("Iniciando creación de prospecto para usuario {UserId}", usuarioActualId);
-                
+
                 var prospectoId = await _prospectoService.Crear(model.Prospecto, usuarioActualId);
-                
+
                 _logger.LogInformation("Prospecto creado exitosamente. ID: {ProspectoId}", prospectoId);
                 TempData["Exito"] = "Prospecto registrado correctamente.";
                 return RedirectToAction(nameof(Index));

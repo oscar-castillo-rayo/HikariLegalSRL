@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using System.Text;
 
-namespace HikariLegalSRL.Controllers
+namespace HikariLegalSRL.Controllers.Account
 {
     public class AccountController : Controller
     {
@@ -45,7 +45,7 @@ namespace HikariLegalSRL.Controllers
 
             if (result.Succeeded)
             {
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction("Index", "Dashboard");
             }
 
             if (result.IsNotAllowed)
@@ -125,9 +125,7 @@ namespace HikariLegalSRL.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> ResetPassword(
-            string email,
-            string code)
+        public async Task<IActionResult> ResetPassword(string email, string code)
         {
             if (string.IsNullOrEmpty(email) ||
                 string.IsNullOrEmpty(code))
@@ -199,7 +197,7 @@ namespace HikariLegalSRL.Controllers
         {
             return View();
         }
-         private async Task<bool> IsPasswordResetTokenValidAsync(ApplicationUser user, string code)
+        private async Task<bool> IsPasswordResetTokenValidAsync(ApplicationUser user, string code)
         {
             if (user == null || string.IsNullOrWhiteSpace(code))
             {
@@ -222,5 +220,9 @@ namespace HikariLegalSRL.Controllers
             }
         }
 
+        public IActionResult AccessDenied()
+        {
+            return View("~/Views/Errors/AccessDenied.cshtml");
+        }
     }
 }

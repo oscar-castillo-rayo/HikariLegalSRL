@@ -1,4 +1,4 @@
-﻿using HikariLegalSRL.Controllers;
+﻿using HikariLegalSRL.Controllers.BitacoraAuditoria;
 using HikariLegalSRL.Data;
 using HikariLegalSRL.Services.Interfaces;
 

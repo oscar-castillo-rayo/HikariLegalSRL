@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
-namespace HikariLegalSRL.Controllers
+namespace HikariLegalSRL.Controllers.Roles
 {
     [Authorize(Roles = "Administrador")]
     public class RolesController : Controller
@@ -197,7 +197,7 @@ namespace HikariLegalSRL.Controllers
 
             if (rol.EsFijo)
             {
-                TempData["Error"] = "El Rol de Administrador no puede ser modificado.";
+                TempData["Error"] = "El Rol principal del sistema no puede ser modificado.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -223,6 +223,67 @@ namespace HikariLegalSRL.Controllers
             }
 
             TempData["Exito"] = $"Rol {rol.Name} modificado exitosamente.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Desactivar(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return NotFound();
+
+            var rol = await _roleManager.FindByIdAsync(id);
+            if (rol == null) return NotFound();
+
+            // Regla de negocio: Proteger los roles fijos
+            if (rol.EsFijo)
+            {
+                TempData["Error"] = "Los roles principales del sistema no pueden ser desactivados.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            rol.Activo = false;
+            var resultado = await _roleManager.UpdateAsync(rol);
+
+            if (resultado.Succeeded)
+            {
+                TempData["Exito"] = $"El rol {rol.Name} fue desactivado correctamente.";
+            }
+            else
+            {
+                TempData["Error"] = "Ocurrió un error al intentar desactivar el rol.";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Activar(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return NotFound();
+
+            var rol = await _roleManager.FindByIdAsync(id);
+            if (rol == null) return NotFound();
+
+            if (rol.EsFijo)
+            {
+                TempData["Error"] = "No se puede alterar el estado de los roles fijos del sistema.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            rol.Activo = true;
+            var resultado = await _roleManager.UpdateAsync(rol);
+
+            if (resultado.Succeeded)
+            {
+                TempData["Exito"] = $"El rol {rol.Name} fue activado correctamente.";
+            }
+            else
+            {
+                TempData["Error"] = "Ocurrió un error al intentar activar el rol.";
+            }
+
             return RedirectToAction(nameof(Index));
         }
     }
