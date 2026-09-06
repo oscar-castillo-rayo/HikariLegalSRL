@@ -2,6 +2,7 @@ using HikariLegalSRL.Data;
 using HikariLegalSRL.Models;
 using HikariLegalSRL.Services.Implementations;
 using HikariLegalSRL.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,12 @@ builder.Services.AddSweetAlert2();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 // Configuración de servicios para Identity y correo electrónico
 builder.Services.AddTransient<IEmailSender, EmailSender>();
@@ -103,7 +110,7 @@ app.UseAuthorization();
 app.UseStatusCodePagesWithReExecute("/Error/{0}");
 
 
-app.MapStaticAssets();
+app.MapStaticAssets().AllowAnonymous();
 
 app.MapControllerRoute(
     name: "default",

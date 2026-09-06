@@ -1,5 +1,6 @@
 ﻿using HikariLegalSRL.Models;
 using HikariLegalSRL.ViewModels.Auth;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -8,6 +9,7 @@ using System.Text;
 
 namespace HikariLegalSRL.Controllers.Account
 {
+    [AllowAnonymous]
     public class AccountController : Controller
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
