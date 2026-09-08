@@ -27,13 +27,25 @@
             La página que estás buscando no existe o la dirección ingresada
             no es válida.
         </p>
-
-        <a asp-controller="Dashboard"
-           asp-action="Index"
-           class="btn btn-error">
-            <i class="bi bi-house me-1"></i>
-            Ir al Dashboard
-        </a>
+         @if (User.Identity?.IsAuthenticated == true)
+         {
+             <a asp-controller="Dashboard"
+                asp-action="Index"
+                class="btn btn-error">
+                 <i class="bi bi-house me-1"></i>
+                 Ir al Dashboard
+             </a>
+         }
+         else
+         {
+              <a asp-controller="Account"
+                asp-action="Login"
+                class="btn btn-error">
+                 <i class="bi bi-house me-1"></i>
+                 Iniciar sesión
+             </a>
+         }
+       
 
     </div>
 

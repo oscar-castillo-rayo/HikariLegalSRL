@@ -31,20 +31,25 @@
 
         <div class="d-flex justify-content-center gap-2 flex-wrap">
 
+              @if(User.Identity?.IsAuthenticated == true)
+              {
             <a asp-controller="Dashboard"
                asp-action="Index"
                class="btn btn-error">
                 <i class="bi bi-house me-1"></i>
                 Ir al Dashboard
             </a>
-
-            <button type="button"
-                    onclick="history.back()"
-                    class="btn btn-secondary-error">
-                <i class="bi bi-arrow-left me-1"></i>
-                Regresar
-            </button>
-
+            }
+           else
+           {
+                <a asp-controller="Account"
+                asp-action="Login"
+                class="btn btn-error">
+                 <i class="bi bi-house me-1"></i>
+                 Iniciar sesión
+             </a>
+           }
+           
         </div>
 
     </div>
