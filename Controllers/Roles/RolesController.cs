@@ -1,7 +1,8 @@
-﻿using HikariLegalSRL.Constants.HikariLegalSRL.Constants;
+﻿using HikariLegalSRL.Authorization;
+using HikariLegalSRL.Constants;
 using HikariLegalSRL.Models;
+using HikariLegalSRL.Services.Interfaces;
 using HikariLegalSRL.ViewModels.Roles;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -9,18 +10,20 @@ using System.Security.Claims;
 
 namespace HikariLegalSRL.Controllers.Roles
 {
-    [Authorize(Roles = "Administrador")]
     public class RolesController : Controller
     {
 
         private readonly RoleManager<ApplicationRole> _roleManager;
+        private readonly IPermisoEvaluador _permisoEvaluador;
 
-        public RolesController(RoleManager<ApplicationRole> roleManager)
+        public RolesController(RoleManager<ApplicationRole> roleManager, IPermisoEvaluador permisoEvaluador)
         {
             _roleManager = roleManager;
+            _permisoEvaluador = permisoEvaluador;
         }
 
         [HttpGet]
+        [Permiso(Permisos.Roles.Ver)]
         public async Task<IActionResult> Index(string? rolId)
         {
             //Busca y agrega los roles del sistema en orden alfabético.
@@ -56,7 +59,7 @@ namespace HikariLegalSRL.Controllers.Roles
 
             var claims = await _roleManager.GetClaimsAsync(rol);
             var codigosAsignados = claims
-                .Where(c => c.Type == "Permiso")
+                .Where(c => c.Type == Permisos.ClaimType)
                 .Select(c => c.Value)
                 .ToHashSet();
 
@@ -87,6 +90,7 @@ namespace HikariLegalSRL.Controllers.Roles
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Roles.GestionarPermisos)]
         public async Task<IActionResult> GuardarPermisos(string rolId, List<string>? permisosSeleccionados)
         {
             var rol = await _roleManager.FindByIdAsync(rolId);
@@ -105,7 +109,7 @@ namespace HikariLegalSRL.Controllers.Roles
             seleccionados.IntersectWith(codigosValidos);
 
             var claimsActuales = (await _roleManager.GetClaimsAsync(rol))
-                .Where(c => c.Type == "Permiso")
+                .Where(c => c.Type == Permisos.ClaimType)
                 .ToList();
             var codigosActuales = claimsActuales.Select(c => c.Value).ToHashSet();
 
@@ -113,16 +117,20 @@ namespace HikariLegalSRL.Controllers.Roles
             var aQuitar = claimsActuales.Where(c => !seleccionados.Contains(c.Value));
 
             foreach (var codigo in aAgregar)
-                await _roleManager.AddClaimAsync(rol, new Claim("Permiso", codigo));
+                await _roleManager.AddClaimAsync(rol, new Claim(Permisos.ClaimType, codigo));
 
             foreach (var claim in aQuitar)
                 await _roleManager.RemoveClaimAsync(rol, claim);
+
+            // Los permisos del rol cambiaron: descartar la caché para que aplique de inmediato.
+            _permisoEvaluador.InvalidarRol(rol.Id);
 
             TempData["Exito"] = $"Permisos de {rol.Name} actualizados correctamente.";
             return RedirectToAction(nameof(Index), new { rolId = rol.Id });
         }
 
         [HttpGet]
+        [Permiso(Permisos.Roles.Crear)]
         public IActionResult Crear()
         {
             return View(new CrearRolViewModel());
@@ -130,6 +138,7 @@ namespace HikariLegalSRL.Controllers.Roles
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Roles.Crear)]
         public async Task<IActionResult> Crear(CrearRolViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
@@ -164,6 +173,7 @@ namespace HikariLegalSRL.Controllers.Roles
         }
 
         [HttpGet]
+        [Permiso(Permisos.Roles.Editar)]
         public async Task<IActionResult> Editar(string id)
         {
             var rol = await _roleManager.FindByIdAsync(id);
@@ -188,6 +198,7 @@ namespace HikariLegalSRL.Controllers.Roles
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Roles.Editar)]
         public async Task<IActionResult> Editar(EditarRolViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
@@ -228,6 +239,7 @@ namespace HikariLegalSRL.Controllers.Roles
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Roles.Activar)]
         public async Task<IActionResult> Desactivar(string id)
         {
             if (string.IsNullOrEmpty(id)) return NotFound();
@@ -247,6 +259,7 @@ namespace HikariLegalSRL.Controllers.Roles
 
             if (resultado.Succeeded)
             {
+                _permisoEvaluador.InvalidarRol(rol.Id);
                 TempData["Exito"] = $"El rol {rol.Name} fue desactivado correctamente.";
             }
             else
@@ -259,6 +272,7 @@ namespace HikariLegalSRL.Controllers.Roles
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Roles.Activar)]
         public async Task<IActionResult> Activar(string id)
         {
             if (string.IsNullOrEmpty(id)) return NotFound();
@@ -277,6 +291,7 @@ namespace HikariLegalSRL.Controllers.Roles
 
             if (resultado.Succeeded)
             {
+                _permisoEvaluador.InvalidarRol(rol.Id);
                 TempData["Exito"] = $"El rol {rol.Name} fue activado correctamente.";
             }
             else
