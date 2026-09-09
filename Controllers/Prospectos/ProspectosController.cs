@@ -1,4 +1,6 @@
-﻿using HikariLegalSRL.Exceptions;
+﻿using HikariLegalSRL.Authorization;
+using HikariLegalSRL.Constants;
+using HikariLegalSRL.Exceptions;
 using HikariLegalSRL.Models;
 using HikariLegalSRL.Services.Interfaces;
 using HikariLegalSRL.ViewModels.Prospectos;
@@ -28,12 +30,14 @@ namespace HikariLegalSRL.Controllers.Prospectos
             _logger = logger;
         }
 
+        [Permiso(Permisos.Prospectos.Ver)]
         public IActionResult Index()
         {
             return View();
         }
 
         [HttpGet]
+        [Permiso(Permisos.Prospectos.Crear)]
         public async Task<IActionResult> Crear()
         {
             var viewModel = new ProspectoCreateViewModel
@@ -46,6 +50,7 @@ namespace HikariLegalSRL.Controllers.Prospectos
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Prospectos.Crear)]
         public async Task<IActionResult> Crear(ProspectoCreateViewModel model)
         {
             if (!ModelState.IsValid)

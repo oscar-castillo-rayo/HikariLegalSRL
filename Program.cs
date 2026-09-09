@@ -1,3 +1,4 @@
+using HikariLegalSRL.Authorization;
 using HikariLegalSRL.Data;
 using HikariLegalSRL.Models;
 using HikariLegalSRL.Services.Implementations;
@@ -15,12 +16,20 @@ builder.Services.AddSweetAlert2();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddMemoryCache();
 builder.Services.AddAuthorization(options =>
 {
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();
 });
+
+// Autorización por permiso (Claims de tipo "Permiso" sobre el rol):
+// - PermisoPolicyProvider fabrica las políticas "Permiso:<codigo>".
+// - PermisoAuthorizationHandler las evalúa vía IPermisoEvaluador.
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermisoPolicyProvider>();
+builder.Services.AddScoped<IAuthorizationHandler, PermisoAuthorizationHandler>();
+builder.Services.AddScoped<IPermisoEvaluador, PermisoEvaluador>();
 
 // Configuración de servicios para Identity y correo electrónico
 builder.Services.AddTransient<IEmailSender, EmailSender>();
@@ -60,6 +69,13 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 .AddSignInManager<ApplicationSignInManager>() // Agrega el SignInManager personalizado
 .AddDefaultTokenProviders(); // Agrega proveedores de tokens predeterminados para la recuperación de contraseña y la verificación de correo electrónico
 
+// Cada cuánto se revalida la cookie contra la BD. Cuando se cambia la contraseña o se desactiva un usuario, 
+// la cookie se invalida en el próximo request después de este intervalo.
+builder.Services.Configure<SecurityStampValidatorOptions>(options =>
+{
+    options.ValidationInterval = TimeSpan.FromMinutes(1); //intervalo corto para reflejar cambios de estado de usuario rápidamente.
+});
+
 // Configuración de la cookie de autenticación y redirecciones por estado
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -90,7 +106,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    await DbInitializer.SeedAdminAsync(services);
+    await DbInitializer.SeedAsync(services);
 }
 
 

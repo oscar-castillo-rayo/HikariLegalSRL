@@ -1,6 +1,7 @@
-﻿using HikariLegalSRL.Models;
+﻿using HikariLegalSRL.Authorization;
+using HikariLegalSRL.Constants;
+using HikariLegalSRL.Models;
 using HikariLegalSRL.ViewModels.Usuarios;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -8,7 +9,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HikariLegalSRL.Controllers
 {
-    [Authorize(Roles = "Administrador")]
     public class UsuariosController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
@@ -21,6 +21,7 @@ namespace HikariLegalSRL.Controllers
         }
 
         [HttpGet]
+        [Permiso(Permisos.Usuarios.Ver)]
         public async Task<IActionResult> Index()
         {
             var usuarios = await _userManager.Users
@@ -49,6 +50,7 @@ namespace HikariLegalSRL.Controllers
         }
 
         [HttpGet]
+        [Permiso(Permisos.Usuarios.Editar)]
         public async Task<IActionResult> Editar(string id)
         {
             var usuario = await _userManager.FindByIdAsync(id);
@@ -83,6 +85,7 @@ namespace HikariLegalSRL.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Usuarios.Editar)]
         public async Task<IActionResult> Editar(EditarUsuarioViewModel model)
         {
             if (!ModelState.IsValid)
@@ -158,7 +161,8 @@ namespace HikariLegalSRL.Controllers
                 return View(model);
             }
 
-            if (!rolesActuales.Contains(nuevoRol.Name))
+            var rolCambio = !rolesActuales.Contains(nuevoRol.Name);
+            if (rolCambio)
             {
                 var resultadoEliminacionRoles = await _userManager.RemoveFromRolesAsync(usuario, rolesActuales);
                 if (!resultadoEliminacionRoles.Succeeded)
@@ -181,12 +185,19 @@ namespace HikariLegalSRL.Controllers
                     return View(model);
                 }
             }
+
+            // Si el usuario quedó inactivo o cambió de rol, invalidar sus sesiones activas:
+            // SecurityStampValidator lo detecta en el siguiente chequeo (≤ 1 min).
+            if (rolCambio || !usuario.Activo)
+                await _userManager.UpdateSecurityStampAsync(usuario);
+
             TempData["Exito"] = $"Usuario {usuario.NombreCompleto} actualizado correctamente";
             return RedirectToAction(nameof(Index));
         }
 
 
         [HttpGet]
+        [Permiso(Permisos.Usuarios.Crear)]
         public async Task<IActionResult> Crear()
         {
             var model = new CrearUsuarioViewModel
@@ -198,6 +209,7 @@ namespace HikariLegalSRL.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Usuarios.Crear)]
         public async Task<IActionResult> Crear(CrearUsuarioViewModel model)
         {
             if (!ModelState.IsValid)
@@ -275,6 +287,7 @@ namespace HikariLegalSRL.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Usuarios.Activar)]
         public async Task<IActionResult> Desactivar(string id)
         {
             if (string.IsNullOrEmpty(id)) return NotFound();
@@ -311,6 +324,9 @@ namespace HikariLegalSRL.Controllers
 
             if (resultado.Succeeded)
             {
+                // Invalida las sesiones activas del usuario: SecurityStampValidator lo saca
+                // en el siguiente chequeo (≤ 1 min), sin esperar a que expire la cookie.
+                await _userManager.UpdateSecurityStampAsync(usuario);
                 TempData["Exito"] = $"El usuario {usuario.NombreCompleto} fue desactivado correctamente.";
             }
             else
@@ -323,6 +339,7 @@ namespace HikariLegalSRL.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Usuarios.Activar)]
         public async Task<IActionResult> Activar(string id)
         {
             if (string.IsNullOrEmpty(id)) return NotFound();
