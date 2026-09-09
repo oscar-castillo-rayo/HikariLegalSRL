@@ -1,9 +1,7 @@
 namespace HikariLegalSRL.Constants
 {
-    // Roles base del sistema (RF-001) y sus permisos por defecto. El seed (`DbInitializer`) crea estos
-    // roles la primera vez; a partir de ahí el Administrador los ajusta desde la pantalla de Roles y el
-    // seed ya no vuelve a tocar sus permisos (salvo los del rol fijo Administrador, que se sincronizan
-    // siempre con el catálogo completo).
+    // Roles base del sistema. Se definen como constantes para poder referenciarlos en el
+    // código y en la base de datos.
     public static class RolesBase
     {
         public const string Administrador      = "Administrador";
@@ -21,9 +19,6 @@ namespace HikariLegalSRL.Constants
             new(Asistente,          "Personal de apoyo administrativo de la firma", EsFijo: false),
         };
 
-        // Permisos por defecto por rol. Derivados de 88_IIsem2026_Proyecto_TemaTFG_OscarCastillo
-        // (relación de involucrados y "valores por defecto" del control de acceso). Editables por el
-        // Administrador después; el Administrador recibe el catálogo completo desde `DbInitializer`.
         public static readonly IReadOnlyDictionary<string, string[]> PermisosPorDefecto =
             new Dictionary<string, string[]>
             {
