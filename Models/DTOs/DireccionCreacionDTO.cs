@@ -4,9 +4,9 @@ namespace HikariLegalSRL.Models.DTOs
 {   
     public class DireccionCreacionDTO
     {
-        [Required(ErrorMessage = "El país es requerido")]
+        [Required(ErrorMessage = "Debe seleccionar un país")]
         [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar un país válido")]
-        public int PaisId { get; set; }
+        public int? PaisId { get; set; }
         
         public int? DistritoId { get; set; }
         

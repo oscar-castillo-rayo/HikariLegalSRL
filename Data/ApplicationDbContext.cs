@@ -76,10 +76,15 @@ namespace HikariLegalSRL.Data
                 .Property(d => d.TipoUbicacion).HasMaxLength(15);
 
             modelBuilder.Entity<Direccion>()
-                .ToTable(t => t.HasCheckConstraint(
-                    "CK_Direccion_TipoUbicacion",
-                    "[TipoUbicacion] IN ('nacional', 'extranjero')"
-                ));
+                .ToTable(t =>
+                {
+                    t.HasCheckConstraint(
+                        "CK_Direccion_TipoUbicacion",
+                        "[TipoUbicacion] IN ('nacional', 'extranjero')"
+                    );
+                    t.HasTrigger("TR_Direcciones_TipoUbicacion");
+                    t.HasTrigger("TR_Direcciones_Validar");
+                });
 
             modelBuilder.Entity<Direccion>()
                 .HasOne(d => d.Pais)

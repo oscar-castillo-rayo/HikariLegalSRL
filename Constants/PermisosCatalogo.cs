@@ -56,6 +56,7 @@ namespace HikariLegalSRL.Constants
                     new() { Codigo = "prospectos.calificar", Nombre = "Calificar",     Descripcion = "Asignar puntuación de 1 a 5" },
                     new() { Codigo = "prospectos.convertir", Nombre = "Convertir",     Descripcion = "Convertir el prospecto en cliente activo" },
                     new() { Codigo = "prospectos.descartar", Nombre = "Descartar",     Descripcion = "Marcar el prospecto como descartado" },
+                    new() { Codigo = "prospectos.reactivar", Nombre = "Reactivar",     Descripcion = "Reactivar un prospecto descartado" },
                 }
             },
             new PermisoModulo

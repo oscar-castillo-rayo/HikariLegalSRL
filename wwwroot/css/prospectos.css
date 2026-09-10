@@ -1,0 +1,86 @@
+.prospectos-btn-accion:disabled,
+.prospectos-btn-accion.disabled {
+    background-color: #e9ecef;
+    border-color: #e9ecef;
+    color: #adb5bd;
+    opacity: 1;
+    pointer-events: none;
+}
+
+.prospectos-btn-guardar {
+    background: #1F3864;
+    color: #fff;
+}
+
+    .prospectos-btn-guardar:hover {
+        background: #16294a;
+        color: #fff;
+    }
+
+.prospectos-card-header {
+    background: #EAF0FB;
+    color: #1F3864;
+}
+
+.prospectos-datos dd {
+    margin-bottom: .5rem;
+}
+
+.prospectos-datos dt {
+    color: #6c757d;
+    font-size: .8125rem;
+    font-weight: 500;
+    margin-bottom: .5rem;
+}
+
+.prospectos-filtros {
+    background: #f8f9fa;
+}
+
+.prospectos-form-card {
+    max-width: 720px;
+}
+
+.prospectos-seccion {
+    color: #6c757d;
+    letter-spacing: .05em;
+}
+
+.prospectos-tabla tbody td {
+    padding-bottom: .7rem;
+    padding-top: .7rem;
+}
+
+.prospectos-tabla thead th {
+    background: #1F3864;
+    border-bottom: none;
+    color: #fff;
+    font-size: .8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.prospectos-titulo {
+    color: #1F3864;
+}
+
+@media (max-width: 575.98px) {
+
+    .prospectos-btn-guardar,
+    .prospectos-form-card .btn-outline-danger {
+        width: 100%;
+    }
+
+    .prospectos-form-card {
+        border-radius: 0;
+        box-shadow: none !important;
+    }
+
+    .prospectos-tabla {
+        font-size: .875rem;
+    }
+
+    .prospectos-titulo {
+        font-size: 1.15rem;
+    }
+}

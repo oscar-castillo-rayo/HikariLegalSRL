@@ -1,16 +1,155 @@
+@model HikariLegalSRL.ViewModels.Prospectos.ProspectoIndexViewModel
+@using HikariLegalSRL.Models.Enums
+
 @{
     ViewData["Title"] = "Prospectos";
+    var puedeEditar = await Authorization.TienePermiso(User, Permisos.Prospectos.Editar);
+    var puedeDescartar = await Authorization.TienePermiso(User, Permisos.Prospectos.Descartar);
+    var puedeReactivar = await Authorization.TienePermiso(User, Permisos.Prospectos.Reactivar);
 }
 
-<h1>Prospectos</h1>
-
-@if (TempData["Mensaje"] != null)
-{
-    <div class="alert alert-success">@TempData["Mensaje"]</div>
+@section Styles {
+    <link rel="stylesheet" href="~/css/prospectos.css" />
 }
 
-<a asp-action="Crear" class="btn btn-primary">Nuevo prospecto</a>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <h4 class="mb-0 fw-bold prospectos-titulo"><i class="bi bi-person-plus me-2"></i>Prospectos</h4>
+    <a asp-action="Crear" class="btn text-white fw-semibold prospectos-btn-guardar">
+        <i class="bi bi-plus-lg me-1"></i>Nuevo prospecto
+    </a>
+</div>
 
-<p class="text-muted mt-3">
-    Test prospecto
-</p>
+<form method="get" class="card shadow-sm border-0 p-3 mb-4 prospectos-filtros">
+    <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-5">
+            <label class="form-label small fw-semibold mb-1">Buscar</label>
+            <input name="buscar" value="@Model.Buscar" class="form-control"
+                   placeholder="Empresa, contacto o correo..." />
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="form-label small fw-semibold mb-1">Calificación</label>
+            <select name="calificacion" class="form-select">
+                <option value="">Todas</option>
+                @for (byte i = 5; i >= 1; i--)
+                {
+                    <option value="@i" selected="@(Model.Calificacion == i)">
+                        @string.Concat(Enumerable.Repeat("⭐", i))
+                    </option>
+                }
+            </select>
+        </div>
+        <div class="col-6 col-md-2">
+            <label class="form-label small fw-semibold mb-1">Estado</label>
+            <select name="estado" class="form-select">
+                <option value="">Todos</option>
+                <option value="0" selected="@(Model.Estado == 0)">Activo</option>
+                <option value="1" selected="@(Model.Estado == 1)">Convertido</option>
+                <option value="2" selected="@(Model.Estado == 2)">Descartado</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-2 d-grid">
+            <button type="submit" class="btn btn-outline-secondary">
+                <i class="bi bi-search me-1"></i>Filtrar
+            </button>
+        </div>
+    </div>
+</form>
+
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 prospectos-tabla">
+            <thead>
+                <tr>
+                    <th>Empresa / Persona</th>
+                    <th>Contacto</th>
+                    <th>Teléfono</th>
+                    <th class="text-center">Calificación</th>
+                    <th class="text-center">Estado</th>
+                    <th>Registrado</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Prospectos.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            No hay prospectos que coincidan con los filtros.
+                        </td>
+                    </tr>
+                }
+                @foreach (var p in Model.Prospectos)
+                {
+                    var (badge, texto) = p.Estado switch
+                    {
+                        EstadoProspecto.Activo => ("bg-success", "Activo"),
+                        EstadoProspecto.Convertido => ("bg-primary", "Convertido"),
+                        EstadoProspecto.Descartado => ("bg-secondary", "Descartado"),
+                        _ => ("bg-secondary", p.Estado.ToString())
+                    };
+                    <tr>
+                        <td class="fw-semibold">@p.NombreEmpresaPersona</td>
+                        <td>
+                            @p.NombreContacto<br />
+                            <small class="text-muted">@p.Correo</small>
+                        </td>
+                        <td>@p.Telefono</td>
+                        <td class="text-center">
+                            @if (p.Calificacion is null)
+                            {
+                                <span class="text-muted small">Sin calificar</span>
+                            }
+                            else
+                            {
+                                <text>@string.Concat(Enumerable.Repeat("⭐", p.Calificacion.Value))</text>
+                            }
+                        </td>
+                        <td class="text-center"><span class="badge @badge">@texto</span></td>
+                        <td><small>@p.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy")</small></td>
+                        <td class="text-end text-nowrap">
+                            <a asp-action="Detalle" asp-route-id="@p.Id"
+                               class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            @if (puedeEditar && p.Estado == EstadoProspecto.Activo)
+                            {
+                                <a asp-action="Editar" asp-route-id="@p.Id"
+                                   class="btn btn-sm btn-outline-secondary" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            }
+                            @if (p.Estado == EstadoProspecto.Activo)
+                            {
+                                <form asp-action="Descartar" asp-route-id="@p.Id" method="post"
+                                      class="d-inline form-confirmar"
+                                      data-titulo="¿Descartar este prospecto?"
+                                      data-texto="@($"{p.NombreEmpresaPersona} pasará a estado descartado. Se conserva el historial.")"
+                                      data-icono="warning"
+                                      data-btn-confirmar="Sí, descartar">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger prospectos-btn-accion" title="Descartar" @(puedeDescartar ? null : "disabled")>
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            }
+                            @if (p.Estado == EstadoProspecto.Descartado)
+                            {
+                                <form asp-action="Reactivar" asp-route-id="@p.Id" method="post"
+                                      class="d-inline form-confirmar"
+                                      data-titulo="¿Reactivar este prospecto?"
+                                      data-texto="@($"{p.NombreEmpresaPersona} volverá a estado activo.")"
+                                      data-icono="info"
+                                      data-btn-confirmar="Sí, reactivar">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-success prospectos-btn-accion" title="Reactivar" @(puedeReactivar ? null : "disabled")>
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                    </button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

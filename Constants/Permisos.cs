@@ -37,6 +37,7 @@ namespace HikariLegalSRL.Constants
             public const string Calificar = "prospectos.calificar";
             public const string Convertir = "prospectos.convertir";
             public const string Descartar = "prospectos.descartar";
+            public const string Reactivar = "prospectos.reactivar";
         }
 
         public static class Clientes
@@ -97,7 +98,7 @@ namespace HikariLegalSRL.Constants
         {
             Roles.Ver, Roles.Crear, Roles.Editar, Roles.Activar, Roles.GestionarPermisos,
             Usuarios.Ver, Usuarios.Crear, Usuarios.Editar, Usuarios.Activar, Usuarios.GestionarRoles,
-            Prospectos.Ver, Prospectos.Crear, Prospectos.Editar, Prospectos.Calificar, Prospectos.Convertir, Prospectos.Descartar,
+            Prospectos.Ver, Prospectos.Crear, Prospectos.Editar, Prospectos.Calificar, Prospectos.Convertir, Prospectos.Descartar, Prospectos.Reactivar,
             Clientes.Ver, Clientes.Crear, Clientes.Editar, Clientes.Asignar, Clientes.Desactivar,
             Propuestas.Ver, Propuestas.Crear, Propuestas.Editar, Propuestas.Enviar, Propuestas.Aceptar,
             Expedientes.Ver, Expedientes.Crear, Expedientes.Asignar, Expedientes.Cerrar, Expedientes.Aprobar, Expedientes.Devolver, Expedientes.Cargar,
