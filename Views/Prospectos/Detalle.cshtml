@@ -1,0 +1,144 @@
+@model HikariLegalSRL.Models.DTOs.ProspectoDetalleDTO
+@using HikariLegalSRL.Models.Enums
+
+@{
+    ViewData["Title"] = Model.NombreEmpresaPersona;
+
+    var (badge, texto) = Model.Estado switch
+    {
+        EstadoProspecto.Activo => ("bg-success", "Activo"),
+        EstadoProspecto.Convertido => ("bg-primary", "Convertido"),
+        EstadoProspecto.Descartado => ("bg-secondary", "Descartado"),
+        _ => ("bg-secondary", Model.Estado.ToString())
+    };
+
+    var puedeEditar = await Authorization.TienePermiso(User, Permisos.Prospectos.Editar);
+    var puedeDescartar = await Authorization.TienePermiso(User, Permisos.Prospectos.Descartar);
+    var puedeReactivar = await Authorization.TienePermiso(User, Permisos.Prospectos.Reactivar);
+    var esActivo = Model.Estado == EstadoProspecto.Activo;
+    var esDescartado = Model.Estado == EstadoProspecto.Descartado;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/prospectos.css" />
+}
+
+<div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0 fw-bold prospectos-titulo">@Model.NombreEmpresaPersona</h4>
+    <span class="badge @badge">@texto</span>
+
+    <div class="ms-sm-auto d-flex flex-wrap gap-2">
+        @if (puedeEditar && esActivo)
+        {
+            <a asp-action="Editar" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-pencil me-1"></i>Editar
+            </a>
+        }
+        @if (esActivo)
+        {
+            <form asp-action="Descartar" asp-route-id="@Model.Id" method="post"
+                  class="form-confirmar"
+                  data-titulo="¿Descartar este prospecto?"
+                  data-texto="@($"{Model.NombreEmpresaPersona} pasará a estado descartado. Se conserva el historial.")"
+                  data-icono="warning"
+                  data-btn-confirmar="Sí, descartar">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline-danger btn-sm prospectos-btn-accion" @(puedeDescartar ? null : "disabled")>
+                    <i class="bi bi-trash me-1"></i>Descartar
+                </button>
+            </form>
+        }
+        @if (esDescartado)
+        {
+            <form asp-action="Reactivar" asp-route-id="@Model.Id" method="post"
+                  class="form-confirmar"
+                  data-titulo="¿Reactivar este prospecto?"
+                  data-texto="@($"{Model.NombreEmpresaPersona} volverá a estado activo.")"
+                  data-icono="info"
+                  data-btn-confirmar="Sí, reactivar">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline-success btn-sm prospectos-btn-accion" @(puedeReactivar ? null : "disabled")>
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Reactivar
+                </button>
+            </form>
+        }
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0  mb-3">
+            <div class="card-header fw-semibold prospectos-card-header">Información general</div>
+            <div class="card-body">
+                <dl class="row mb-0 prospectos-datos">
+                    <dt class="col-5">Contacto</dt>
+                    <dd class="col-7">@Model.NombreContacto</dd>
+
+                    <dt class="col-5">Cédula jurídica</dt>
+                    <dd class="col-7">@(Model.CedulaJuridica ?? "—")</dd>
+
+                    <dt class="col-5">Teléfono</dt>
+                    <dd class="col-7">@Model.Telefono</dd>
+
+                    <dt class="col-5">Correo</dt>
+                    <dd class="col-7">@Model.Correo</dd>
+
+                    <dt class="col-5">Sector</dt>
+                    <dd class="col-7">@(Model.Sector ?? "—")</dd>
+
+                    <dt class="col-5">Calificación</dt>
+                    <dd class="col-7">
+                        @(Model.Calificacion is null
+                            ? "Sin calificar"
+                            : string.Concat(Enumerable.Repeat("⭐", Model.Calificacion.Value)))
+                    </dd>
+
+                    <dt class="col-5">Registrado</dt>
+                    <dd class="col-7">@Model.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+
+                    <dt class="col-5">Creado por</dt>
+                    <dd class="col-7">@Model.CreadoPor</dd>
+                </dl>
+
+                @if (!string.IsNullOrWhiteSpace(Model.Observaciones))
+                {
+                    <hr class="my-3" />
+                    <p class="small mb-0"><strong>Observaciones</strong><br />@Model.Observaciones</p>
+                }
+            </div>
+        </div>
+        
+       
+            <div class="card shadow-sm border-0">
+                <div class="card-header fw-semibold prospectos-card-header">
+                    Ubicación
+                    <span class="badge bg-light text-dark border ms-1 text-capitalize">@Model.TipoUbicacion</span>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0 prospectos-datos">
+                        <dt class="col-5">País</dt>
+                        <dd class="col-7">@Model.Pais</dd>
+
+                        <dt class="col-5">Provincia</dt>
+                        <dd class="col-7">@(Model.Provincia ?? "—")</dd>
+
+                        <dt class="col-5">Cantón</dt>
+                        <dd class="col-7">@(Model.Canton ?? "—")</dd>
+
+                        <dt class="col-5">Distrito</dt>
+                        <dd class="col-7">@(Model.Distrito ?? "—")</dd>
+
+                        <dt class="col-5">Señas exactas</dt>
+                        <dd class="col-7">@(string.IsNullOrWhiteSpace(Model.SenasExactas) ? "—" : Model.SenasExactas)</dd>
+                    </dl>
+                </div>
+            </div>
+       
+    </div>
+    <div class="col-lg-6">
+        Seguimiento
+    </div>
+</div>

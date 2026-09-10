@@ -128,7 +128,14 @@
         @if (!hideShell)
         {
             <div id="topbar">
-                <span class="fw-semibold text-muted">@ViewData["Title"]</span>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-outline-secondary btn-sm d-lg-none" type="button"
+                            data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas"
+                            aria-controls="sidebarOffcanvas" aria-label="Abrir menú">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <span class="fw-semibold text-muted">@ViewData["Title"]</span>
+                </div>
                 <span class="badge" style="background:#1F3864;">
                     @rolUsuario
                 </span>
