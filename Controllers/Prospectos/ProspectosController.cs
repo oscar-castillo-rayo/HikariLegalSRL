@@ -2,9 +2,11 @@
 using HikariLegalSRL.Constants;
 using HikariLegalSRL.Exceptions;
 using HikariLegalSRL.Models;
+using HikariLegalSRL.Models.DTOs;
 using HikariLegalSRL.Models.Enums;
 using HikariLegalSRL.Services.Interfaces;
 using HikariLegalSRL.ViewModels.Prospectos;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -15,17 +17,20 @@ namespace HikariLegalSRL.Controllers.Prospectos
     public class ProspectosController : Controller
     {
         private readonly IProspectoService _prospectoService;
+        private readonly IActividadSeguimientoService _actividadSeguimientoService;
         private readonly IGeografiaService _geografiaService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<ProspectosController> _logger;
 
         public ProspectosController(
             IProspectoService prospectoService,
+            IActividadSeguimientoService actividadSeguimientoService,
             IGeografiaService geografiaService,
             UserManager<ApplicationUser> userManager,
             ILogger<ProspectosController> logger)
         {
             _prospectoService = prospectoService;
+            _actividadSeguimientoService = actividadSeguimientoService;
             _geografiaService = geografiaService;
             _userManager = userManager;
             _logger = logger;
@@ -55,7 +60,93 @@ namespace HikariLegalSRL.Controllers.Prospectos
             if (prospecto is null)
                 return NotFound();
 
-            return View(prospecto);
+            var viewModel = new ProspectoDetalleViewModel
+            {
+                Prospecto = prospecto,
+                Actividades = await _actividadSeguimientoService.Listar(id),
+                UsuariosAsignables = await _userManager.Users
+                    .Where(u => u.Activo)
+                    .OrderBy(u => u.NombreCompleto)
+                    .Select(u => new UsuarioOpcionDTO { Id = u.Id, Nombre = u.NombreCompleto })
+                    .ToListAsync()
+            };
+
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Prospectos.Editar)]
+        public async Task<IActionResult> RegistrarActividad(int id, ActividadSeguimientoFormDTO actividad)
+        {
+            var usuarioActualId = _userManager.GetUserId(User)!;
+
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Revise los datos de la actividad de seguimiento.";
+                return RedirectToAction(nameof(Detalle), new { id });
+            }
+
+            try
+            {
+                await _actividadSeguimientoService.Registrar(id, actividad, usuarioActualId);
+                TempData["Exito"] = "Actividad de seguimiento registrada.";
+            }
+            catch (ReglaNegocioException ex)
+            {
+                _logger.LogWarning(ex, "Error de regla de negocio al registrar actividad del prospecto {ProspectoId}", id);
+                TempData["Error"] = ex.Message;
+            }
+
+            return RedirectToAction(nameof(Detalle), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Prospectos.Editar)]
+        public async Task<IActionResult> EditarActividad(int id, int actividadId, ActividadSeguimientoFormDTO actividad)
+        {
+            var usuarioActualId = _userManager.GetUserId(User)!;
+
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Revise los datos de la actividad de seguimiento.";
+                return RedirectToAction(nameof(Detalle), new { id });
+            }
+
+            try
+            {
+                await _actividadSeguimientoService.Editar(actividadId, actividad, usuarioActualId);
+                TempData["Exito"] = "Actividad de seguimiento actualizada.";
+            }
+            catch (ReglaNegocioException ex)
+            {
+                _logger.LogWarning(ex, "Error de regla de negocio al editar la actividad {ActividadId}", actividadId);
+                TempData["Error"] = ex.Message;
+            }
+
+            return RedirectToAction(nameof(Detalle), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Prospectos.Editar)]
+        public async Task<IActionResult> EliminarActividad(int id, int actividadId)
+        {
+            var usuarioActualId = _userManager.GetUserId(User)!;
+
+            try
+            {
+                await _actividadSeguimientoService.Eliminar(actividadId, usuarioActualId);
+                TempData["Exito"] = "Actividad de seguimiento eliminada.";
+            }
+            catch (ReglaNegocioException ex)
+            {
+                _logger.LogWarning(ex, "Error de regla de negocio al eliminar la actividad {ActividadId}", actividadId);
+                TempData["Error"] = ex.Message;
+            }
+
+            return RedirectToAction(nameof(Detalle), new { id });
         }
 
         [HttpGet]

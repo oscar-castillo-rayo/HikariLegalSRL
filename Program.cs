@@ -46,6 +46,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IBitacoraAuditoriaService, BitacoraAuditoriaService>();
 builder.Services.AddScoped<IGeografiaService, GeografiaService>();
 builder.Services.AddScoped<IProspectoService, ProspectoService>();
+builder.Services.AddScoped<IActividadSeguimientoService, ActividadSeguimientoService>();
 
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 {

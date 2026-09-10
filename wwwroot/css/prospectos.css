@@ -46,6 +46,34 @@
     letter-spacing: .05em;
 }
 
+.prospectos-seg-btn {
+    font-size: .8rem;
+    padding: .15rem .4rem;
+}
+
+.prospectos-seg-item-main {
+    min-width: 12rem;
+}
+
+.prospectos-seg-lista {
+    max-height: 32rem;
+    overflow-y: auto;
+}
+
+.prospectos-seg-modal {
+    max-width: 600px;
+}
+
+.prospectos-seg-titulo {
+    color: #1F3864;
+    word-break: break-word;
+}
+
+.prospectos-seg-vacio-icono {
+    font-size: 2.5rem;
+    opacity: .25;
+}
+
 .prospectos-tabla tbody td {
     padding-bottom: .7rem;
     padding-top: .7rem;
@@ -74,6 +102,10 @@
     .prospectos-form-card {
         border-radius: 0;
         box-shadow: none !important;
+    }
+
+    .prospectos-seg-lista {
+        max-height: 24rem;
     }
 
     .prospectos-tabla {

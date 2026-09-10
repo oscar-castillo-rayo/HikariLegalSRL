@@ -1,22 +1,40 @@
-@model HikariLegalSRL.Models.DTOs.ProspectoDetalleDTO
+@model HikariLegalSRL.ViewModels.Prospectos.ProspectoDetalleViewModel
 @using HikariLegalSRL.Models.Enums
 
 @{
-    ViewData["Title"] = Model.NombreEmpresaPersona;
+    var p = Model.Prospecto;
+    ViewData["Title"] = p.NombreEmpresaPersona;
 
-    var (badge, texto) = Model.Estado switch
+    var (badge, texto) = p.Estado switch
     {
         EstadoProspecto.Activo => ("bg-success", "Activo"),
         EstadoProspecto.Convertido => ("bg-primary", "Convertido"),
         EstadoProspecto.Descartado => ("bg-secondary", "Descartado"),
-        _ => ("bg-secondary", Model.Estado.ToString())
+        _ => ("bg-secondary", p.Estado.ToString())
     };
 
     var puedeEditar = await Authorization.TienePermiso(User, Permisos.Prospectos.Editar);
     var puedeDescartar = await Authorization.TienePermiso(User, Permisos.Prospectos.Descartar);
     var puedeReactivar = await Authorization.TienePermiso(User, Permisos.Prospectos.Reactivar);
-    var esActivo = Model.Estado == EstadoProspecto.Activo;
-    var esDescartado = Model.Estado == EstadoProspecto.Descartado;
+    var esActivo = p.Estado == EstadoProspecto.Activo;
+    var esDescartado = p.Estado == EstadoProspecto.Descartado;
+    var puedeGestionarSeguimiento = puedeEditar && esActivo;
+
+    (string icono, string color, string fondo) EstiloTipo(TipoActividad t) => t switch
+    {
+        TipoActividad.Llamada => ("bi-telephone", "primary", "#EBF3FF"),
+        TipoActividad.Reunion => ("bi-calendar-event", "success", "#EAFAF1"),
+        TipoActividad.Correo => ("bi-envelope", "info", "#E8F8FC"),
+        TipoActividad.Nota => ("bi-journal-text", "secondary", "#F1F3F5"),
+        TipoActividad.Propuesta => ("bi-file-earmark-text", "warning", "#FFFBEA"),
+        _ => ("bi-three-dots", "secondary", "#F1F3F5")
+    };
+
+    string EtiquetaTipo(TipoActividad t) => t switch
+    {
+        TipoActividad.Reunion => "Reunión",
+        _ => t.ToString()
+    };
 }
 
 @section Styles {
@@ -27,22 +45,22 @@
     <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left"></i>
     </a>
-    <h4 class="mb-0 fw-bold prospectos-titulo">@Model.NombreEmpresaPersona</h4>
+    <h4 class="mb-0 fw-bold prospectos-titulo">@p.NombreEmpresaPersona</h4>
     <span class="badge @badge">@texto</span>
 
     <div class="ms-sm-auto d-flex flex-wrap gap-2">
         @if (puedeEditar && esActivo)
         {
-            <a asp-action="Editar" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-sm">
+            <a asp-action="Editar" asp-route-id="@p.Id" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-pencil me-1"></i>Editar
             </a>
         }
         @if (esActivo)
         {
-            <form asp-action="Descartar" asp-route-id="@Model.Id" method="post"
+            <form asp-action="Descartar" asp-route-id="@p.Id" method="post"
                   class="form-confirmar"
                   data-titulo="¿Descartar este prospecto?"
-                  data-texto="@($"{Model.NombreEmpresaPersona} pasará a estado descartado. Se conserva el historial.")"
+                  data-texto="@($"{p.NombreEmpresaPersona} pasará a estado descartado. Se conserva el historial.")"
                   data-icono="warning"
                   data-btn-confirmar="Sí, descartar">
                 @Html.AntiForgeryToken()
@@ -53,10 +71,10 @@
         }
         @if (esDescartado)
         {
-            <form asp-action="Reactivar" asp-route-id="@Model.Id" method="post"
+            <form asp-action="Reactivar" asp-route-id="@p.Id" method="post"
                   class="form-confirmar"
                   data-titulo="¿Reactivar este prospecto?"
-                  data-texto="@($"{Model.NombreEmpresaPersona} volverá a estado activo.")"
+                  data-texto="@($"{p.NombreEmpresaPersona} volverá a estado activo.")"
                   data-icono="info"
                   data-btn-confirmar="Sí, reactivar">
                 @Html.AntiForgeryToken()
@@ -75,70 +93,245 @@
             <div class="card-body">
                 <dl class="row mb-0 prospectos-datos">
                     <dt class="col-5">Contacto</dt>
-                    <dd class="col-7">@Model.NombreContacto</dd>
+                    <dd class="col-7">@p.NombreContacto</dd>
 
                     <dt class="col-5">Cédula jurídica</dt>
-                    <dd class="col-7">@(Model.CedulaJuridica ?? "—")</dd>
+                    <dd class="col-7">@(p.CedulaJuridica ?? "—")</dd>
 
                     <dt class="col-5">Teléfono</dt>
-                    <dd class="col-7">@Model.Telefono</dd>
+                    <dd class="col-7">@p.Telefono</dd>
 
                     <dt class="col-5">Correo</dt>
-                    <dd class="col-7">@Model.Correo</dd>
+                    <dd class="col-7">@p.Correo</dd>
 
                     <dt class="col-5">Sector</dt>
-                    <dd class="col-7">@(Model.Sector ?? "—")</dd>
+                    <dd class="col-7">@(p.Sector ?? "—")</dd>
 
                     <dt class="col-5">Calificación</dt>
                     <dd class="col-7">
-                        @(Model.Calificacion is null
+                        @(p.Calificacion is null
                             ? "Sin calificar"
-                            : string.Concat(Enumerable.Repeat("⭐", Model.Calificacion.Value)))
+                            : string.Concat(Enumerable.Repeat("⭐", p.Calificacion.Value)))
                     </dd>
 
                     <dt class="col-5">Registrado</dt>
-                    <dd class="col-7">@Model.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                    <dd class="col-7">@p.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
 
                     <dt class="col-5">Creado por</dt>
-                    <dd class="col-7">@Model.CreadoPor</dd>
+                    <dd class="col-7">@p.CreadoPor</dd>
                 </dl>
 
-                @if (!string.IsNullOrWhiteSpace(Model.Observaciones))
+                @if (!string.IsNullOrWhiteSpace(p.Observaciones))
                 {
                     <hr class="my-3" />
-                    <p class="small mb-0"><strong>Observaciones</strong><br />@Model.Observaciones</p>
+                    <p class="small mb-0"><strong>Observaciones</strong><br />@p.Observaciones</p>
                 }
             </div>
         </div>
-        
-       
-            <div class="card shadow-sm border-0">
-                <div class="card-header fw-semibold prospectos-card-header">
-                    Ubicación
-                    <span class="badge bg-light text-dark border ms-1 text-capitalize">@Model.TipoUbicacion</span>
-                </div>
-                <div class="card-body">
-                    <dl class="row mb-0 prospectos-datos">
-                        <dt class="col-5">País</dt>
-                        <dd class="col-7">@Model.Pais</dd>
 
-                        <dt class="col-5">Provincia</dt>
-                        <dd class="col-7">@(Model.Provincia ?? "—")</dd>
-
-                        <dt class="col-5">Cantón</dt>
-                        <dd class="col-7">@(Model.Canton ?? "—")</dd>
-
-                        <dt class="col-5">Distrito</dt>
-                        <dd class="col-7">@(Model.Distrito ?? "—")</dd>
-
-                        <dt class="col-5">Señas exactas</dt>
-                        <dd class="col-7">@(string.IsNullOrWhiteSpace(Model.SenasExactas) ? "—" : Model.SenasExactas)</dd>
-                    </dl>
-                </div>
+        <div class="card shadow-sm border-0">
+            <div class="card-header fw-semibold prospectos-card-header">
+                Ubicación
+                <span class="badge bg-light text-dark border ms-1 text-capitalize">@p.TipoUbicacion</span>
             </div>
-       
+            <div class="card-body">
+                <dl class="row mb-0 prospectos-datos">
+                    <dt class="col-5">País</dt>
+                    <dd class="col-7">@p.Pais</dd>
+
+                    <dt class="col-5">Provincia</dt>
+                    <dd class="col-7">@(p.Provincia ?? "—")</dd>
+
+                    <dt class="col-5">Cantón</dt>
+                    <dd class="col-7">@(p.Canton ?? "—")</dd>
+
+                    <dt class="col-5">Distrito</dt>
+                    <dd class="col-7">@(p.Distrito ?? "—")</dd>
+
+                    <dt class="col-5">Señas exactas</dt>
+                    <dd class="col-7">@(string.IsNullOrWhiteSpace(p.SenasExactas) ? "—" : p.SenasExactas)</dd>
+                </dl>
+            </div>
+        </div>
     </div>
+
     <div class="col-lg-6">
-        Seguimiento
+        <div class="card shadow-sm border-0 prospectos-seg" data-prospecto-id="@p.Id"
+             data-url-registrar="@Url.Action("RegistrarActividad", new { id = p.Id })"
+             data-url-editar="@Url.Action("EditarActividad", new { id = p.Id })">
+            <div class="card-header fw-semibold prospectos-card-header d-flex flex-wrap align-items-center gap-2">
+                <span>Seguimiento</span>
+                <span class="badge bg-light text-dark border">@Model.Actividades.Count</span>
+                @if (puedeGestionarSeguimiento)
+                {
+                    <button type="button" class="btn btn-sm prospectos-btn-guardar ms-auto" data-accion="nueva-actividad">
+                        <i class="bi bi-plus-lg me-1"></i>Agregar seguimiento
+                    </button>
+                }
+            </div>
+            <div class="card-body prospectos-seg-lista">
+                @if (Model.Actividades.Count == 0)
+                {
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-clock-history prospectos-seg-vacio-icono"></i>
+                        <p class="mt-2 small mb-0 fw-semibold">Sin actividades de seguimiento.</p>
+                        <p class="small mb-0">Registra llamadas, reuniones, correos o notas del prospecto.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex flex-column gap-3">
+                        @foreach (var a in Model.Actividades)
+                        {
+                            var estilo = EstiloTipo(a.TipoActividad);
+                            <div class="prospectos-seg-item rounded border p-3"
+                                 style="background:@estilo.fondo;"
+                                 data-id="@a.Id"
+                                 data-tipo="@a.TipoActividad"
+                                 data-tipo-label="@EtiquetaTipo(a.TipoActividad)"
+                                 data-titulo="@a.Titulo"
+                                 data-descripcion="@a.Descripcion"
+                                 data-fecha="@a.FechaHora.ToLocalTime().ToString("yyyy-MM-ddTHH:mm")"
+                                 data-fecha-texto="@a.FechaHora.ToLocalTime().ToString("dd/MM/yyyy HH:mm")"
+                                 data-responsable-id="@a.ResponsableId"
+                                 data-responsable="@a.ResponsableNombre"
+                                 data-registrado-por="@a.RegistradoPor">
+                                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                                    <div class="flex-grow-1 prospectos-seg-item-main">
+                                        <span class="badge bg-@estilo.color mb-1">
+                                            <i class="bi @estilo.icono me-1"></i>@EtiquetaTipo(a.TipoActividad)
+                                        </span>
+                                        <p class="mb-1 fw-semibold prospectos-seg-titulo">@a.Titulo</p>
+                                        <div class="d-flex flex-wrap gap-2 gap-md-3 small text-muted">
+                                            <span title="Persona que registró la actividad">
+                                                <i class="bi bi-pencil-square me-1"></i>Registró: @a.RegistradoPor
+                                            </span>
+                                            <span class="text-primary fw-semibold" title="Persona responsable de la actividad">
+                                                <i class="bi bi-person-badge me-1"></i>Responsable: @a.ResponsableNombre
+                                            </span>
+                                            <span class="text-dark">
+                                                <i class="bi bi-calendar-event me-1"></i>@a.FechaHora.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-1 flex-shrink-0 ms-auto">
+                                        <button type="button" class="btn btn-sm btn-outline-primary prospectos-seg-btn"
+                                                data-accion="ver-actividad" title="Ver seguimiento">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary prospectos-seg-btn prospectos-btn-accion"
+                                                data-accion="editar-actividad" title="Editar seguimiento"
+                                                @(puedeGestionarSeguimiento ? null : "disabled")>
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <form asp-action="EliminarActividad" asp-route-id="@p.Id" asp-route-actividadId="@a.Id"
+                                              method="post" class="d-inline form-confirmar"
+                                              data-titulo="¿Eliminar esta actividad?"
+                                              data-texto="@($"Se eliminará «{a.Titulo}». Esta acción no se puede deshacer.")"
+                                              data-icono="warning"
+                                              data-btn-confirmar="Sí, eliminar">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger prospectos-seg-btn prospectos-btn-accion"
+                                                    title="Eliminar seguimiento"
+                                                    @(puedeGestionarSeguimiento ? null : "disabled")>
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
     </div>
 </div>
+
+<div class="modal fade" id="modalVerActividad" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header prospectos-card-header">
+                <h5 class="modal-title" id="verActividadTipo">Seguimiento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="fw-semibold mb-1" id="verActividadTitulo"></p>
+                <p class="mb-3" id="verActividadDescripcion"></p>
+                <dl class="row mb-0 prospectos-datos">
+                    <dt class="col-5">Registró</dt>
+                    <dd class="col-7" id="verActividadRegistro"></dd>
+                    <dt class="col-5">Responsable</dt>
+                    <dd class="col-7" id="verActividadResponsable"></dd>
+                    <dt class="col-5">Fecha y hora</dt>
+                    <dd class="col-7" id="verActividadFecha"></dd>
+                </dl>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (puedeGestionarSeguimiento)
+{
+    <div class="modal fade" id="modalFormActividad" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered prospectos-seg-modal">
+            <form method="post" id="formActividad">
+                @Html.AntiForgeryToken()
+                <div class="modal-content">
+                    <div class="modal-header prospectos-card-header">
+                        <h5 class="modal-title" id="formActividadTitulo">Agregar seguimiento</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-12 col-sm-4">
+                                <label class="form-label" for="formActividadTipo">Tipo de actividad</label>
+                                <select class="form-select" id="formActividadTipo" name="Tipo" required>
+                                    @foreach (var t in Enum.GetValues<TipoActividad>())
+                                    {
+                                        <option value="@t">@EtiquetaTipo(t)</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-12 col-sm-8">
+                                <label class="form-label" for="formActividadTituloInput">Título</label>
+                                <input type="text" class="form-control" id="formActividadTituloInput" name="Titulo"
+                                       maxlength="150" required />
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label" for="formActividadFecha">Fecha y hora</label>
+                                <input type="datetime-local" class="form-control" id="formActividadFecha" name="FechaHora" required />
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label" for="formActividadResponsable">Responsable</label>
+                                <select class="form-select" id="formActividadResponsable" name="ResponsableId" required>
+                                    <option value="">-- Seleccione --</option>
+                                    @foreach (var u in Model.UsuariosAsignables)
+                                    {
+                                        <option value="@u.Id">@u.Nombre</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" for="formActividadDescripcion">Descripción</label>
+                                <textarea class="form-control" id="formActividadDescripcion" name="Descripcion"
+                                          rows="3" maxlength="1000"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn prospectos-btn-guardar">Guardar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/prospectos-seguimiento.js" asp-append-version="true"></script>
+}

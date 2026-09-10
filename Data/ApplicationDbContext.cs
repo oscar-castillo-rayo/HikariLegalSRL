@@ -20,6 +20,7 @@ namespace HikariLegalSRL.Data
         public DbSet<Distrito> Distritos { get; set; } = null!;
         public DbSet<Direccion> Direcciones { get; set; } = null!;
         public DbSet<Prospecto> Prospectos { get; set; } = null!;
+        public DbSet<ActividadSeguimiento> ActividadesSeguimiento { get; set; } = null!;
         public DbSet<BitacoraAuditoria> BitacoraAuditoria { get; set; } = null!;
 
 
@@ -143,6 +144,43 @@ namespace HikariLegalSRL.Data
                 .ToTable(t => t.HasCheckConstraint(
                     "CK_Prospecto_Estado",
                     "[Estado] IN ('activo', 'convertido', 'descartado')"
+                    ));
+
+            // ActividadesSeguimiento
+            modelBuilder.Entity<ActividadSeguimiento>()
+                .Property(a => a.TipoActividad)
+                .HasConversion(e => e.ToString().ToLower(),
+                s => (TipoActividad)Enum.Parse(typeof(TipoActividad), s, ignoreCase: true))
+                .HasMaxLength(20);
+
+            modelBuilder.Entity<ActividadSeguimiento>()
+                .Property(a => a.Titulo).HasMaxLength(150);
+
+            modelBuilder.Entity<ActividadSeguimiento>()
+                .Property(a => a.Descripcion).HasMaxLength(1000);
+
+            modelBuilder.Entity<ActividadSeguimiento>()
+                .HasOne(a => a.Prospecto)
+                .WithMany()
+                .HasForeignKey(a => a.ProspectoId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ActividadSeguimiento>()
+                .HasOne(a => a.UsuarioRegistro)
+                .WithMany()
+                .HasForeignKey(a => a.UsuarioRegistroId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ActividadSeguimiento>()
+                .HasOne(a => a.Responsable)
+                .WithMany()
+                .HasForeignKey(a => a.ResponsableId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ActividadSeguimiento>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_ActividadSeguimiento_TipoActividad",
+                    "[TipoActividad] IN ('llamada', 'reunion', 'correo', 'nota', 'propuesta', 'otro')"
                     ));
 
             // Bitacora Auditoría
