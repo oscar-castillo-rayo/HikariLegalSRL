@@ -1,0 +1,153 @@
+@model HikariLegalSRL.ViewModels.Clientes.ClienteEditViewModel
+@using HikariLegalSRL.Models.Enums
+
+@{
+    ViewData["Title"] = "Editar cliente";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/clientes.css" />
+}
+
+<div class="d-flex align-items-center gap-2 mb-4">
+    <a asp-action="Detalle" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0 fw-bold clientes-titulo">Editar cliente</h4>
+</div>
+
+<div class="card shadow-sm border-0 clientes-form-card">
+    <div class="card-body p-3 p-md-4">
+        <form asp-action="Editar" method="post"
+              data-prospecto-direccion data-pais-base="1"
+              data-provincia-actual="@Model.ProvinciaIdActual"
+              data-canton-actual="@Model.CantonIdActual"
+              data-distrito-actual="@Model.Cliente.Direccion.DistritoId">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="ProvinciaIdActual" id="provinciaIdActual" />
+            <input type="hidden" asp-for="CantonIdActual" id="cantonIdActual" />
+
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-3"></div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="Cliente.NombreEmpresaPersona" class="form-label fw-semibold"></label>
+                    <input asp-for="Cliente.NombreEmpresaPersona" class="form-control" autocomplete="off" />
+                    <span asp-validation-for="Cliente.NombreEmpresaPersona" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Cliente.NombreContacto" class="form-label fw-semibold"></label>
+                    <input asp-for="Cliente.NombreContacto" class="form-control" autocomplete="off" />
+                    <span asp-validation-for="Cliente.NombreContacto" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Cliente.CedulaJuridica" class="form-label fw-semibold"></label>
+                    <input asp-for="Cliente.CedulaJuridica" class="form-control" autocomplete="off" />
+                    <span asp-validation-for="Cliente.CedulaJuridica" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Cliente.Telefono" class="form-label fw-semibold"></label>
+                    <input asp-for="Cliente.Telefono" class="form-control" autocomplete="off" />
+                    <span asp-validation-for="Cliente.Telefono" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Cliente.Correo" class="form-label fw-semibold"></label>
+                    <input asp-for="Cliente.Correo" type="email" class="form-control" autocomplete="off" />
+                    <span asp-validation-for="Cliente.Correo" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Cliente.SectorEconomico" class="form-label fw-semibold"></label>
+                    <input asp-for="Cliente.SectorEconomico" class="form-control" placeholder="Ej: Tecnología, Comercio, Salud..." />
+                    <span asp-validation-for="Cliente.SectorEconomico" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Cliente.ModalidadPago" class="form-label fw-semibold">Modalidad de pago</label>
+                    <select asp-for="Cliente.ModalidadPago" class="form-select">
+                        <option value="">-- Seleccione --</option>
+                        <option value="@ModalidadPago.Contado">Contado</option>
+                        <option value="@ModalidadPago.Abono">Abono</option>
+                        <option value="@ModalidadPago.ProBono">Pro Bono</option>
+                    </select>
+                    <span asp-validation-for="Cliente.ModalidadPago" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12">
+                    <hr class="my-1" />
+                    <small class="text-muted fw-semibold text-uppercase clientes-seccion">Dirección</small>
+                </div>
+
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <input asp-for="EsNacional" class="form-check-input" id="esNacional" />
+                        <label class="form-check-label" for="esNacional">Dirección nacional (Costa Rica)</label>
+                    </div>
+                </div>
+
+                <div class="col-12" id="bloqueNacional">
+                    <input type="hidden" asp-for="Cliente.Direccion.PaisId" id="paisIdOculto" />
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Provincia</label>
+                            <select id="selectProvincia" class="form-select">
+                                <option value="">-- Seleccione --</option>
+                                @foreach (var p in Model.Provincias)
+                                {
+                                    <option value="@p.Id">@p.Nombre</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Cantón</label>
+                            <select id="selectCanton" class="form-select" disabled>
+                                <option value="">-- Seleccione una provincia primero --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Distrito</label>
+                            <select asp-for="Cliente.Direccion.DistritoId" id="selectDistrito" class="form-select" disabled>
+                                <option value="">-- Seleccione un cantón primero --</option>
+                            </select>
+                            <span asp-validation-for="Cliente.Direccion.DistritoId" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12" id="bloqueExtranjero" style="display:none;">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">País</label>
+                            <select id="selectPaisExtranjero" class="form-select">
+                                <option value="">-- Seleccione --</option>
+                                @foreach (var pais in Model.Paises)
+                                {
+                                    <option value="@pais.Id">@pais.Nombre</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Cliente.Direccion.PaisId" class="text-danger small d-block"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <label asp-for="Cliente.Direccion.SenasExactas" class="form-label fw-semibold"></label>
+                    <textarea asp-for="Cliente.Direccion.SenasExactas" class="form-control" rows="2"
+                              placeholder="100m sur del parque central, edificio azul..."></textarea>
+                    <span asp-validation-for="Cliente.Direccion.SenasExactas" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="d-flex flex-column flex-sm-row justify-content-sm-end gap-2 mt-4">
+                <a asp-action="Detalle" asp-route-id="@Model.Id" class="btn btn-outline-danger order-2 order-sm-1">Cancelar</a>
+                <button type="submit" class="btn text-white fw-semibold px-4 order-1 order-sm-2 clientes-btn-guardar">
+                    <i class="bi bi-check-lg me-1"></i>Guardar cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/prospectos-direccion.js" asp-append-version="true"></script>
+}
