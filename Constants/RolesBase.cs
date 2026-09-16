@@ -26,7 +26,7 @@ namespace HikariLegalSRL.Constants
                 {
                     Permisos.Prospectos.Ver, Permisos.Prospectos.Crear, Permisos.Prospectos.Editar,
                     Permisos.Prospectos.Calificar, Permisos.Prospectos.Convertir,
-                    Permisos.Clientes.Ver, Permisos.Clientes.Crear, Permisos.Clientes.Editar,
+                    Permisos.Clientes.Ver, Permisos.Clientes.Crear, Permisos.Clientes.Editar, Permisos.Clientes.SerResponsable,
                     Permisos.Propuestas.Ver, Permisos.Propuestas.Crear, Permisos.Propuestas.Editar, Permisos.Propuestas.Enviar,
                     Permisos.Expedientes.Ver, Permisos.Expedientes.Crear, Permisos.Expedientes.Asignar,
                     Permisos.Expedientes.Aprobar, Permisos.Expedientes.Devolver, Permisos.Expedientes.Cargar,

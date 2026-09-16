@@ -1,13 +1,9 @@
 using System.ComponentModel.DataAnnotations;
-using HikariLegalSRL.Models.Enums;
 
 namespace HikariLegalSRL.Models.DTOs
 {
-    public class ClienteConversionDTO
+    public class ReasignarResponsableDTO
     {
-        [Required(ErrorMessage = "Debe seleccionar la modalidad de pago")]
-        public ModalidadPago? ModalidadPago { get; set; }
-
         [Required(ErrorMessage = "Debe seleccionar un responsable")]
         public string? ResponsableId { get; set; }
     }
