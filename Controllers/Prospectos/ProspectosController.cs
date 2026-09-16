@@ -18,6 +18,7 @@ namespace HikariLegalSRL.Controllers.Prospectos
     {
         private readonly IProspectoService _prospectoService;
         private readonly IActividadSeguimientoService _actividadSeguimientoService;
+        private readonly IClienteService _clienteService;
         private readonly IGeografiaService _geografiaService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<ProspectosController> _logger;
@@ -25,12 +26,14 @@ namespace HikariLegalSRL.Controllers.Prospectos
         public ProspectosController(
             IProspectoService prospectoService,
             IActividadSeguimientoService actividadSeguimientoService,
+            IClienteService clienteService,
             IGeografiaService geografiaService,
             UserManager<ApplicationUser> userManager,
             ILogger<ProspectosController> logger)
         {
             _prospectoService = prospectoService;
             _actividadSeguimientoService = actividadSeguimientoService;
+            _clienteService = clienteService;
             _geografiaService = geografiaService;
             _userManager = userManager;
             _logger = logger;
@@ -299,6 +302,86 @@ namespace HikariLegalSRL.Controllers.Prospectos
                 TempData["Error"] = ex.Message;
             }
             return RedirectToAction(nameof(Detalle), new { id });
+        }
+
+        [HttpGet]
+        [Permiso(Permisos.Prospectos.Convertir)]
+        public async Task<IActionResult> ConvertirACliente(int id)
+        {
+            var prospecto = await _prospectoService.ObtenerDetalle(id);
+            if (prospecto is null)
+                return NotFound();
+
+            if (prospecto.Estado != EstadoProspecto.Activo)
+            {
+                TempData["Error"] = "Solo se pueden convertir a cliente los prospectos en estado activo.";
+                return RedirectToAction(nameof(Detalle), new { id });
+            }
+
+            var viewModel = new ConvertirClienteViewModel
+            {
+                Prospecto = prospecto
+            };
+            await CargarResponsables(viewModel);
+
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Prospectos.Convertir)]
+        public async Task<IActionResult> ConvertirACliente(int id, ClienteConversionDTO cliente)
+        {
+            var usuarioActualId = _userManager.GetUserId(User)!;
+
+            if (!ModelState.IsValid)
+            {
+                var model = await ConstruirModeloConversion(id, cliente);
+                if (model is null)
+                    return NotFound();
+                return View(model);
+            }
+
+            try
+            {
+                var clienteId = await _clienteService.ConvertirDesdeProspecto(id, cliente, usuarioActualId);
+                TempData["Exito"] = "Prospecto convertido a cliente correctamente.";
+                return RedirectToAction("Detalle", "Clientes", new { id = clienteId });
+            }
+            catch (ReglaNegocioException ex)
+            {
+                _logger.LogWarning(ex, "Error de regla de negocio al convertir el prospecto {ProspectoId} a cliente", id);
+                ModelState.AddModelError(string.Empty, ex.Message);
+                var model = await ConstruirModeloConversion(id, cliente);
+                if (model is null)
+                    return NotFound();
+                return View(model);
+            }
+        }
+
+        private async Task<ConvertirClienteViewModel?> ConstruirModeloConversion(int id, ClienteConversionDTO cliente)
+        {
+            var prospecto = await _prospectoService.ObtenerDetalle(id);
+            if (prospecto is null)
+                return null;
+
+            var model = new ConvertirClienteViewModel
+            {
+                Prospecto = prospecto,
+                Cliente = cliente
+            };
+            await CargarResponsables(model);
+            return model;
+        }
+
+        private async Task CargarResponsables(ConvertirClienteViewModel model)
+        {
+            var responsables = await _userManager.GetUsersInRoleAsync(RolesBase.AbogadoAsesor);
+            model.Responsables = responsables
+                .Where(u => u.Activo)
+                .OrderBy(u => u.NombreCompleto)
+                .Select(u => new UsuarioOpcionDTO { Id = u.Id, Nombre = u.NombreCompleto })
+                .ToList();
         }
 
         [HttpGet]
