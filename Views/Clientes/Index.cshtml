@@ -3,6 +3,9 @@
 
 @{
     ViewData["Title"] = "Clientes";
+    var puedeEditar = await Authorization.TienePermiso(User, Permisos.Clientes.Editar);
+    var puedeDesactivar = await Authorization.TienePermiso(User, Permisos.Clientes.Desactivar);
+    var puedeReactivar = await Authorization.TienePermiso(User, Permisos.Clientes.Reactivar);
 }
 
 @section Styles {
@@ -83,6 +86,42 @@
                                class="btn btn-sm btn-outline-primary" title="Ver detalle">
                                 <i class="bi bi-eye"></i>
                             </a>
+                            @if (c.Estado == EstadoCliente.Activo)
+                            {
+                                <a asp-action="Editar" asp-route-id="@c.Id"
+                                   class="btn btn-sm btn-outline-secondary clientes-btn-accion @(puedeEditar ? "" : "disabled")"
+                                   aria-disabled="@(!puedeEditar)"
+                                   tabindex="@(puedeEditar ? "0" : "-1")"
+                                   onclick="@(puedeEditar ? null : "return false;")"
+                                   title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form asp-action="Desactivar" asp-route-id="@c.Id" method="post"
+                                      class="d-inline form-confirmar"
+                                      data-titulo="¿Desactivar este cliente?"
+                                      data-texto="@($"{c.NombreEmpresaPersona} pasará a estado inactivo. Se conserva el historial.")"
+                                      data-icono="warning"
+                                      data-btn-confirmar="Sí, desactivar">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger clientes-btn-accion" title="Desactivar" @(puedeDesactivar ? null : "disabled")>
+                                        <i class="bi bi-person-x"></i>
+                                    </button>
+                                </form>
+                            }
+                            @if (c.Estado == EstadoCliente.Inactivo)
+                            {
+                                <form asp-action="Reactivar" asp-route-id="@c.Id" method="post"
+                                      class="d-inline form-confirmar"
+                                      data-titulo="¿Reactivar este cliente?"
+                                      data-texto="@($"{c.NombreEmpresaPersona} volverá a estado activo.")"
+                                      data-icono="info"
+                                      data-btn-confirmar="Sí, reactivar">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-success clientes-btn-accion" title="Reactivar" @(puedeReactivar ? null : "disabled")>
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                    </button>
+                                </form>
+                            }
                         </td>
                     </tr>
                 }

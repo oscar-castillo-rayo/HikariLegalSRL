@@ -74,7 +74,7 @@
                             <span asp-validation-for="Cliente.ModalidadPago" class="text-danger small"></span>
                         </div>
                         <div class="col-md-6">
-                            <label asp-for="Cliente.ResponsableId" class="form-label fw-semibold">Abogado/Asesor responsable</label>
+                            <label asp-for="Cliente.ResponsableId" class="form-label fw-semibold">Responsable</label>
                             <select asp-for="Cliente.ResponsableId" class="form-select">
                                 <option value="">-- Seleccione --</option>
                                 @foreach (var r in Model.Responsables)
