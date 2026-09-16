@@ -89,9 +89,12 @@
                             <i class="bi bi-person-gear me-2"></i>Usuarios
                         </a>
                     }
-                    <a class="@NavClass("Servicios")" asp-controller="Servicios" asp-action="Index">
-                        <i class="bi bi-grid me-2"></i>Catálogo Servicios
-                    </a>
+                    @if (await Authorization.TienePermiso(User, Permisos.Servicios.Ver))
+                    {
+                        <a class="@NavClass("Servicios")" asp-controller="Servicios" asp-action="Index">
+                            <i class="bi bi-grid me-2"></i>Catálogo Servicios
+                        </a>
+                    }
                     @if (await Authorization.TienePermiso(User, Permisos.Reportes.Conversion))
                     {
                         <a class="@NavClass("Reportes")" asp-controller="Reportes" asp-action="Index">

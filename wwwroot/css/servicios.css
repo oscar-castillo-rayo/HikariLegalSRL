@@ -1,0 +1,72 @@
+.servicios-btn-accion:disabled,
+.servicios-btn-accion.disabled {
+    background-color: #e9ecef;
+    border-color: #e9ecef;
+    color: #adb5bd;
+    opacity: 1;
+    pointer-events: none;
+}
+
+.servicios-btn-guardar {
+    background: #1F3864;
+    color: #fff;
+}
+
+    .servicios-btn-guardar:hover {
+        background: #16294a;
+        color: #fff;
+    }
+
+.servicios-descripcion-preview {
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.servicios-filtros {
+    background: #f8f9fa;
+}
+
+.servicios-form-card {
+    max-width: 720px;
+}
+
+.servicios-tabla tbody td {
+    padding-bottom: .7rem;
+    padding-top: .7rem;
+}
+
+.servicios-tabla thead th {
+    background: #1F3864;
+    border-bottom: none;
+    color: #fff;
+    font-size: .8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.servicios-titulo {
+    color: #1F3864;
+}
+
+@media (max-width: 575.98px) {
+
+    .servicios-btn-guardar,
+    .servicios-form-card .btn-outline-danger {
+        width: 100%;
+    }
+
+    .servicios-form-card {
+        border-radius: 0;
+        box-shadow: none !important;
+    }
+
+    .servicios-tabla {
+        font-size: .875rem;
+    }
+
+    .servicios-titulo {
+        font-size: 1.15rem;
+    }
+}

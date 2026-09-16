@@ -22,6 +22,7 @@ namespace HikariLegalSRL.Data
         public DbSet<Prospecto> Prospectos { get; set; } = null!;
         public DbSet<Cliente> Clientes { get; set; } = null!;
         public DbSet<ActividadSeguimiento> ActividadesSeguimiento { get; set; } = null!;
+        public DbSet<CatalogoServicio> CatalogoServicios { get; set; } = null!;
         public DbSet<BitacoraAuditoria> BitacoraAuditoria { get; set; } = null!;
 
 
@@ -248,6 +249,48 @@ namespace HikariLegalSRL.Data
                 .ToTable(t => t.HasCheckConstraint(
                     "CK_ActividadSeguimiento_TipoActividad",
                     "[TipoActividad] IN ('llamada', 'reunion', 'correo', 'nota', 'propuesta', 'otro')"
+                    ));
+
+            // CatalogoServicio
+            modelBuilder.Entity<CatalogoServicio>()
+                .HasKey(s => s.ServicioId);
+            modelBuilder.Entity<CatalogoServicio>()
+                .Property(s => s.Nombre).HasMaxLength(150);
+            modelBuilder.Entity<CatalogoServicio>()
+                .Property(s => s.AreaCategoria).HasMaxLength(100);
+            modelBuilder.Entity<CatalogoServicio>()
+                .Property(s => s.Descripcion).HasMaxLength(1000);
+            modelBuilder.Entity<CatalogoServicio>()
+                .Property(s => s.PrecioBase).HasColumnType("decimal(14,2)");
+
+            modelBuilder.Entity<CatalogoServicio>()
+                .Property(s => s.TipoServicio)
+                .HasConversion(e => e.ToString().ToLower(),
+                s => (TipoServicio)Enum.Parse(typeof(TipoServicio), s, ignoreCase: true))
+                .HasMaxLength(15);
+
+            modelBuilder.Entity<CatalogoServicio>()
+                .Property(s => s.Estado)
+                .HasConversion(e => e.ToString().ToLower(),
+                s => (EstadoServicio)Enum.Parse(typeof(EstadoServicio), s, ignoreCase: true))
+                .HasMaxLength(10);
+
+            modelBuilder.Entity<CatalogoServicio>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_CatalogoServicio_PrecioBase",
+                    "[PrecioBase] >= 0"
+                    ));
+
+            modelBuilder.Entity<CatalogoServicio>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_CatalogoServicio_TipoServicio",
+                    "[TipoServicio] IN ('ofrecido', 'solicitado')"
+                    ));
+
+            modelBuilder.Entity<CatalogoServicio>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_CatalogoServicio_Estado",
+                    "[Estado] IN ('activo', 'inactivo')"
                     ));
 
             // Bitacora Auditoría
