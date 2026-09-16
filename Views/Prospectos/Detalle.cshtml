@@ -16,8 +16,10 @@
     var puedeEditar = await Authorization.TienePermiso(User, Permisos.Prospectos.Editar);
     var puedeDescartar = await Authorization.TienePermiso(User, Permisos.Prospectos.Descartar);
     var puedeReactivar = await Authorization.TienePermiso(User, Permisos.Prospectos.Reactivar);
+    var puedeConvertir = await Authorization.TienePermiso(User, Permisos.Prospectos.Convertir);
     var esActivo = p.Estado == EstadoProspecto.Activo;
     var esDescartado = p.Estado == EstadoProspecto.Descartado;
+    var esConvertido = p.Estado == EstadoProspecto.Convertido;
     var puedeGestionarSeguimiento = puedeEditar && esActivo;
 
     (string icono, string color, string fondo) EstiloTipo(TipoActividad t) => t switch
@@ -82,6 +84,23 @@
                     <i class="bi bi-arrow-counterclockwise me-1"></i>Reactivar
                 </button>
             </form>
+        }
+        @if (esActivo)
+        {
+            <a asp-action="ConvertirACliente" asp-route-id="@p.Id"
+               class="btn btn-success btn-sm prospectos-btn-accion @(puedeConvertir ? "" : "disabled")"
+               aria-disabled="@(!puedeConvertir)"
+               tabindex="@(puedeConvertir ? "0" : "-1")"
+               onclick="@(puedeConvertir ? null : "return false;")">
+                <i class="bi bi-person-check me-1"></i>Convertir a cliente
+            </a>
+        }
+        @if (esConvertido && p.ClienteConvertidoId is not null)
+        {
+            <a asp-controller="Clientes" asp-action="Detalle" asp-route-id="@p.ClienteConvertidoId"
+               class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-people me-1"></i>Ver en Clientes
+            </a>
         }
     </div>
 </div>
@@ -289,36 +308,47 @@
                         <div class="row g-3">
                             <div class="col-12 col-sm-4">
                                 <label class="form-label" for="formActividadTipo">Tipo de actividad</label>
-                                <select class="form-select" id="formActividadTipo" name="Tipo" required>
+                                <select class="form-select" id="formActividadTipo" name="Tipo"
+                                        data-val="true" data-val-required="El tipo de actividad es requerido">
                                     @foreach (var t in Enum.GetValues<TipoActividad>())
                                     {
                                         <option value="@t">@EtiquetaTipo(t)</option>
                                     }
                                 </select>
+                                <span class="text-danger small" data-valmsg-for="Tipo" data-valmsg-replace="true"></span>
                             </div>
                             <div class="col-12 col-sm-8">
                                 <label class="form-label" for="formActividadTituloInput">Título</label>
                                 <input type="text" class="form-control" id="formActividadTituloInput" name="Titulo"
-                                       maxlength="150" required />
+                                       maxlength="150"
+                                       data-val="true" data-val-required="El título es requerido"
+                                       data-val-length="El título no puede superar los 150 caracteres" data-val-length-max="150" />
+                                <span class="text-danger small" data-valmsg-for="Titulo" data-valmsg-replace="true"></span>
                             </div>
                             <div class="col-12 col-sm-6">
                                 <label class="form-label" for="formActividadFecha">Fecha y hora</label>
-                                <input type="datetime-local" class="form-control" id="formActividadFecha" name="FechaHora" required />
+                                <input type="datetime-local" class="form-control" id="formActividadFecha" name="FechaHora"
+                                       data-val="true" data-val-required="La fecha y hora de la actividad son requeridas" />
+                                <span class="text-danger small" data-valmsg-for="FechaHora" data-valmsg-replace="true"></span>
                             </div>
                             <div class="col-12 col-sm-6">
                                 <label class="form-label" for="formActividadResponsable">Responsable</label>
-                                <select class="form-select" id="formActividadResponsable" name="ResponsableId" required>
+                                <select class="form-select" id="formActividadResponsable" name="ResponsableId"
+                                        data-val="true" data-val-required="El responsable es requerido">
                                     <option value="">-- Seleccione --</option>
                                     @foreach (var u in Model.UsuariosAsignables)
                                     {
                                         <option value="@u.Id">@u.Nombre</option>
                                     }
                                 </select>
+                                <span class="text-danger small" data-valmsg-for="ResponsableId" data-valmsg-replace="true"></span>
                             </div>
                             <div class="col-12">
                                 <label class="form-label" for="formActividadDescripcion">Descripción</label>
                                 <textarea class="form-control" id="formActividadDescripcion" name="Descripcion"
-                                          rows="3" maxlength="1000"></textarea>
+                                          rows="3" maxlength="1000"
+                                          data-val="true" data-val-length="La descripción no puede superar los 1000 caracteres" data-val-length-max="1000"></textarea>
+                                <span class="text-danger small" data-valmsg-for="Descripcion" data-valmsg-replace="true"></span>
                             </div>
                         </div>
                     </div>
@@ -333,5 +363,6 @@
 }
 
 @section Scripts {
+    <partial name="_ValidationScriptsPartial" />
     <script src="~/js/prospectos-seguimiento.js" asp-append-version="true"></script>
 }

@@ -1,0 +1,101 @@
+@model HikariLegalSRL.Models.DTOs.ClienteDetalleDTO
+@using HikariLegalSRL.Models.Enums
+
+@{
+    ViewData["Title"] = Model.NombreEmpresaPersona;
+
+    var (badge, texto) = Model.Estado switch
+    {
+        EstadoCliente.Activo => ("bg-success", "Activo"),
+        EstadoCliente.Inactivo => ("bg-secondary", "Inactivo"),
+        _ => ("bg-secondary", Model.Estado.ToString())
+    };
+
+    var (badgeModalidad, textoModalidad) = Model.ModalidadPago switch
+    {
+        ModalidadPago.Contado => ("bg-success", "Contado"),
+        ModalidadPago.Abono => ("bg-warning text-dark", "Abono"),
+        ModalidadPago.ProBono => ("bg-info text-dark", "Pro Bono"),
+        _ => ("bg-secondary", Model.ModalidadPago.ToString())
+    };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/clientes.css" />
+}
+
+<div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0 fw-bold clientes-titulo">@Model.NombreEmpresaPersona</h4>
+    <span class="badge @badge">@texto</span>
+    <span class="badge @badgeModalidad">@textoModalidad</span>
+
+    @if (Model.ProspectoOrigenId is not null)
+    {
+        <a asp-controller="Prospectos" asp-action="Detalle" asp-route-id="@Model.ProspectoOrigenId"
+           class="ms-sm-auto btn btn-outline-primary btn-sm">
+            <i class="bi bi-person-plus me-1"></i>Ver prospecto de origen
+        </a>
+    }
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 mb-3">
+            <div class="card-header fw-semibold clientes-card-header">Información general</div>
+            <div class="card-body">
+                <dl class="row mb-0 clientes-datos">
+                    <dt class="col-5">Contacto</dt>
+                    <dd class="col-7">@(Model.NombreContacto ?? "—")</dd>
+
+                    <dt class="col-5">Cédula jurídica</dt>
+                    <dd class="col-7">@(Model.CedulaJuridica ?? "—")</dd>
+
+                    <dt class="col-5">Teléfono</dt>
+                    <dd class="col-7">@(Model.Telefono ?? "—")</dd>
+
+                    <dt class="col-5">Correo</dt>
+                    <dd class="col-7">@Model.Correo</dd>
+
+                    <dt class="col-5">Sector</dt>
+                    <dd class="col-7">@(Model.SectorEconomico ?? "—")</dd>
+
+                    <dt class="col-5">Cliente desde</dt>
+                    <dd class="col-7">@Model.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+
+                    <dt class="col-5">Responsable</dt>
+                    <dd class="col-7">@Model.ResponsableNombre</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header fw-semibold clientes-card-header">
+                Ubicación
+                <span class="badge bg-light text-dark border ms-1 text-capitalize">@Model.TipoUbicacion</span>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0 clientes-datos">
+                    <dt class="col-5">País</dt>
+                    <dd class="col-7">@Model.Pais</dd>
+
+                    <dt class="col-5">Provincia</dt>
+                    <dd class="col-7">@(Model.Provincia ?? "—")</dd>
+
+                    <dt class="col-5">Cantón</dt>
+                    <dd class="col-7">@(Model.Canton ?? "—")</dd>
+
+                    <dt class="col-5">Distrito</dt>
+                    <dd class="col-7">@(Model.Distrito ?? "—")</dd>
+
+                    <dt class="col-5">Señas exactas</dt>
+                    <dd class="col-7">@(string.IsNullOrWhiteSpace(Model.SenasExactas) ? "—" : Model.SenasExactas)</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>

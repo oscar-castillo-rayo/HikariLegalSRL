@@ -1,0 +1,103 @@
+@model HikariLegalSRL.ViewModels.Prospectos.ConvertirClienteViewModel
+@using HikariLegalSRL.Models.Enums
+
+@{
+    var p = Model.Prospecto;
+    ViewData["Title"] = "Convertir a cliente";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/prospectos.css" />
+}
+
+<div class="d-flex align-items-center gap-2 mb-4">
+    <a asp-action="Detalle" asp-route-id="@p.Id" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0 fw-bold prospectos-titulo">Convertir a cliente</h4>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card shadow-sm border-0">
+            <div class="card-header fw-semibold prospectos-card-header">Datos del prospecto</div>
+            <div class="card-body">
+                <dl class="row mb-0 prospectos-datos">
+                    <dt class="col-5">Empresa / Persona</dt>
+                    <dd class="col-7">@p.NombreEmpresaPersona</dd>
+
+                    <dt class="col-5">Contacto</dt>
+                    <dd class="col-7">@p.NombreContacto</dd>
+
+                    <dt class="col-5">Cédula jurídica</dt>
+                    <dd class="col-7">@(p.CedulaJuridica ?? "—")</dd>
+
+                    <dt class="col-5">Teléfono</dt>
+                    <dd class="col-7">@p.Telefono</dd>
+
+                    <dt class="col-5">Correo</dt>
+                    <dd class="col-7">@p.Correo</dd>
+
+                    <dt class="col-5">Sector</dt>
+                    <dd class="col-7">@(p.Sector ?? "—")</dd>
+
+                    <dt class="col-5">Ubicación</dt>
+                    <dd class="col-7">
+                        @p.Pais
+                        @if (!string.IsNullOrEmpty(p.Provincia))
+                        {
+                            <text> · @p.Provincia</text>
+                        }
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0 prospectos-form-card">
+            <div class="card-header fw-semibold prospectos-card-header">Datos del cliente</div>
+            <div class="card-body p-3 p-md-4">
+                <form asp-action="ConvertirACliente" asp-route-id="@p.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-3"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Cliente.ModalidadPago" class="form-label fw-semibold">Modalidad de pago</label>
+                            <select asp-for="Cliente.ModalidadPago" class="form-select">
+                                <option value="">-- Seleccione --</option>
+                                <option value="@ModalidadPago.Contado">Contado</option>
+                                <option value="@ModalidadPago.Abono">Abono</option>
+                                <option value="@ModalidadPago.ProBono">Pro Bono</option>
+                            </select>
+                            <span asp-validation-for="Cliente.ModalidadPago" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Cliente.ResponsableId" class="form-label fw-semibold">Abogado/Asesor responsable</label>
+                            <select asp-for="Cliente.ResponsableId" class="form-select">
+                                <option value="">-- Seleccione --</option>
+                                @foreach (var r in Model.Responsables)
+                                {
+                                    <option value="@r.Id">@r.Nombre</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Cliente.ResponsableId" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-column flex-sm-row justify-content-sm-end gap-2 mt-4">
+                        <a asp-action="Detalle" asp-route-id="@p.Id" class="btn btn-outline-danger order-2 order-sm-1">Cancelar</a>
+                        <button type="submit" class="btn text-white fw-semibold px-4 order-1 order-sm-2 prospectos-btn-guardar">
+                            <i class="bi bi-person-check me-1"></i>Convertir a cliente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

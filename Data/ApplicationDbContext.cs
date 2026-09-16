@@ -20,6 +20,7 @@ namespace HikariLegalSRL.Data
         public DbSet<Distrito> Distritos { get; set; } = null!;
         public DbSet<Direccion> Direcciones { get; set; } = null!;
         public DbSet<Prospecto> Prospectos { get; set; } = null!;
+        public DbSet<Cliente> Clientes { get; set; } = null!;
         public DbSet<ActividadSeguimiento> ActividadesSeguimiento { get; set; } = null!;
         public DbSet<BitacoraAuditoria> BitacoraAuditoria { get; set; } = null!;
 
@@ -144,6 +145,72 @@ namespace HikariLegalSRL.Data
                 .ToTable(t => t.HasCheckConstraint(
                     "CK_Prospecto_Estado",
                     "[Estado] IN ('activo', 'convertido', 'descartado')"
+                    ));
+
+            // Cliente
+            modelBuilder.Entity<Cliente>()
+                .Property(c => c.NombreEmpresaPersona).HasMaxLength(200);
+            modelBuilder.Entity<Cliente>()
+                .Property(c => c.NombreContacto).HasMaxLength(150);
+            modelBuilder.Entity<Cliente>()
+                .Property(c => c.CedulaJuridica).HasMaxLength(30);
+            modelBuilder.Entity<Cliente>()
+                .Property(c => c.Telefono).HasMaxLength(30);
+            modelBuilder.Entity<Cliente>()
+                .Property(c => c.Correo).HasMaxLength(150);
+            modelBuilder.Entity<Cliente>()
+                .Property(c => c.SectorEconomico).HasMaxLength(100);
+
+            modelBuilder.Entity<Cliente>()
+                .Property(c => c.ModalidadPago)
+                .HasConversion(
+                    m => m == ModalidadPago.ProBono ? "pro_bono" : m.ToString().ToLower(),
+                    s => s == "pro_bono" ? ModalidadPago.ProBono : (ModalidadPago)Enum.Parse(typeof(ModalidadPago), s, true))
+                .HasMaxLength(15);
+
+            modelBuilder.Entity<Cliente>()
+                .Property(c => c.Estado)
+                .HasConversion(e => e.ToString().ToLower(),
+                s => (EstadoCliente)Enum.Parse(typeof(EstadoCliente), s, ignoreCase: true))
+                .HasMaxLength(10);
+
+            modelBuilder.Entity<Cliente>()
+                .HasOne(c => c.ProspectoOrigen)
+                .WithMany()
+                .HasForeignKey(c => c.ProspectoOrigenId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Cliente>()
+                .HasOne(c => c.Direccion)
+                .WithMany()
+                .HasForeignKey(c => c.DireccionId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Cliente>()
+                .HasOne(c => c.Responsable)
+                .WithMany()
+                .HasForeignKey(c => c.ResponsableId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Cliente>()
+                .HasIndex(c => c.Correo)
+                .IsUnique();
+
+            modelBuilder.Entity<Cliente>()
+                .HasIndex(c => c.ProspectoOrigenId)
+                .IsUnique()
+                .HasFilter("[ProspectoOrigenId] IS NOT NULL");
+
+            modelBuilder.Entity<Cliente>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_Cliente_ModalidadPago",
+                    "[ModalidadPago] IN ('contado', 'abono', 'pro_bono')"
+                    ));
+
+            modelBuilder.Entity<Cliente>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_Cliente_Estado",
+                    "[Estado] IN ('activo', 'inactivo')"
                     ));
 
             // ActividadesSeguimiento

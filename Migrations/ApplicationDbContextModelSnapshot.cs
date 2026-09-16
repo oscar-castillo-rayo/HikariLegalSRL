@@ -257,6 +257,84 @@ namespace HikariLegalSRL.Migrations
                     b.ToTable("Cantones");
                 });
 
+            modelBuilder.Entity("HikariLegalSRL.Models.Cliente", b =>
+                {
+                    b.Property<int>("ClienteId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ClienteId"));
+
+                    b.Property<string>("CedulaJuridica")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Correo")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("DireccionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModalidadPago")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<string>("NombreContacto")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("NombreEmpresaPersona")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("ProspectoOrigenId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ResponsableId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SectorEconomico")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Telefono")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.HasKey("ClienteId");
+
+                    b.HasIndex("Correo")
+                        .IsUnique();
+
+                    b.HasIndex("DireccionId");
+
+                    b.HasIndex("ProspectoOrigenId")
+                        .IsUnique()
+                        .HasFilter("[ProspectoOrigenId] IS NOT NULL");
+
+                    b.HasIndex("ResponsableId");
+
+                    b.ToTable("Clientes", t =>
+                        {
+                            t.HasCheckConstraint("CK_Cliente_Estado", "[Estado] IN ('activo', 'inactivo')");
+
+                            t.HasCheckConstraint("CK_Cliente_ModalidadPago", "[ModalidadPago] IN ('contado', 'abono', 'pro_bono')");
+                        });
+                });
+
             modelBuilder.Entity("HikariLegalSRL.Models.Direccion", b =>
                 {
                     b.Property<int>("DireccionId")
@@ -605,6 +683,32 @@ namespace HikariLegalSRL.Migrations
                         .IsRequired();
 
                     b.Navigation("Provincia");
+                });
+
+            modelBuilder.Entity("HikariLegalSRL.Models.Cliente", b =>
+                {
+                    b.HasOne("HikariLegalSRL.Models.Direccion", "Direccion")
+                        .WithMany()
+                        .HasForeignKey("DireccionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("HikariLegalSRL.Models.Prospecto", "ProspectoOrigen")
+                        .WithMany()
+                        .HasForeignKey("ProspectoOrigenId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("HikariLegalSRL.Models.ApplicationUser", "Responsable")
+                        .WithMany()
+                        .HasForeignKey("ResponsableId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Direccion");
+
+                    b.Navigation("ProspectoOrigen");
+
+                    b.Navigation("Responsable");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Direccion", b =>

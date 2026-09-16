@@ -16,6 +16,7 @@ namespace HikariLegalSRL.Models.DTOs
         public EstadoProspecto Estado { get; set; }
         public DateTime FechaCreacion { get; set; }
         public string CreadoPor { get; set; } = null!;
+        public int? ClienteConvertidoId { get; set; }
 
         public string TipoUbicacion { get; set; } = null!;
         public string Pais { get; set; } = null!;
