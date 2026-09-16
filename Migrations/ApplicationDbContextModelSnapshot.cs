@@ -257,6 +257,53 @@ namespace HikariLegalSRL.Migrations
                     b.ToTable("Cantones");
                 });
 
+            modelBuilder.Entity("HikariLegalSRL.Models.CatalogoServicio", b =>
+                {
+                    b.Property<int>("ServicioId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ServicioId"));
+
+                    b.Property<string>("AreaCategoria")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<decimal>("PrecioBase")
+                        .HasColumnType("decimal(14,2)");
+
+                    b.Property<string>("TipoServicio")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.HasKey("ServicioId");
+
+                    b.ToTable("CatalogoServicios", t =>
+                        {
+                            t.HasCheckConstraint("CK_CatalogoServicio_Estado", "[Estado] IN ('activo', 'inactivo')");
+
+                            t.HasCheckConstraint("CK_CatalogoServicio_PrecioBase", "[PrecioBase] >= 0");
+
+                            t.HasCheckConstraint("CK_CatalogoServicio_TipoServicio", "[TipoServicio] IN ('ofrecido', 'solicitado')");
+                        });
+                });
+
             modelBuilder.Entity("HikariLegalSRL.Models.Cliente", b =>
                 {
                     b.Property<int>("ClienteId")

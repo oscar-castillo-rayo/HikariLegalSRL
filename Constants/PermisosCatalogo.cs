@@ -75,6 +75,18 @@ namespace HikariLegalSRL.Constants
             },
             new PermisoModulo
             {
+                Nombre = "Servicios",
+                Acciones = new()
+                {
+                    new() { Codigo = "servicios.ver",        Nombre = "Consultar",           Descripcion = "Ver catálogo de servicios" },
+                    new() { Codigo = "servicios.crear",      Nombre = "Crear",               Descripcion = "Registrar nuevo servicio en el catálogo" },
+                    new() { Codigo = "servicios.editar",     Nombre = "Editar",              Descripcion = "Modificar datos de un servicio" },
+                    new() { Codigo = "servicios.desactivar", Nombre = "Desactivar",          Descripcion = "Eliminación lógica del servicio" },
+                    new() { Codigo = "servicios.reactivar",  Nombre = "Reactivar",           Descripcion = "Reactivar un servicio desactivado" },
+                }
+            },
+            new PermisoModulo
+            {
                 Nombre = "Propuestas",
                 Acciones = new()
                 {

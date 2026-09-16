@@ -48,6 +48,7 @@ builder.Services.AddScoped<IGeografiaService, GeografiaService>();
 builder.Services.AddScoped<IProspectoService, ProspectoService>();
 builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<IActividadSeguimientoService, ActividadSeguimientoService>();
+builder.Services.AddScoped<IServicioService, ServicioService>();
 
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 {
