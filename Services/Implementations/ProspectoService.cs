@@ -162,6 +162,10 @@ namespace HikariLegalSRL.Services.Implementations
                     Estado = p.Estado,
                     FechaCreacion = p.FechaCreacion,
                     CreadoPor = p.UsuarioCreador.NombreCompleto,
+                    ClienteConvertidoId = _context.Clientes
+                        .Where(c => c.ProspectoOrigenId == p.ProspectoId)
+                        .Select(c => (int?)c.ClienteId)
+                        .FirstOrDefault(),
                     TipoUbicacion = p.Direccion.TipoUbicacion,
                     Pais = p.Direccion.Pais.Nombre,
                     Provincia = p.Direccion.Distrito != null ? p.Direccion.Distrito.Canton.Provincia.Nombre : null,

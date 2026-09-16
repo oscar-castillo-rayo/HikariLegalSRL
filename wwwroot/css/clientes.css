@@ -1,0 +1,48 @@
+.clientes-card-header {
+    background: #EAF0FB;
+    color: #1F3864;
+}
+
+.clientes-datos dd {
+    margin-bottom: .5rem;
+}
+
+.clientes-datos dt {
+    color: #6c757d;
+    font-size: .8125rem;
+    font-weight: 500;
+    margin-bottom: .5rem;
+}
+
+.clientes-filtros {
+    background: #f8f9fa;
+}
+
+.clientes-tabla tbody td {
+    padding-bottom: .7rem;
+    padding-top: .7rem;
+}
+
+.clientes-tabla thead th {
+    background: #1F3864;
+    border-bottom: none;
+    color: #fff;
+    font-size: .8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.clientes-titulo {
+    color: #1F3864;
+}
+
+@media (max-width: 575.98px) {
+
+    .clientes-tabla {
+        font-size: .875rem;
+    }
+
+    .clientes-titulo {
+        font-size: 1.15rem;
+    }
+}
