@@ -1,0 +1,201 @@
+@model HikariLegalSRL.ViewModels.Expedientes.ExpedienteDetalleViewModel
+@using HikariLegalSRL.Models.Enums
+
+@{
+    var e = Model.Expediente;
+    ViewData["Title"] = $"Expediente #{e.Id}";
+    var (bc, bt) = e.Estado switch
+    {
+        EstadoExpediente.Abierto => ("success", "Abierto"),
+        EstadoExpediente.Cerrado => ("secondary", "Cerrado"),
+        _ => ("secondary", e.Estado.ToString())
+    };
+    var puedeAgregarTarea = await Authorization.TienePermiso(User, Permisos.Expedientes.Crear) && e.Estado == EstadoExpediente.Abierto;
+
+    var diasRestantes = (e.PlazoComprometido.Date - DateTime.Today).Days;
+    var claseDias = diasRestantes < 0 ? "bg-danger" : diasRestantes <= 2 ? "bg-warning text-dark" : "bg-light text-dark border";
+    var textoDias = diasRestantes < 0 ? $"{Math.Abs(diasRestantes)} día(s) vencido" : $"{diasRestantes} día(s) restantes";
+
+    var columnas = new[]
+    {
+        ("Pendiente", "secondary", EstadoTarea.Pendiente),
+        ("En proceso", "primary", EstadoTarea.EnProceso),
+        ("Lista para revisión", "warning text-dark", EstadoTarea.ListaRevision),
+        ("Aprobada", "success", EstadoTarea.Aprobada),
+        ("Devuelta", "danger", EstadoTarea.Devuelta),
+    };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/expedientes.css" />
+}
+
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+        <h4 class="mb-0 fw-bold expedientes-titulo">Expediente #@e.Id — @e.ClienteNombre</h4>
+        <small class="text-muted">
+            Responsable: @e.ResponsableNombre ·
+            Propuesta origen:
+            <a asp-controller="Propuestas" asp-action="Detalle" asp-route-id="@e.PropuestaId">#@e.PropuestaId</a>
+        </small>
+    </div>
+
+    <div class="ms-sm-auto d-flex flex-wrap align-items-center gap-2">
+        <span class="badge bg-@bc">@bt</span>
+        @if (e.Estado == EstadoExpediente.Abierto)
+        {
+            <span class="badge fs-6 @claseDias">
+                <i class="bi bi-calendar-event me-1"></i>@e.PlazoComprometido.ToString("dd/MM/yyyy") (@textoDias)
+            </span>
+        }
+        else
+        {
+            <span class="badge fs-6 bg-light text-dark border">
+                <i class="bi bi-calendar-event me-1"></i>@e.PlazoComprometido.ToString("dd/MM/yyyy")
+            </span>
+        }
+        @if (puedeAgregarTarea)
+        {
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevaTarea">
+                <i class="bi bi-plus-lg me-1"></i>Agregar tarea
+            </button>
+        }
+    </div>
+</div>
+
+<div class="row g-3 expedientes-kanban">
+    @foreach (var (titulo, color, estadoCol) in columnas)
+    {
+        var tareasCol = e.Tareas.Where(t => t.Estado == estadoCol).ToList();
+        <div class="col-12 col-sm-6 col-lg">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-header fw-bold d-flex justify-content-between align-items-center text-white bg-@color">
+                    <span>@titulo</span>
+                    <span class="badge bg-white text-dark">@tareasCol.Count</span>
+                </div>
+                <div class="card-body p-2 expedientes-kanban-col">
+                    @if (tareasCol.Count == 0)
+                    {
+                        <p class="text-center text-muted small py-4 mb-0">Sin tareas</p>
+                    }
+                    @foreach (var t in tareasCol)
+                    {
+                        var (colorP, textoP) = t.Prioridad switch
+                        {
+                            PrioridadTarea.Alta => ("danger", "Alta"),
+                            PrioridadTarea.Media => ("warning text-dark", "Media"),
+                            PrioridadTarea.Baja => ("success", "Baja"),
+                            _ => ("secondary", t.Prioridad.ToString())
+                        };
+                        var vencida = t.Estado != EstadoTarea.Aprobada && t.FechaLimite.Date < DateTime.Today;
+                        <div class="card mb-2 expedientes-kanban-card @(vencida ? "border-danger" : "")">
+                            <div class="card-body p-2">
+                                <div class="d-flex justify-content-between align-items-start gap-1 mb-1">
+                                    <p class="mb-0 fw-semibold small">@t.Descripcion</p>
+                                    <span class="badge bg-@colorP flex-shrink-0" style="font-size:10px;">@textoP</span>
+                                </div>
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-person me-1"></i>@t.ColaboradorNombre
+                                </small>
+                                <small class="d-block @(vencida ? "text-danger fw-bold" : "text-muted")">
+                                    <i class="bi bi-calendar-event me-1"></i>@t.FechaLimite.ToString("dd/MM/yyyy")
+                                    @if (vencida)
+                                    {
+                                        <i class="bi bi-exclamation-triangle-fill ms-1" title="Vencida"></i>
+                                    }
+                                </small>
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-clock me-1"></i>@t.HorasEstimadas.ToString("0.##") hrs estimadas
+                                </small>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+<p class="text-muted small mt-2">
+    <i class="bi bi-info-circle me-1"></i>
+    Mover tareas entre columnas y aprobar/devolver entregables se habilita en la siguiente historia (tablero Kanban interactivo).
+</p>
+
+@if (puedeAgregarTarea)
+{
+    <div class="modal fade" id="modalNuevaTarea" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form asp-action="AgregarTarea" asp-route-id="@e.Id" method="post" id="formNuevaTarea"
+                  data-plazo-comprometido="@e.PlazoComprometido.ToString("yyyy-MM-dd")" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-content">
+                    <div class="modal-header expedientes-card-header">
+                        <h5 class="modal-title">Agregar tarea</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info py-2 small">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Plazo comprometido del expediente: <strong>@e.PlazoComprometido.ToString("dd/MM/yyyy")</strong>.
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label asp-for="NuevaTarea.Descripcion" class="form-label fw-semibold">Descripción</label>
+                                <textarea asp-for="NuevaTarea.Descripcion" class="form-control" rows="3"
+                                          placeholder="Describe qué debe hacer el colaborador..."></textarea>
+                                <span asp-validation-for="NuevaTarea.Descripcion" class="text-danger small"></span>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="NuevaTarea.ColaboradorResponsableId" class="form-label fw-semibold">Colaborador responsable</label>
+                                <select asp-for="NuevaTarea.ColaboradorResponsableId" class="form-select">
+                                    <option value="">-- Seleccione --</option>
+                                    @foreach (var c in Model.Colaboradores)
+                                    {
+                                        <option value="@c.Id">@c.Nombre</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="NuevaTarea.ColaboradorResponsableId" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="NuevaTarea.FechaLimite" class="form-label fw-semibold">Fecha límite</label>
+                                <input asp-for="NuevaTarea.FechaLimite" id="nuevaTareaFechaLimite" class="form-control" type="date" />
+                                <span asp-validation-for="NuevaTarea.FechaLimite" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="NuevaTarea.HorasEstimadas" class="form-label fw-semibold">Horas estimadas</label>
+                                <div class="input-group">
+                                    <input asp-for="NuevaTarea.HorasEstimadas" class="form-control" type="number" min="0.5" step="0.5" />
+                                    <span class="input-group-text">hrs</span>
+                                </div>
+                                <span asp-validation-for="NuevaTarea.HorasEstimadas" class="text-danger small"></span>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="NuevaTarea.Prioridad" class="form-label fw-semibold">Prioridad</label>
+                                <select asp-for="NuevaTarea.Prioridad" class="form-select">
+                                    <option value="">-- Seleccione --</option>
+                                    <option value="@PrioridadTarea.Baja">Baja</option>
+                                    <option value="@PrioridadTarea.Media" selected>Media</option>
+                                    <option value="@PrioridadTarea.Alta">Alta</option>
+                                </select>
+                                <span asp-validation-for="NuevaTarea.Prioridad" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn text-white fw-semibold expedientes-btn-guardar">
+                            <i class="bi bi-check-lg me-1"></i>Guardar tarea
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/expedientes-tarea.js" asp-append-version="true"></script>
+}

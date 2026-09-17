@@ -24,7 +24,7 @@ namespace HikariLegalSRL.Services.Interfaces
 
         Task MarcarComoEnviada(int id, string usuarioActualId);
 
-        Task MarcarComoAceptada(int id, string usuarioActualId);
+        Task<int> MarcarComoAceptada(int id, string usuarioActualId);
 
         Task MarcarComoRechazada(int id, string usuarioActualId);
     }
