@@ -12,7 +12,7 @@ namespace HikariLegalSRL.Services.Interfaces
 
         Task<List<ServicioOpcionDTO>> ObtenerServiciosActivos();
 
-        Task<List<PropuestaListaDTO>> Listar(EstadoPropuesta? estado);
+        Task<List<PropuestaListaDTO>> Listar(string? buscar, EstadoPropuesta? estado);
 
         Task<PropuestaDetalleDTO?> ObtenerDetalle(int id);
 
@@ -21,5 +21,11 @@ namespace HikariLegalSRL.Services.Interfaces
         Task<PropuestaEditViewModel?> ObtenerParaEditar(int id);
 
         Task Editar(int id, PropuestaEdicionDTO dto, string usuarioActualId);
+
+        Task MarcarComoEnviada(int id, string usuarioActualId);
+
+        Task MarcarComoAceptada(int id, string usuarioActualId);
+
+        Task MarcarComoRechazada(int id, string usuarioActualId);
     }
 }

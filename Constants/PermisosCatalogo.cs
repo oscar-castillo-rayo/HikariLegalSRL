@@ -93,8 +93,9 @@ namespace HikariLegalSRL.Constants
                     new() { Codigo = "propuestas.ver",     Nombre = "Consultar",       Descripcion = "Ver listado y detalle de propuestas" },
                     new() { Codigo = "propuestas.crear",   Nombre = "Crear",           Descripcion = "Crear propuesta en estado borrador" },
                     new() { Codigo = "propuestas.editar",  Nombre = "Editar",          Descripcion = "Modificar una propuesta en borrador" },
-                    new() { Codigo = "propuestas.enviar",  Nombre = "Enviar",          Descripcion = "Marcar la propuesta como enviada al cliente" },
-                    new() { Codigo = "propuestas.aceptar", Nombre = "Aceptar/Rechazar", Descripcion = "Registrar la respuesta del cliente" },
+                    new() { Codigo = "propuestas.enviar",   Nombre = "Enviar",   Descripcion = "Marcar la propuesta como enviada al cliente" },
+                    new() { Codigo = "propuestas.aceptar",  Nombre = "Aceptar",  Descripcion = "Registrar la aceptación de la propuesta y abrir el expediente" },
+                    new() { Codigo = "propuestas.rechazar", Nombre = "Rechazar", Descripcion = "Registrar el rechazo de la propuesta" },
                 }
             },
             new PermisoModulo

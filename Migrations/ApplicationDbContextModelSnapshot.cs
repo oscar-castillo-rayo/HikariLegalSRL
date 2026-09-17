@@ -449,6 +449,53 @@ namespace HikariLegalSRL.Migrations
                     b.ToTable("Distritos");
                 });
 
+            modelBuilder.Entity("HikariLegalSRL.Models.Expediente", b =>
+                {
+                    b.Property<int>("ExpedienteId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ExpedienteId"));
+
+                    b.Property<int>("ClienteId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<DateTime>("FechaApertura")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaCierre")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("PlazoComprometido")
+                        .HasColumnType("date");
+
+                    b.Property<int>("PropuestaId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ResponsableId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("ExpedienteId");
+
+                    b.HasIndex("ClienteId");
+
+                    b.HasIndex("PropuestaId")
+                        .IsUnique();
+
+                    b.HasIndex("ResponsableId");
+
+                    b.ToTable("Expedientes", t =>
+                        {
+                            t.HasCheckConstraint("CK_Expediente_Estado", "[Estado] IN ('abierto', 'cerrado')");
+                        });
+                });
+
             modelBuilder.Entity("HikariLegalSRL.Models.Pais", b =>
                 {
                     b.Property<int>("PaisId")
@@ -899,6 +946,33 @@ namespace HikariLegalSRL.Migrations
                         .IsRequired();
 
                     b.Navigation("Canton");
+                });
+
+            modelBuilder.Entity("HikariLegalSRL.Models.Expediente", b =>
+                {
+                    b.HasOne("HikariLegalSRL.Models.Cliente", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("HikariLegalSRL.Models.Propuesta", "Propuesta")
+                        .WithMany()
+                        .HasForeignKey("PropuestaId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("HikariLegalSRL.Models.ApplicationUser", "Responsable")
+                        .WithMany()
+                        .HasForeignKey("ResponsableId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Cliente");
+
+                    b.Navigation("Propuesta");
+
+                    b.Navigation("Responsable");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Propuesta", b =>

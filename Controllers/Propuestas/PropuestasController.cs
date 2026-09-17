@@ -30,12 +30,13 @@ namespace HikariLegalSRL.Controllers.Propuestas
         }
 
         [Permiso(Permisos.Propuestas.Ver)]
-        public async Task<IActionResult> Index(EstadoPropuesta? estado)
+        public async Task<IActionResult> Index(string? buscar, EstadoPropuesta? estado)
         {
             var viewModel = new PropuestaIndexViewModel
             {
+                Buscar = buscar,
                 EstadoFiltro = estado,
-                Propuestas = await _propuestaService.Listar(estado)
+                Propuestas = await _propuestaService.Listar(buscar, estado)
             };
 
             return View(viewModel);
@@ -147,6 +148,69 @@ namespace HikariLegalSRL.Controllers.Propuestas
                 model.Servicios = await _propuestaService.ObtenerServiciosActivos();
                 return View(model);
             }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Propuestas.Enviar)]
+        public async Task<IActionResult> MarcarComoEnviada(int id)
+        {
+            var usuarioActualId = _userManager.GetUserId(User)!;
+
+            try
+            {
+                await _propuestaService.MarcarComoEnviada(id, usuarioActualId);
+                TempData["Exito"] = "Propuesta marcada como enviada.";
+            }
+            catch (ReglaNegocioException ex)
+            {
+                _logger.LogWarning(ex, "Error de regla de negocio al enviar propuesta {PropuestaId}", id);
+                TempData["Error"] = ex.Message;
+            }
+
+            return RedirectToAction(nameof(Detalle), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Propuestas.Aceptar)]
+        public async Task<IActionResult> MarcarComoAceptada(int id)
+        {
+            var usuarioActualId = _userManager.GetUserId(User)!;
+
+            try
+            {
+                await _propuestaService.MarcarComoAceptada(id, usuarioActualId);
+                TempData["Exito"] = "Propuesta aceptada. Se abrió el expediente correspondiente.";
+            }
+            catch (ReglaNegocioException ex)
+            {
+                _logger.LogWarning(ex, "Error de regla de negocio al aceptar propuesta {PropuestaId}", id);
+                TempData["Error"] = ex.Message;
+            }
+
+            return RedirectToAction(nameof(Detalle), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Propuestas.Rechazar)]
+        public async Task<IActionResult> MarcarComoRechazada(int id)
+        {
+            var usuarioActualId = _userManager.GetUserId(User)!;
+
+            try
+            {
+                await _propuestaService.MarcarComoRechazada(id, usuarioActualId);
+                TempData["Exito"] = "Propuesta marcada como rechazada.";
+            }
+            catch (ReglaNegocioException ex)
+            {
+                _logger.LogWarning(ex, "Error de regla de negocio al rechazar propuesta {PropuestaId}", id);
+                TempData["Error"] = ex.Message;
+            }
+
+            return RedirectToAction(nameof(Detalle), new { id });
         }
     }
 }
