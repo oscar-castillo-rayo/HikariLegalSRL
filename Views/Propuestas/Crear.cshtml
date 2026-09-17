@@ -1,0 +1,138 @@
+@model HikariLegalSRL.ViewModels.Propuestas.PropuestaCreateViewModel
+@using HikariLegalSRL.Models.Enums
+
+@{
+    ViewData["Title"] = "Nueva propuesta";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/propuestas.css" />
+}
+
+<div class="d-flex align-items-center gap-2 mb-4">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0 fw-bold propuestas-titulo">Nueva propuesta</h4>
+</div>
+
+<form asp-action="Crear" method="post" novalidate id="formPropuesta">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-3"></div>
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header fw-bold propuestas-card-header">Datos generales</div>
+                <div class="card-body row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Prospecto</label>
+                        <select asp-for="Propuesta.ProspectoId" id="selectProspecto" class="form-select">
+                            <option value="">-- Ninguno --</option>
+                            @foreach (var p in Model.Prospectos)
+                            {
+                                <option value="@p.Id">@p.Nombre</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Cliente</label>
+                        <select asp-for="Propuesta.ClienteId" id="selectCliente" class="form-select">
+                            <option value="">-- Ninguno --</option>
+                            @foreach (var c in Model.Clientes)
+                            {
+                                <option value="@c.Id">@c.Nombre</option>
+                            }
+                        </select>
+                        <small class="text-muted">Seleccione prospecto o cliente, no ambos.</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Propuesta.Moneda" class="form-label fw-semibold">Moneda</label>
+                        <select asp-for="Propuesta.Moneda" class="form-select">
+                            <option value="">-- Seleccione --</option>
+                            <option value="@Moneda.Colones">Colones (₡)</option>
+                            <option value="@Moneda.Dolares">Dólares ($)</option>
+                        </select>
+                        <span asp-validation-for="Propuesta.Moneda" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Propuesta.PlazoDias" class="form-label fw-semibold">Plazo de entrega</label>
+                        <div class="input-group">
+                            <input asp-for="Propuesta.PlazoDias" class="form-control" type="number" />
+                            <span class="input-group-text">días</span>
+                        </div>
+                        <span asp-validation-for="Propuesta.PlazoDias" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Propuesta.ModalidadPago" class="form-label fw-semibold">Modalidad de pago</label>
+                        <select asp-for="Propuesta.ModalidadPago" class="form-select">
+                            <option value="">-- Seleccione --</option>
+                            <option value="@ModalidadPago.Contado">Contado</option>
+                            <option value="@ModalidadPago.Abono">Abono</option>
+                            <option value="@ModalidadPago.ProBono">Pro Bono</option>
+                        </select>
+                        <span asp-validation-for="Propuesta.ModalidadPago" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Propuesta.DescripcionGeneral" class="form-label fw-semibold">Descripción general</label>
+                        <textarea asp-for="Propuesta.DescripcionGeneral" class="form-control" rows="3"
+                                  placeholder="Descripción general de la propuesta..."></textarea>
+                        <span asp-validation-for="Propuesta.DescripcionGeneral" class="text-danger small"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header fw-bold d-flex justify-content-between align-items-center propuestas-card-header">
+                    <span>Servicios incluidos</span>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="btnAgregarServicio">
+                        <i class="bi bi-plus-lg me-1"></i>Agregar servicio
+                    </button>
+                </div>
+                <div class="card-body p-2">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0" id="tablaServicios">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Servicio</th>
+                                    <th>Descripción personalizada</th>
+                                    <th>Precio</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="cuerpoItems"></tbody>
+                            <tfoot>
+                                <tr class="table-light fw-bold">
+                                    <td colspan="2" class="text-end">Total:</td>
+                                    <td id="totalPropuesta">0.00</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <select id="templateServicios" class="d-none">
+                        @foreach (var s in Model.Servicios)
+                        {
+                            <option value="@s.Id" data-precio="@s.PrecioBase.ToString(System.Globalization.CultureInfo.InvariantCulture)">@s.Nombre</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex flex-column flex-sm-row justify-content-sm-end gap-2 mt-4">
+        <a asp-action="Index" class="btn btn-outline-danger order-2 order-sm-1">Cancelar</a>
+        <button type="submit" class="btn text-white fw-semibold px-4 order-1 order-sm-2 propuestas-btn-guardar">
+            <i class="bi bi-check-lg me-1"></i>Guardar propuesta
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/propuestas-crear.js" asp-append-version="true"></script>
+}
