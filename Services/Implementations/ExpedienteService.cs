@@ -48,6 +48,15 @@ namespace HikariLegalSRL.Services.Implementations
         private static decimal CombinarHorasMinutos(int? horas, int? minutos)
             => Math.Round((horas ?? 0) + (minutos ?? 0) / 60m, 2);
 
+        // Ronda que corresponde al trabajo actual: mientras la tarea está en proceso (o recién
+        // devuelta) es la ronda siguiente a la última entregada; mientras está en revisión es la
+        // ronda del entregable que se está evaluando.
+        private static int RondaActual(Tarea tarea)
+        {
+            var ultimaRonda = tarea.Entregables.Count == 0 ? 0 : tarea.Entregables.Max(e => e.RondaRevision);
+            return tarea.Estado == EstadoTarea.ListaRevision ? ultimaRonda : ultimaRonda + 1;
+        }
+
         private async Task<bool> PuedeGestionarTareaAjenaAsync(string usuarioActualId)
         {
             var usuarioActual = await _context.Users.FindAsync(usuarioActualId);
@@ -84,6 +93,7 @@ namespace HikariLegalSRL.Services.Implementations
                 .Include(e => e.Responsable)
                 .Include(e => e.Tareas).ThenInclude(t => t.ColaboradorResponsable)
                 .Include(e => e.Tareas).ThenInclude(t => t.Entregables)
+                .Include(e => e.Tareas).ThenInclude(t => t.RegistrosHoras)
                 .FirstOrDefaultAsync(e => e.ExpedienteId == id);
 
             if (expediente is null)
@@ -118,14 +128,19 @@ namespace HikariLegalSRL.Services.Implementations
                                 .OrderByDescending(en => en.RondaRevision)
                                 .Select(en => (int?)en.EntregableId)
                                 .FirstOrDefault(),
-                            HorasReales = t.Entregables
-                                .OrderByDescending(en => en.RondaRevision)
-                                .Select(en => (decimal?)en.HorasReales)
-                                .FirstOrDefault(),
                             TieneArchivoAdjunto = t.Entregables
                                 .OrderByDescending(en => en.RondaRevision)
                                 .Select(en => en.ArchivoRuta)
-                                .FirstOrDefault() != null
+                                .FirstOrDefault() != null,
+                            HorasColaborador = Math.Round((t.RegistrosHoras
+                                .Where(r => r.Rol == RolHoras.Colaborador)
+                                .Sum(r => (int?)r.Minutos) ?? 0) / 60m, 2),
+                            HorasRevisor = Math.Round((t.RegistrosHoras
+                                .Where(r => r.Rol == RolHoras.Revisor)
+                                .Sum(r => (int?)r.Minutos) ?? 0) / 60m, 2),
+                            HorasRondaActual = Math.Round((t.RegistrosHoras
+                                .Where(r => r.Rol == RolHoras.Colaborador && r.RondaRevision == RondaActual(t))
+                                .Sum(r => (int?)r.Minutos) ?? 0) / 60m, 2)
                         }).ToList()
                 },
                 Colaboradores = await ObtenerColaboradoresActivos(),
@@ -284,9 +299,15 @@ namespace HikariLegalSRL.Services.Implementations
             if (tarea.ColaboradorResponsableId != usuarioActualId && !await PuedeGestionarTareaAjenaAsync(usuarioActualId))
                 throw new ReglaNegocioException("Solo el colaborador asignado puede completar esta tarea.");
 
-            var horasReales = CombinarHorasMinutos(dto.Horas, dto.Minutos);
-            if (horasReales <= 0)
-                throw new ReglaNegocioException("Debe registrar las horas reales trabajadas antes de enviar a revisión.");
+            var rondaActual = RondaActual(tarea);
+            var minutosRonda = await _context.RegistrosHoras
+                .Where(r => r.TareaId == tareaId && r.RondaRevision == rondaActual && r.Rol == RolHoras.Colaborador)
+                .SumAsync(r => (int?)r.Minutos) ?? 0;
+
+            if (minutosRonda <= 0)
+                throw new ReglaNegocioException("Debe registrar tiempo trabajado en esta ronda (con el botón + de horas) antes de enviar a revisión.");
+
+            var horasReales = Math.Round(minutosRonda / 60m, 2);
 
             var archivo = dto.Archivo;
             if (archivo is not null)
@@ -302,7 +323,7 @@ namespace HikariLegalSRL.Services.Implementations
             var entregable = new Entregable
             {
                 TareaId = tareaId,
-                RondaRevision = tarea.Entregables.Count + 1,
+                RondaRevision = rondaActual,
                 HorasReales = horasReales,
                 TipoEntregable = TipoEntregable.Preliminar,
                 CargadoPorId = usuarioActualId,
@@ -336,7 +357,57 @@ namespace HikariLegalSRL.Services.Implementations
                 moduloAfectado: "Expedientes",
                 registroAfectadoId: tareaId.ToString(),
                 valorAnterior: "en_proceso",
-                valorNuevo: $"lista_revision (horas reales: {dto.Horas ?? 0}h {dto.Minutos ?? 0}min)");
+                valorNuevo: $"lista_revision (horas reales ronda {rondaActual}: {horasReales}h)");
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task AgregarHoras(int tareaId, AgregarHorasDTO dto, string usuarioActualId)
+        {
+            var tarea = await _context.Tareas
+                .Include(t => t.Expediente)
+                .Include(t => t.Entregables)
+                .FirstOrDefaultAsync(t => t.TareaId == tareaId)
+                ?? throw new ReglaNegocioException("La tarea indicada no existe.");
+
+            if (tarea.Expediente.Estado != EstadoExpediente.Abierto)
+                throw new ReglaNegocioException("Solo se pueden registrar horas en expedientes abiertos.");
+
+            if (tarea.Estado is not (EstadoTarea.EnProceso or EstadoTarea.ListaRevision or EstadoTarea.Devuelta))
+                throw new ReglaNegocioException("Solo se pueden registrar horas en una tarea activa.");
+
+            var puedeRegistrar = tarea.ColaboradorResponsableId == usuarioActualId || await PuedeGestionarTareaAjenaAsync(usuarioActualId);
+            if (!puedeRegistrar)
+                throw new ReglaNegocioException("No tiene permiso para registrar horas en esta tarea.");
+
+            var minutos = (dto.Horas ?? 0) * 60 + (dto.Minutos ?? 0);
+            if (minutos <= 0)
+                throw new ReglaNegocioException("Ingrese un tiempo válido.");
+
+            // El rol depende del momento del flujo en que se registra, no de quién lo registra:
+            // mientras se trabaja la tarea (en proceso o recién devuelta) cuenta como colaborador;
+            // mientras está en revisión cuenta como revisor.
+            var rol = tarea.Estado == EstadoTarea.ListaRevision ? RolHoras.Revisor : RolHoras.Colaborador;
+
+            var registro = new RegistroHoras
+            {
+                TareaId = tareaId,
+                RondaRevision = RondaActual(tarea),
+                UsuarioId = usuarioActualId,
+                Rol = rol,
+                Minutos = minutos,
+                FechaHora = DateTime.UtcNow
+            };
+
+            _context.RegistrosHoras.Add(registro);
+            await _context.SaveChangesAsync();
+
+            await _bitacoraAuditoriaService.Registrar(
+                usuarioId: usuarioActualId,
+                tipoAccion: "crear",
+                moduloAfectado: "Expedientes",
+                registroAfectadoId: tareaId.ToString(),
+                valorNuevo: $"Horas registradas como {rol.ToString().ToLower()}: {dto.Horas ?? 0}h {dto.Minutos ?? 0}min");
 
             await _context.SaveChangesAsync();
         }

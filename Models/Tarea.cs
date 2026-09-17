@@ -22,5 +22,6 @@ namespace HikariLegalSRL.Models
         public DateTime FechaCreacion { get; set; }
 
         public List<Entregable> Entregables { get; set; } = new();
+        public List<RegistroHoras> RegistrosHoras { get; set; } = new();
     }
 }

@@ -131,12 +131,6 @@ namespace HikariLegalSRL.Controllers.Expedientes
         {
             var usuarioActualId = _userManager.GetUserId(User)!;
 
-            if (!ModelState.IsValid)
-            {
-                TempData["Error"] = "Ingrese un tiempo válido.";
-                return RedirectToAction(nameof(Detalle), new { id = expedienteId });
-            }
-
             try
             {
                 await _expedienteService.MarcarListaParaRevision(tareaId, entregable, usuarioActualId);
@@ -145,6 +139,33 @@ namespace HikariLegalSRL.Controllers.Expedientes
             catch (ReglaNegocioException ex)
             {
                 _logger.LogWarning(ex, "Error de regla de negocio al enviar a revisión la tarea {TareaId}", tareaId);
+                TempData["Error"] = ex.Message;
+            }
+
+            return RedirectToAction(nameof(Detalle), new { id = expedienteId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Expedientes.Cargar)]
+        public async Task<IActionResult> AgregarHoras(int expedienteId, int tareaId, AgregarHorasDTO dto)
+        {
+            var usuarioActualId = _userManager.GetUserId(User)!;
+
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Ingrese un tiempo válido.";
+                return RedirectToAction(nameof(Detalle), new { id = expedienteId });
+            }
+
+            try
+            {
+                await _expedienteService.AgregarHoras(tareaId, dto, usuarioActualId);
+                TempData["Exito"] = "Horas registradas.";
+            }
+            catch (ReglaNegocioException ex)
+            {
+                _logger.LogWarning(ex, "Error de regla de negocio al registrar horas de la tarea {TareaId}", tareaId);
                 TempData["Error"] = ex.Message;
             }
 
