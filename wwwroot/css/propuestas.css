@@ -1,0 +1,65 @@
+.propuestas-badge-tipo {
+    font-size: .7rem;
+}
+
+.propuestas-btn-accion.disabled {
+    background-color: #e9ecef;
+    border-color: #e9ecef;
+    color: #adb5bd;
+    opacity: 1;
+    pointer-events: none;
+}
+
+.propuestas-btn-guardar {
+    background: #1F3864;
+    color: #fff;
+}
+
+    .propuestas-btn-guardar:hover {
+        background: #16294a;
+        color: #fff;
+    }
+
+.propuestas-card-header {
+    background: #EAF0FB;
+    color: #1F3864;
+}
+
+.propuestas-datos dd {
+    margin-bottom: .5rem;
+}
+
+.propuestas-datos dt {
+    color: #6c757d;
+    font-size: .8125rem;
+    font-weight: 500;
+    margin-bottom: .5rem;
+}
+
+.propuestas-tabla thead th {
+    background: #1F3864;
+    border-bottom: none;
+    color: #fff;
+    font-size: .8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.propuestas-titulo {
+    color: #1F3864;
+}
+
+@media (max-width: 575.98px) {
+
+    .propuestas-btn-guardar {
+        width: 100%;
+    }
+
+    .propuestas-tabla {
+        font-size: .875rem;
+    }
+
+    .propuestas-titulo {
+        font-size: 1.15rem;
+    }
+}

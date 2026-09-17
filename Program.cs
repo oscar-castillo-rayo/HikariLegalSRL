@@ -1,6 +1,7 @@
 using HikariLegalSRL.Authorization;
 using HikariLegalSRL.Data;
 using HikariLegalSRL.Models;
+using HikariLegalSRL.ModelBinding;
 using HikariLegalSRL.Services.Implementations;
 using HikariLegalSRL.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -15,7 +16,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSweetAlert2();
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    // Los <input type="number"> de HTML5 siempre envían decimales con punto,
+    // sin importar la cultura del servidor (p. ej. es-CR usa coma). Sin esto,
+    // el binding de cualquier campo decimal con centavos falla en silencio.
+    options.ModelBinderProviders.Insert(0, new InvariantDecimalModelBinderProvider());
+});
 builder.Services.AddMemoryCache();
 builder.Services.AddAuthorization(options =>
 {
@@ -49,6 +56,7 @@ builder.Services.AddScoped<IProspectoService, ProspectoService>();
 builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<IActividadSeguimientoService, ActividadSeguimientoService>();
 builder.Services.AddScoped<IServicioService, ServicioService>();
+builder.Services.AddScoped<IPropuestaService, PropuestaService>();
 
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 {

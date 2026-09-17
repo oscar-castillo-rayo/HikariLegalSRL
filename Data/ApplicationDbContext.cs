@@ -23,6 +23,8 @@ namespace HikariLegalSRL.Data
         public DbSet<Cliente> Clientes { get; set; } = null!;
         public DbSet<ActividadSeguimiento> ActividadesSeguimiento { get; set; } = null!;
         public DbSet<CatalogoServicio> CatalogoServicios { get; set; } = null!;
+        public DbSet<Propuesta> Propuestas { get; set; } = null!;
+        public DbSet<PropuestaServicio> PropuestaServicios { get; set; } = null!;
         public DbSet<BitacoraAuditoria> BitacoraAuditoria { get; set; } = null!;
 
 
@@ -291,6 +293,121 @@ namespace HikariLegalSRL.Data
                 .ToTable(t => t.HasCheckConstraint(
                     "CK_CatalogoServicio_Estado",
                     "[Estado] IN ('activo', 'inactivo')"
+                    ));
+
+            // Propuesta
+            modelBuilder.Entity<Propuesta>()
+                .HasKey(p => p.PropuestaId);
+
+            modelBuilder.Entity<Propuesta>()
+                .Property(p => p.DescripcionGeneral).HasMaxLength(2000);
+            modelBuilder.Entity<Propuesta>()
+                .Property(p => p.MontoTotal).HasColumnType("decimal(14,2)");
+
+            modelBuilder.Entity<Propuesta>()
+                .Property(p => p.Moneda)
+                .HasConversion(e => e.ToString().ToLower(),
+                s => (Moneda)Enum.Parse(typeof(Moneda), s, ignoreCase: true))
+                .HasMaxLength(10);
+
+            modelBuilder.Entity<Propuesta>()
+                .Property(p => p.ModalidadPago)
+                .HasConversion(
+                    m => m == ModalidadPago.ProBono ? "pro_bono" : m.ToString().ToLower(),
+                    s => s == "pro_bono" ? ModalidadPago.ProBono : (ModalidadPago)Enum.Parse(typeof(ModalidadPago), s, true))
+                .HasMaxLength(15);
+
+            modelBuilder.Entity<Propuesta>()
+                .Property(p => p.Estado)
+                .HasConversion(e => e.ToString().ToLower(),
+                s => (EstadoPropuesta)Enum.Parse(typeof(EstadoPropuesta), s, ignoreCase: true))
+                .HasMaxLength(15);
+
+            modelBuilder.Entity<Propuesta>()
+                .HasOne(p => p.Prospecto)
+                .WithMany()
+                .HasForeignKey(p => p.ProspectoId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Propuesta>()
+                .HasOne(p => p.Cliente)
+                .WithMany()
+                .HasForeignKey(p => p.ClienteId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Propuesta>()
+                .HasOne(p => p.ElaboradaPor)
+                .WithMany()
+                .HasForeignKey(p => p.ElaboradaPorId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Propuesta>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_Propuesta_Destinatario",
+                    "([ProspectoId] IS NOT NULL AND [ClienteId] IS NULL) OR ([ProspectoId] IS NULL AND [ClienteId] IS NOT NULL)"
+                    ));
+
+            modelBuilder.Entity<Propuesta>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_Propuesta_Moneda",
+                    "[Moneda] IN ('colones', 'dolares')"
+                    ));
+
+            modelBuilder.Entity<Propuesta>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_Propuesta_ModalidadPago",
+                    "[ModalidadPago] IN ('contado', 'abono', 'pro_bono')"
+                    ));
+
+            modelBuilder.Entity<Propuesta>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_Propuesta_Estado",
+                    "[Estado] IN ('borrador', 'enviada', 'aceptada', 'rechazada')"
+                    ));
+
+            modelBuilder.Entity<Propuesta>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_Propuesta_PlazoDias",
+                    "[PlazoDias] > 0"
+                    ));
+
+            // PropuestaServicio
+            modelBuilder.Entity<PropuestaServicio>()
+                .HasKey(s => s.PropuestaServicioId);
+
+            modelBuilder.Entity<PropuestaServicio>()
+                .Property(s => s.DescripcionServicio).HasMaxLength(1000);
+            modelBuilder.Entity<PropuestaServicio>()
+                .Property(s => s.Precio).HasColumnType("decimal(14,2)");
+
+            modelBuilder.Entity<PropuestaServicio>()
+                .Property(s => s.TipoServicio)
+                .HasConversion(e => e.ToString().ToLower(),
+                s => (TipoServicio)Enum.Parse(typeof(TipoServicio), s, ignoreCase: true))
+                .HasMaxLength(15);
+
+            modelBuilder.Entity<PropuestaServicio>()
+                .HasOne(s => s.Propuesta)
+                .WithMany(p => p.Servicios)
+                .HasForeignKey(s => s.PropuestaId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<PropuestaServicio>()
+                .HasOne(s => s.Servicio)
+                .WithMany()
+                .HasForeignKey(s => s.ServicioId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<PropuestaServicio>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_PropuestaServicio_Precio",
+                    "[Precio] >= 0"
+                    ));
+
+            modelBuilder.Entity<PropuestaServicio>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_PropuestaServicio_TipoServicio",
+                    "[TipoServicio] IN ('ofrecido', 'solicitado')"
                     ));
 
             // Bitacora Auditoría
