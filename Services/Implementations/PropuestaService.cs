@@ -12,13 +12,16 @@ namespace HikariLegalSRL.Services.Implementations
     public class PropuestaService : IPropuestaService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IClienteService _clienteService;
         private readonly IBitacoraAuditoriaService _bitacoraAuditoriaService;
 
         public PropuestaService(
             ApplicationDbContext context,
+            IClienteService clienteService,
             IBitacoraAuditoriaService bitacoraAuditoriaService)
         {
             _context = context;
+            _clienteService = clienteService;
             _bitacoraAuditoriaService = bitacoraAuditoriaService;
         }
 
@@ -58,7 +61,7 @@ namespace HikariLegalSRL.Services.Implementations
                 .ToListAsync();
         }
 
-        public async Task<List<PropuestaListaDTO>> Listar(EstadoPropuesta? estado)
+        public async Task<List<PropuestaListaDTO>> Listar(string? buscar, EstadoPropuesta? estado)
         {
             var query = _context.Propuestas
                 .AsNoTracking()
@@ -66,6 +69,14 @@ namespace HikariLegalSRL.Services.Implementations
                 .Include(p => p.Cliente)
                 .Include(p => p.ElaboradaPor)
                 .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(buscar))
+            {
+                var termino = buscar.Trim();
+                query = query.Where(p =>
+                    EF.Functions.Like(p.Prospecto!.NombreEmpresaPersona, $"%{termino}%") ||
+                    EF.Functions.Like(p.Cliente!.NombreEmpresaPersona, $"%{termino}%"));
+            }
 
             if (estado is not null)
                 query = query.Where(p => p.Estado == estado);
@@ -383,6 +394,163 @@ namespace HikariLegalSRL.Services.Implementations
                 valorNuevo: $"Propuesta borrador por {propuesta.MontoTotal:N2}");
 
             await _context.SaveChangesAsync();
+        }
+
+        public async Task MarcarComoEnviada(int id, string usuarioActualId)
+        {
+            var propuesta = await _context.Propuestas
+                .Include(p => p.Prospecto)
+                .Include(p => p.Cliente)
+                .Include(p => p.Servicios)
+                .FirstOrDefaultAsync(p => p.PropuestaId == id)
+                ?? throw new ReglaNegocioException("La propuesta indicada no existe.");
+
+            if (propuesta.Estado != EstadoPropuesta.Borrador)
+                throw new ReglaNegocioException("Solo se pueden enviar propuestas en estado borrador.");
+
+            if (propuesta.Servicios.Count == 0)
+                throw new ReglaNegocioException("Debe agregar al menos un servicio a la propuesta antes de enviarla.");
+
+            ValidarDestinatarioActivo(propuesta);
+
+            propuesta.Estado = EstadoPropuesta.Enviada;
+            propuesta.FechaEnvio = DateTime.UtcNow;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new ReglaNegocioException(ex.Message);
+            }
+
+            await _bitacoraAuditoriaService.Registrar(
+                usuarioId: usuarioActualId,
+                tipoAccion: "cambiar_estado",
+                moduloAfectado: "Propuestas",
+                registroAfectadoId: propuesta.PropuestaId.ToString(),
+                valorAnterior: "borrador",
+                valorNuevo: "enviada");
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task MarcarComoAceptada(int id, string usuarioActualId)
+        {
+            var propuesta = await _context.Propuestas
+                .Include(p => p.Prospecto)
+                .Include(p => p.Cliente)
+                .FirstOrDefaultAsync(p => p.PropuestaId == id)
+                ?? throw new ReglaNegocioException("La propuesta indicada no existe.");
+
+            if (propuesta.Estado != EstadoPropuesta.Enviada)
+                throw new ReglaNegocioException("Solo se pueden aceptar propuestas en estado enviada.");
+
+            ValidarDestinatarioActivo(propuesta);
+
+            int clienteId;
+            string responsableId;
+
+            if (propuesta.ClienteId is not null)
+            {
+                clienteId = propuesta.ClienteId.Value;
+                responsableId = propuesta.Cliente!.ResponsableId;
+            }
+            else
+            {
+                clienteId = await _clienteService.ConvertirDesdeProspecto(
+                    propuesta.ProspectoId!.Value,
+                    new ClienteConversionDTO
+                    {
+                        ModalidadPago = propuesta.ModalidadPago,
+                        ResponsableId = propuesta.ElaboradaPorId
+                    },
+                    usuarioActualId);
+                responsableId = propuesta.ElaboradaPorId;
+            }
+
+            propuesta.Estado = EstadoPropuesta.Aceptada;
+            propuesta.FechaResolucion = DateTime.UtcNow;
+
+            var expediente = new Expediente
+            {
+                ClienteId = clienteId,
+                PropuestaId = propuesta.PropuestaId,
+                ResponsableId = responsableId,
+                PlazoComprometido = DateTime.UtcNow.Date.AddDays(propuesta.PlazoDias),
+                FechaApertura = DateTime.UtcNow,
+                Estado = EstadoExpediente.Abierto
+            };
+
+            _context.Expedientes.Add(expediente);
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new ReglaNegocioException(ex.Message);
+            }
+
+            await _bitacoraAuditoriaService.Registrar(
+                usuarioId: usuarioActualId,
+                tipoAccion: "cambiar_estado",
+                moduloAfectado: "Propuestas",
+                registroAfectadoId: propuesta.PropuestaId.ToString(),
+                valorAnterior: "enviada",
+                valorNuevo: "aceptada");
+
+            await _bitacoraAuditoriaService.Registrar(
+                usuarioId: usuarioActualId,
+                tipoAccion: "crear",
+                moduloAfectado: "Expedientes",
+                registroAfectadoId: expediente.ExpedienteId.ToString(),
+                valorNuevo: $"Expediente abierto desde propuesta #{propuesta.PropuestaId}");
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task MarcarComoRechazada(int id, string usuarioActualId)
+        {
+            var propuesta = await _context.Propuestas
+                .FirstOrDefaultAsync(p => p.PropuestaId == id)
+                ?? throw new ReglaNegocioException("La propuesta indicada no existe.");
+
+            if (propuesta.Estado != EstadoPropuesta.Enviada)
+                throw new ReglaNegocioException("Solo se pueden rechazar propuestas en estado enviada.");
+
+            propuesta.Estado = EstadoPropuesta.Rechazada;
+            propuesta.FechaResolucion = DateTime.UtcNow;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new ReglaNegocioException(ex.Message);
+            }
+
+            await _bitacoraAuditoriaService.Registrar(
+                usuarioId: usuarioActualId,
+                tipoAccion: "cambiar_estado",
+                moduloAfectado: "Propuestas",
+                registroAfectadoId: propuesta.PropuestaId.ToString(),
+                valorAnterior: "enviada",
+                valorNuevo: "rechazada");
+
+            await _context.SaveChangesAsync();
+        }
+
+        private static void ValidarDestinatarioActivo(Propuesta propuesta)
+        {
+            if (propuesta.ProspectoId is not null && propuesta.Prospecto!.Estado != EstadoProspecto.Activo)
+                throw new ReglaNegocioException("No se puede continuar: el prospecto está inactivo o descartado.");
+
+            if (propuesta.ClienteId is not null && propuesta.Cliente!.Estado != EstadoCliente.Activo)
+                throw new ReglaNegocioException("No se puede continuar: el cliente está inactivo.");
         }
     }
 }
