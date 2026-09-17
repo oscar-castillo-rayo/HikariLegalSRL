@@ -449,6 +449,53 @@ namespace HikariLegalSRL.Migrations
                     b.ToTable("Distritos");
                 });
 
+            modelBuilder.Entity("HikariLegalSRL.Models.Entregable", b =>
+                {
+                    b.Property<int>("EntregableId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EntregableId"));
+
+                    b.Property<string>("ArchivoRuta")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("CargadoPorId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("FechaCarga")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("HorasReales")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<int>("RondaRevision")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TareaId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TipoEntregable")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("nvarchar(11)");
+
+                    b.HasKey("EntregableId");
+
+                    b.HasIndex("CargadoPorId");
+
+                    b.HasIndex("TareaId");
+
+                    b.ToTable("Entregables", t =>
+                        {
+                            t.HasCheckConstraint("CK_Entregable_HorasReales", "[HorasReales] >= 0");
+
+                            t.HasCheckConstraint("CK_Entregable_TipoEntregable", "[TipoEntregable] IN ('preliminar', 'final')");
+                        });
+                });
+
             modelBuilder.Entity("HikariLegalSRL.Models.Expediente", b =>
                 {
                     b.Property<int>("ExpedienteId")
@@ -1003,6 +1050,25 @@ namespace HikariLegalSRL.Migrations
                     b.Navigation("Canton");
                 });
 
+            modelBuilder.Entity("HikariLegalSRL.Models.Entregable", b =>
+                {
+                    b.HasOne("HikariLegalSRL.Models.ApplicationUser", "CargadoPor")
+                        .WithMany()
+                        .HasForeignKey("CargadoPorId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("HikariLegalSRL.Models.Tarea", "Tarea")
+                        .WithMany("Entregables")
+                        .HasForeignKey("TareaId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("CargadoPor");
+
+                    b.Navigation("Tarea");
+                });
+
             modelBuilder.Entity("HikariLegalSRL.Models.Expediente", b =>
                 {
                     b.HasOne("HikariLegalSRL.Models.Cliente", "Cliente")
@@ -1197,6 +1263,11 @@ namespace HikariLegalSRL.Migrations
             modelBuilder.Entity("HikariLegalSRL.Models.Provincia", b =>
                 {
                     b.Navigation("Cantones");
+                });
+
+            modelBuilder.Entity("HikariLegalSRL.Models.Tarea", b =>
+                {
+                    b.Navigation("Entregables");
                 });
 #pragma warning restore 612, 618
         }

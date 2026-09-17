@@ -35,6 +35,11 @@
         border-color: #dc3545;
     }
 
+.expedientes-horas-reales {
+    color: #1D6A3A;
+    font-weight: 600;
+}
+
 .expedientes-kanban-card {
     font-size: .8125rem;
 }

@@ -6,11 +6,16 @@ namespace HikariLegalSRL.Models.DTOs
     {
         public int Id { get; set; }
         public string Descripcion { get; set; } = null!;
+        public string ColaboradorId { get; set; } = null!;
         public string ColaboradorNombre { get; set; } = null!;
         public DateTime FechaLimite { get; set; }
         public decimal HorasEstimadas { get; set; }
         public PrioridadTarea Prioridad { get; set; }
         public EstadoTarea Estado { get; set; }
         public DateTime FechaCreacion { get; set; }
+
+        public int? UltimoEntregableId { get; set; }
+        public decimal? HorasReales { get; set; }
+        public bool TieneArchivoAdjunto { get; set; }
     }
 }
