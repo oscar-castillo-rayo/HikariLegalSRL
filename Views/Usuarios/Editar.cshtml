@@ -19,7 +19,7 @@
 
 <div class="card shadow-sm border-0 usuarios-card-form">
     <div class="card-body p-4">
-        <form asp-controller="Usuarios" asp-action="Editar" method="post">
+        <form asp-controller="Usuarios" asp-action="Editar" method="post" novalidate>
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="Id" />
 

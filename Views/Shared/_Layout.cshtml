@@ -61,6 +61,12 @@
                             <i class="bi bi-people me-2"></i>Clientes
                         </a>
                     }
+                    @if (await Authorization.TienePermiso(User, Permisos.Propuestas.Ver))
+                    {
+                        <a class="@NavClass("Propuestas")" asp-controller="Propuestas" asp-action="Index">
+                            <i class="bi bi-file-earmark-text me-2"></i>Propuestas
+                        </a>
+                    }
 
                     <div class="nav-section">Operaciones</div>
                     @if (await Authorization.TienePermiso(User, Permisos.Expedientes.Ver))

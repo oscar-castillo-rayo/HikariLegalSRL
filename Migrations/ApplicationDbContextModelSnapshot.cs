@@ -480,6 +480,120 @@ namespace HikariLegalSRL.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HikariLegalSRL.Models.Propuesta", b =>
+                {
+                    b.Property<int>("PropuestaId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PropuestaId"));
+
+                    b.Property<int?>("ClienteId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DescripcionGeneral")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("ElaboradaPorId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaEnvio")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaResolucion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModalidadPago")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<string>("Moneda")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<decimal>("MontoTotal")
+                        .HasColumnType("decimal(14,2)");
+
+                    b.Property<int>("PlazoDias")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProspectoId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PropuestaId");
+
+                    b.HasIndex("ClienteId");
+
+                    b.HasIndex("ElaboradaPorId");
+
+                    b.HasIndex("ProspectoId");
+
+                    b.ToTable("Propuestas", t =>
+                        {
+                            t.HasCheckConstraint("CK_Propuesta_Destinatario", "([ProspectoId] IS NOT NULL AND [ClienteId] IS NULL) OR ([ProspectoId] IS NULL AND [ClienteId] IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_Propuesta_Estado", "[Estado] IN ('borrador', 'enviada', 'aceptada', 'rechazada')");
+
+                            t.HasCheckConstraint("CK_Propuesta_ModalidadPago", "[ModalidadPago] IN ('contado', 'abono', 'pro_bono')");
+
+                            t.HasCheckConstraint("CK_Propuesta_Moneda", "[Moneda] IN ('colones', 'dolares')");
+
+                            t.HasCheckConstraint("CK_Propuesta_PlazoDias", "[PlazoDias] > 0");
+                        });
+                });
+
+            modelBuilder.Entity("HikariLegalSRL.Models.PropuestaServicio", b =>
+                {
+                    b.Property<int>("PropuestaServicioId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PropuestaServicioId"));
+
+                    b.Property<string>("DescripcionServicio")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<decimal>("Precio")
+                        .HasColumnType("decimal(14,2)");
+
+                    b.Property<int>("PropuestaId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ServicioId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TipoServicio")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.HasKey("PropuestaServicioId");
+
+                    b.HasIndex("PropuestaId");
+
+                    b.HasIndex("ServicioId");
+
+                    b.ToTable("PropuestaServicios", t =>
+                        {
+                            t.HasCheckConstraint("CK_PropuestaServicio_Precio", "[Precio] >= 0");
+
+                            t.HasCheckConstraint("CK_PropuestaServicio_TipoServicio", "[TipoServicio] IN ('ofrecido', 'solicitado')");
+                        });
+                });
+
             modelBuilder.Entity("HikariLegalSRL.Models.Prospecto", b =>
                 {
                     b.Property<int>("ProspectoId")
@@ -787,6 +901,50 @@ namespace HikariLegalSRL.Migrations
                     b.Navigation("Canton");
                 });
 
+            modelBuilder.Entity("HikariLegalSRL.Models.Propuesta", b =>
+                {
+                    b.HasOne("HikariLegalSRL.Models.Cliente", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("HikariLegalSRL.Models.ApplicationUser", "ElaboradaPor")
+                        .WithMany()
+                        .HasForeignKey("ElaboradaPorId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("HikariLegalSRL.Models.Prospecto", "Prospecto")
+                        .WithMany()
+                        .HasForeignKey("ProspectoId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Cliente");
+
+                    b.Navigation("ElaboradaPor");
+
+                    b.Navigation("Prospecto");
+                });
+
+            modelBuilder.Entity("HikariLegalSRL.Models.PropuestaServicio", b =>
+                {
+                    b.HasOne("HikariLegalSRL.Models.Propuesta", "Propuesta")
+                        .WithMany("Servicios")
+                        .HasForeignKey("PropuestaId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("HikariLegalSRL.Models.CatalogoServicio", "Servicio")
+                        .WithMany()
+                        .HasForeignKey("ServicioId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Propuesta");
+
+                    b.Navigation("Servicio");
+                });
+
             modelBuilder.Entity("HikariLegalSRL.Models.Prospecto", b =>
                 {
                     b.HasOne("HikariLegalSRL.Models.Direccion", "Direccion")
@@ -876,6 +1034,11 @@ namespace HikariLegalSRL.Migrations
             modelBuilder.Entity("HikariLegalSRL.Models.Pais", b =>
                 {
                     b.Navigation("Provincias");
+                });
+
+            modelBuilder.Entity("HikariLegalSRL.Models.Propuesta", b =>
+                {
+                    b.Navigation("Servicios");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Provincia", b =>

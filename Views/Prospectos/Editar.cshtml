@@ -21,7 +21,8 @@
               data-prospecto-direccion data-pais-base="1"
               data-provincia-actual="@Model.ProvinciaIdActual"
               data-canton-actual="@Model.CantonIdActual"
-              data-distrito-actual="@Model.Prospecto.Direccion.DistritoId">
+              data-distrito-actual="@Model.Prospecto.Direccion.DistritoId"
+              novalidate>
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="Id" />
             <input type="hidden" asp-for="ProvinciaIdActual" id="provinciaIdActual" />
