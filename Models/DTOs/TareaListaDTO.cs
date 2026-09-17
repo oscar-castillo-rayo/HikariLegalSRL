@@ -15,7 +15,12 @@ namespace HikariLegalSRL.Models.DTOs
         public DateTime FechaCreacion { get; set; }
 
         public int? UltimoEntregableId { get; set; }
-        public decimal? HorasReales { get; set; }
         public bool TieneArchivoAdjunto { get; set; }
+
+        public decimal HorasColaborador { get; set; }
+        public decimal HorasRevisor { get; set; }
+        public decimal HorasRealesTotal => HorasColaborador + HorasRevisor;
+
+        public decimal HorasRondaActual { get; set; }
     }
 }

@@ -28,6 +28,7 @@ namespace HikariLegalSRL.Data
         public DbSet<Expediente> Expedientes { get; set; } = null!;
         public DbSet<Tarea> Tareas { get; set; } = null!;
         public DbSet<Entregable> Entregables { get; set; } = null!;
+        public DbSet<RegistroHoras> RegistrosHoras { get; set; } = null!;
         public DbSet<BitacoraAuditoria> BitacoraAuditoria { get; set; } = null!;
 
 
@@ -556,6 +557,40 @@ namespace HikariLegalSRL.Data
                 .ToTable(t => t.HasCheckConstraint(
                     "CK_Entregable_TipoEntregable",
                     "[TipoEntregable] IN ('preliminar', 'final')"
+                    ));
+
+            // RegistroHoras
+            modelBuilder.Entity<RegistroHoras>()
+                .HasKey(r => r.RegistroHorasId);
+
+            modelBuilder.Entity<RegistroHoras>()
+                .Property(r => r.Rol)
+                .HasConversion(e => e.ToString().ToLower(),
+                s => (RolHoras)Enum.Parse(typeof(RolHoras), s, ignoreCase: true))
+                .HasMaxLength(12);
+
+            modelBuilder.Entity<RegistroHoras>()
+                .HasOne(r => r.Tarea)
+                .WithMany(t => t.RegistrosHoras)
+                .HasForeignKey(r => r.TareaId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<RegistroHoras>()
+                .HasOne(r => r.Usuario)
+                .WithMany()
+                .HasForeignKey(r => r.UsuarioId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<RegistroHoras>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_RegistroHoras_Minutos",
+                    "[Minutos] > 0"
+                    ));
+
+            modelBuilder.Entity<RegistroHoras>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_RegistroHoras_Rol",
+                    "[Rol] IN ('colaborador', 'revisor')"
                     ));
 
             // Bitacora Auditoría
