@@ -102,5 +102,64 @@ namespace HikariLegalSRL.Controllers.Expedientes
 
             return RedirectToAction(nameof(Detalle), new { id });
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Expedientes.Cargar)]
+        public async Task<IActionResult> IniciarTarea(int expedienteId, int tareaId)
+        {
+            var usuarioActualId = _userManager.GetUserId(User)!;
+
+            try
+            {
+                await _expedienteService.IniciarTarea(tareaId, usuarioActualId);
+                TempData["Exito"] = "Tarea iniciada.";
+            }
+            catch (ReglaNegocioException ex)
+            {
+                _logger.LogWarning(ex, "Error de regla de negocio al iniciar la tarea {TareaId}", tareaId);
+                TempData["Error"] = ex.Message;
+            }
+
+            return RedirectToAction(nameof(Detalle), new { id = expedienteId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Expedientes.Cargar)]
+        public async Task<IActionResult> MarcarListaParaRevision(int expedienteId, int tareaId, CargarEntregableDTO entregable)
+        {
+            var usuarioActualId = _userManager.GetUserId(User)!;
+
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Ingrese un tiempo válido.";
+                return RedirectToAction(nameof(Detalle), new { id = expedienteId });
+            }
+
+            try
+            {
+                await _expedienteService.MarcarListaParaRevision(tareaId, entregable, usuarioActualId);
+                TempData["Exito"] = "Tarea enviada a revisión.";
+            }
+            catch (ReglaNegocioException ex)
+            {
+                _logger.LogWarning(ex, "Error de regla de negocio al enviar a revisión la tarea {TareaId}", tareaId);
+                TempData["Error"] = ex.Message;
+            }
+
+            return RedirectToAction(nameof(Detalle), new { id = expedienteId });
+        }
+
+        [HttpGet]
+        [Permiso(Permisos.Expedientes.Ver)]
+        public async Task<IActionResult> DescargarEntregable(int entregableId)
+        {
+            var archivo = await _expedienteService.ObtenerArchivoEntregable(entregableId);
+            if (archivo is null)
+                return NotFound();
+
+            return PhysicalFile(archivo.Value.RutaAbsoluta, archivo.Value.ContentType, archivo.Value.NombreArchivo);
+        }
     }
 }

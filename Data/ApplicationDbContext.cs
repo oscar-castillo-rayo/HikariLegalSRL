@@ -27,6 +27,7 @@ namespace HikariLegalSRL.Data
         public DbSet<PropuestaServicio> PropuestaServicios { get; set; } = null!;
         public DbSet<Expediente> Expedientes { get; set; } = null!;
         public DbSet<Tarea> Tareas { get; set; } = null!;
+        public DbSet<Entregable> Entregables { get; set; } = null!;
         public DbSet<BitacoraAuditoria> BitacoraAuditoria { get; set; } = null!;
 
 
@@ -515,6 +516,46 @@ namespace HikariLegalSRL.Data
                 .ToTable(t => t.HasCheckConstraint(
                     "CK_Tarea_Estado",
                     "[Estado] IN ('pendiente', 'en_proceso', 'lista_revision', 'aprobada', 'devuelta')"
+                    ));
+
+            // Entregable
+            modelBuilder.Entity<Entregable>()
+                .HasKey(en => en.EntregableId);
+
+            modelBuilder.Entity<Entregable>()
+                .Property(en => en.ArchivoRuta).HasMaxLength(500);
+
+            modelBuilder.Entity<Entregable>()
+                .Property(en => en.HorasReales).HasColumnType("decimal(6,2)");
+
+            modelBuilder.Entity<Entregable>()
+                .Property(en => en.TipoEntregable)
+                .HasConversion(e => e.ToString().ToLower(),
+                s => (TipoEntregable)Enum.Parse(typeof(TipoEntregable), s, ignoreCase: true))
+                .HasMaxLength(11);
+
+            modelBuilder.Entity<Entregable>()
+                .HasOne(en => en.Tarea)
+                .WithMany(t => t.Entregables)
+                .HasForeignKey(en => en.TareaId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Entregable>()
+                .HasOne(en => en.CargadoPor)
+                .WithMany()
+                .HasForeignKey(en => en.CargadoPorId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Entregable>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_Entregable_HorasReales",
+                    "[HorasReales] >= 0"
+                    ));
+
+            modelBuilder.Entity<Entregable>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_Entregable_TipoEntregable",
+                    "[TipoEntregable] IN ('preliminar', 'final')"
                     ));
 
             // Bitacora Auditoría
