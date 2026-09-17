@@ -20,5 +20,7 @@ namespace HikariLegalSRL.Models
         public DateTime? FechaCierre { get; set; }
 
         public EstadoExpediente Estado { get; set; } = EstadoExpediente.Abierto;
+
+        public List<Tarea> Tareas { get; set; } = new();
     }
 }

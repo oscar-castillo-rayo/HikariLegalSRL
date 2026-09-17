@@ -112,9 +112,16 @@ namespace HikariLegalSRL.Services.Implementations
             if (propuesta is null)
                 return null;
 
+            var expedienteId = await _context.Expedientes
+                .AsNoTracking()
+                .Where(e => e.PropuestaId == id)
+                .Select(e => (int?)e.ExpedienteId)
+                .FirstOrDefaultAsync();
+
             return new PropuestaDetalleDTO
             {
                 Id = propuesta.PropuestaId,
+                ExpedienteId = expedienteId,
                 Destinatario = propuesta.ProspectoId != null ? propuesta.Prospecto!.NombreEmpresaPersona : propuesta.Cliente!.NombreEmpresaPersona,
                 EsProspecto = propuesta.ProspectoId != null,
                 Moneda = propuesta.Moneda,
@@ -436,7 +443,7 @@ namespace HikariLegalSRL.Services.Implementations
             await _context.SaveChangesAsync();
         }
 
-        public async Task MarcarComoAceptada(int id, string usuarioActualId)
+        public async Task<int> MarcarComoAceptada(int id, string usuarioActualId)
         {
             var propuesta = await _context.Propuestas
                 .Include(p => p.Prospecto)
@@ -510,6 +517,8 @@ namespace HikariLegalSRL.Services.Implementations
                 valorNuevo: $"Expediente abierto desde propuesta #{propuesta.PropuestaId}");
 
             await _context.SaveChangesAsync();
+
+            return expediente.ExpedienteId;
         }
 
         public async Task MarcarComoRechazada(int id, string usuarioActualId)

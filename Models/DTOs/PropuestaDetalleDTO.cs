@@ -17,6 +17,7 @@ namespace HikariLegalSRL.Models.DTOs
         public DateTime FechaCreacion { get; set; }
         public DateTime? FechaEnvio { get; set; }
         public DateTime? FechaResolucion { get; set; }
+        public int? ExpedienteId { get; set; }
 
         public List<PropuestaServicioDetalleDTO> Servicios { get; set; } = new();
     }
