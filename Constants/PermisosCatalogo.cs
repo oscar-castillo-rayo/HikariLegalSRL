@@ -103,13 +103,15 @@ namespace HikariLegalSRL.Constants
                 Nombre = "Expedientes",
                 Acciones = new()
                 {
-                    new() { Codigo = "expedientes.ver",      Nombre = "Consultar",   Descripcion = "Ver expedientes y tareas" },
-                    new() { Codigo = "expedientes.crear",    Nombre = "Crear tareas", Descripcion = "Crear tareas dentro del expediente" },
-                    new() { Codigo = "expedientes.asignar",  Nombre = "Asignar tareas", Descripcion = "Asignar tareas a colaboradores" },
-                    new() { Codigo = "expedientes.cerrar",   Nombre = "Cerrar",      Descripcion = "Cerrar el expediente" },
-                    new() { Codigo = "expedientes.aprobar",  Nombre = "Aprobar entregable", Descripcion = "Aprobar un entregable presentado" },
-                    new() { Codigo = "expedientes.devolver", Nombre = "Devolver entregable", Descripcion = "Devolver un entregable para corrección" },
-                    new() { Codigo = "expedientes.cargar",   Nombre = "Cargar entregable", Descripcion = "Subir un entregable de una tarea" },
+                    new() { Codigo = "expedientes.ver",             Nombre = "Consultar",           Descripcion = "Ver expedientes y tareas" },
+                    new() { Codigo = "expedientes.crear",           Nombre = "Crear tareas",        Descripcion = "Crear tareas dentro del expediente" },
+                    new() { Codigo = "expedientes.asignar",         Nombre = "Asignar tareas",      Descripcion = "Asignar tareas a colaboradores" },
+                    new() { Codigo = "expedientes.reasignar",       Nombre = "Reasignar responsable", Descripcion = "Cambiar el Abogado/Asesor a cargo del expediente" },
+                    new() { Codigo = "expedientes.cerrar",          Nombre = "Cerrar",              Descripcion = "Cerrar el expediente" },
+                    new() { Codigo = "expedientes.aprobar",         Nombre = "Aprobar entregable",  Descripcion = "Aprobar un entregable presentado" },
+                    new() { Codigo = "expedientes.devolver",        Nombre = "Devolver entregable", Descripcion = "Devolver un entregable para corrección" },
+                    new() { Codigo = "expedientes.cargar",          Nombre = "Cargar entregable",   Descripcion = "Subir un entregable de una tarea" },
+                    new() { Codigo = "expedientes.ser_responsable", Nombre = "Ser responsable",     Descripcion = "Puede ser asignado como responsable a cargo de un expediente" },
                 }
             },
             new PermisoModulo

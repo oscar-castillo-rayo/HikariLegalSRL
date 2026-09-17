@@ -75,5 +75,32 @@ namespace HikariLegalSRL.Controllers.Expedientes
 
             return RedirectToAction(nameof(Detalle), new { id });
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Expedientes.Reasignar)]
+        public async Task<IActionResult> ReasignarResponsable(int id, ReasignarResponsableDTO responsable)
+        {
+            var usuarioActualId = _userManager.GetUserId(User)!;
+
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Debe seleccionar un responsable.";
+                return RedirectToAction(nameof(Detalle), new { id });
+            }
+
+            try
+            {
+                await _expedienteService.ReasignarResponsable(id, responsable.ResponsableId, usuarioActualId);
+                TempData["Exito"] = "Responsable reasignado correctamente.";
+            }
+            catch (ReglaNegocioException ex)
+            {
+                _logger.LogWarning(ex, "Error de regla de negocio al reasignar responsable del expediente {ExpedienteId}", id);
+                TempData["Error"] = ex.Message;
+            }
+
+            return RedirectToAction(nameof(Detalle), new { id });
+        }
     }
 }

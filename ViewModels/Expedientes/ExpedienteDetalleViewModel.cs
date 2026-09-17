@@ -7,5 +7,6 @@ namespace HikariLegalSRL.ViewModels.Expedientes
         public ExpedienteDetalleDTO Expediente { get; set; } = null!;
         public TareaCreacionDTO NuevaTarea { get; set; } = new();
         public List<UsuarioOpcionDTO> Colaboradores { get; set; } = new();
+        public List<UsuarioOpcionDTO> Responsables { get; set; } = new();
     }
 }
