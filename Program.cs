@@ -57,6 +57,7 @@ builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<IActividadSeguimientoService, ActividadSeguimientoService>();
 builder.Services.AddScoped<IServicioService, ServicioService>();
 builder.Services.AddScoped<IPropuestaService, PropuestaService>();
+builder.Services.AddScoped<IExpedienteService, ExpedienteService>();
 
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 {

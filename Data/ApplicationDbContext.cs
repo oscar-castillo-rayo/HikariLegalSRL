@@ -26,6 +26,7 @@ namespace HikariLegalSRL.Data
         public DbSet<Propuesta> Propuestas { get; set; } = null!;
         public DbSet<PropuestaServicio> PropuestaServicios { get; set; } = null!;
         public DbSet<Expediente> Expedientes { get; set; } = null!;
+        public DbSet<Tarea> Tareas { get; set; } = null!;
         public DbSet<BitacoraAuditoria> BitacoraAuditoria { get; set; } = null!;
 
 
@@ -450,6 +451,70 @@ namespace HikariLegalSRL.Data
                 .ToTable(t => t.HasCheckConstraint(
                     "CK_Expediente_Estado",
                     "[Estado] IN ('abierto', 'cerrado')"
+                    ));
+
+            // Tarea
+            modelBuilder.Entity<Tarea>()
+                .HasKey(t => t.TareaId);
+
+            modelBuilder.Entity<Tarea>()
+                .Property(t => t.Descripcion).HasMaxLength(1000);
+
+            modelBuilder.Entity<Tarea>()
+                .Property(t => t.HorasEstimadas).HasColumnType("decimal(6,2)");
+
+            modelBuilder.Entity<Tarea>()
+                .Property(t => t.FechaLimite).HasColumnType("date");
+
+            modelBuilder.Entity<Tarea>()
+                .Property(t => t.Prioridad)
+                .HasConversion(e => e.ToString().ToLower(),
+                s => (PrioridadTarea)Enum.Parse(typeof(PrioridadTarea), s, ignoreCase: true))
+                .HasMaxLength(10);
+
+            modelBuilder.Entity<Tarea>()
+                .Property(t => t.Estado)
+                .HasConversion(
+                    e => e == EstadoTarea.Pendiente ? "pendiente"
+                        : e == EstadoTarea.EnProceso ? "en_proceso"
+                        : e == EstadoTarea.ListaRevision ? "lista_revision"
+                        : e == EstadoTarea.Aprobada ? "aprobada"
+                        : "devuelta",
+                    s => s == "pendiente" ? EstadoTarea.Pendiente
+                        : s == "en_proceso" ? EstadoTarea.EnProceso
+                        : s == "lista_revision" ? EstadoTarea.ListaRevision
+                        : s == "aprobada" ? EstadoTarea.Aprobada
+                        : EstadoTarea.Devuelta)
+                .HasMaxLength(20);
+
+            modelBuilder.Entity<Tarea>()
+                .HasOne(t => t.Expediente)
+                .WithMany(e => e.Tareas)
+                .HasForeignKey(t => t.ExpedienteId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Tarea>()
+                .HasOne(t => t.ColaboradorResponsable)
+                .WithMany()
+                .HasForeignKey(t => t.ColaboradorResponsableId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Tarea>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_Tarea_HorasEstimadas",
+                    "[HorasEstimadas] >= 0"
+                    ));
+
+            modelBuilder.Entity<Tarea>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_Tarea_Prioridad",
+                    "[Prioridad] IN ('baja', 'media', 'alta')"
+                    ));
+
+            modelBuilder.Entity<Tarea>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_Tarea_Estado",
+                    "[Estado] IN ('pendiente', 'en_proceso', 'lista_revision', 'aprobada', 'devuelta')"
                     ));
 
             // Bitacora Auditoría

@@ -1,0 +1,81 @@
+@model HikariLegalSRL.ViewModels.Expedientes.ExpedienteIndexViewModel
+@using HikariLegalSRL.Models.Enums
+
+@{
+    ViewData["Title"] = "Expedientes";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/expedientes.css" />
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <h4 class="mb-0 fw-bold expedientes-titulo"><i class="bi bi-folder2-open me-2"></i>Expedientes</h4>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 expedientes-tabla">
+            <thead>
+                <tr>
+                    <th>Expediente</th>
+                    <th>Cliente</th>
+                    <th>Responsable</th>
+                    <th>Plazo comprometido</th>
+                    <th class="text-center">Estado</th>
+                    <th class="text-center">Tareas</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Expedientes.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            No hay expedientes registrados.
+                        </td>
+                    </tr>
+                }
+                @foreach (var e in Model.Expedientes)
+                {
+                    var (bc, bt) = e.Estado switch
+                    {
+                        EstadoExpediente.Abierto => ("success", "Abierto"),
+                        EstadoExpediente.Cerrado => ("secondary", "Cerrado"),
+                        _ => ("secondary", e.Estado.ToString())
+                    };
+                    var diasRestantes = (e.PlazoComprometido.Date - DateTime.Today).Days;
+                    var claseDias = e.Estado != EstadoExpediente.Abierto ? "bg-light text-dark border"
+                        : diasRestantes < 0 ? "bg-danger"
+                        : diasRestantes <= 2 ? "bg-warning text-dark"
+                        : "bg-light text-dark border";
+                    <tr>
+                        <td class="fw-semibold">#@e.Id</td>
+                        <td>@e.ClienteNombre</td>
+                        <td><small>@e.ResponsableNombre</small></td>
+                        <td>
+                            <small>
+                                @e.PlazoComprometido.ToString("dd/MM/yyyy")
+                                @if (e.Estado == EstadoExpediente.Abierto)
+                                {
+                                    <span class="badge @claseDias ms-1">
+                                        @(diasRestantes < 0 ? $"{Math.Abs(diasRestantes)}d vencido" : $"{diasRestantes}d restantes")
+                                    </span>
+                                }
+                            </small>
+                        </td>
+                        <td class="text-center"><span class="badge bg-@bc">@bt</span></td>
+                        <td class="text-center">
+                            <span class="badge bg-light text-dark border">@e.TareasAprobadas / @e.TotalTareas</span>
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="Detalle" asp-route-id="@e.Id" class="btn btn-sm btn-outline-primary" title="Ver expediente / Kanban">
+                                <i class="bi bi-kanban"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
