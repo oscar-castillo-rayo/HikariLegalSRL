@@ -10,7 +10,9 @@
         EstadoExpediente.Cerrado => ("secondary", "Cerrado"),
         _ => ("secondary", e.Estado.ToString())
     };
-    var puedeAgregarTarea = await Authorization.TienePermiso(User, Permisos.Expedientes.Crear) && e.Estado == EstadoExpediente.Abierto;
+    var esAbierto = e.Estado == EstadoExpediente.Abierto;
+    var puedeAgregarTarea = await Authorization.TienePermiso(User, Permisos.Expedientes.Crear) && esAbierto;
+    var puedeReasignar = await Authorization.TienePermiso(User, Permisos.Expedientes.Reasignar);
 
     var diasRestantes = (e.PlazoComprometido.Date - DateTime.Today).Days;
     var claseDias = diasRestantes < 0 ? "bg-danger" : diasRestantes <= 2 ? "bg-warning text-dark" : "bg-light text-dark border";
@@ -56,6 +58,13 @@
             <span class="badge fs-6 bg-light text-dark border">
                 <i class="bi bi-calendar-event me-1"></i>@e.PlazoComprometido.ToString("dd/MM/yyyy")
             </span>
+        }
+        @if (esAbierto)
+        {
+            <button type="button" class="btn btn-outline-primary btn-sm expedientes-btn-accion" data-bs-toggle="modal"
+                    data-bs-target="#modalReasignar" @(puedeReasignar ? null : "disabled")>
+                <i class="bi bi-person-gear me-1"></i>Cambiar asesor
+            </button>
         }
         @if (puedeAgregarTarea)
         {
@@ -195,7 +204,56 @@
     </div>
 }
 
+@if (esAbierto && puedeReasignar)
+{
+    <div class="modal fade" id="modalReasignar" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form asp-action="ReasignarResponsable" asp-route-id="@e.Id" method="post" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-content">
+                    <div class="modal-header expedientes-card-header">
+                        <h5 class="modal-title">Cambiar asesor</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <dl class="row mb-3">
+                            <dt class="col-5">Asesor actual</dt>
+                            <dd class="col-7">@e.ResponsableNombre</dd>
+                        </dl>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold" id="labelNuevoResponsable">Nuevo asesor</label>
+                                <div class="dropdown expedientes-dropdown-responsable">
+                                    <button type="button" class="form-select text-start expedientes-dropdown-toggle"
+                                            id="botonNuevoResponsable" data-bs-toggle="dropdown" aria-expanded="false"
+                                            aria-labelledby="labelNuevoResponsable">
+                                        <span id="textoNuevoResponsable">-- Seleccione --</span>
+                                    </button>
+                                    <ul class="dropdown-menu expedientes-dropdown-menu w-100" aria-labelledby="botonNuevoResponsable">
+                                        @foreach (var r in Model.Responsables)
+                                        {
+                                            <li><a class="dropdown-item" href="#" data-id="@r.Id" data-nombre="@r.Nombre">@r.Nombre</a></li>
+                                        }
+                                    </ul>
+                                    <input type="hidden" id="selectNuevoResponsable" name="ResponsableId"
+                                           data-val="true" data-val-required="Debe seleccionar un responsable" />
+                                </div>
+                                <span class="text-danger small" data-valmsg-for="ResponsableId" data-valmsg-replace="true"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn text-white fw-semibold expedientes-btn-guardar">Confirmar cambio</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/expedientes-tarea.js" asp-append-version="true"></script>
+    <script src="~/js/expedientes-reasignar.js" asp-append-version="true"></script>
 }
