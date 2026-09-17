@@ -65,8 +65,9 @@ namespace HikariLegalSRL.Constants
             public const string Ver     = "propuestas.ver";
             public const string Crear   = "propuestas.crear";
             public const string Editar  = "propuestas.editar";
-            public const string Enviar  = "propuestas.enviar";
-            public const string Aceptar = "propuestas.aceptar";
+            public const string Enviar   = "propuestas.enviar";
+            public const string Aceptar  = "propuestas.aceptar";
+            public const string Rechazar = "propuestas.rechazar";
         }
 
         public static class Expedientes
@@ -112,7 +113,7 @@ namespace HikariLegalSRL.Constants
             Prospectos.Ver, Prospectos.Crear, Prospectos.Editar, Prospectos.Calificar, Prospectos.Convertir, Prospectos.Descartar, Prospectos.Reactivar,
             Clientes.Ver, Clientes.Crear, Clientes.Editar, Clientes.Asignar, Clientes.Desactivar, Clientes.Reactivar, Clientes.SerResponsable,
             Servicios.Ver, Servicios.Crear, Servicios.Editar, Servicios.Desactivar, Servicios.Reactivar,
-            Propuestas.Ver, Propuestas.Crear, Propuestas.Editar, Propuestas.Enviar, Propuestas.Aceptar,
+            Propuestas.Ver, Propuestas.Crear, Propuestas.Editar, Propuestas.Enviar, Propuestas.Aceptar, Propuestas.Rechazar,
             Expedientes.Ver, Expedientes.Crear, Expedientes.Asignar, Expedientes.Cerrar, Expedientes.Aprobar, Expedientes.Devolver, Expedientes.Cargar,
             Facturacion.Ver, Facturacion.Generar, Facturacion.Anular, Facturacion.Abono, Facturacion.Probono, Facturacion.AprobarProbono,
             Reportes.Conversion, Reportes.Ingresos, Reportes.Geo, Reportes.Carga, Reportes.Calidad,
