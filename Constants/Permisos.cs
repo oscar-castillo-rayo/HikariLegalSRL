@@ -81,6 +81,7 @@ namespace HikariLegalSRL.Constants
             public const string Devolver        = "expedientes.devolver";
             public const string Cargar          = "expedientes.cargar";
             public const string SerResponsable  = "expedientes.ser_responsable";
+            public const string GestionarAjenas = "expedientes.gestionar_ajenas";
         }
 
         public static class Facturacion
@@ -116,7 +117,7 @@ namespace HikariLegalSRL.Constants
             Clientes.Ver, Clientes.Crear, Clientes.Editar, Clientes.Asignar, Clientes.Desactivar, Clientes.Reactivar, Clientes.SerResponsable,
             Servicios.Ver, Servicios.Crear, Servicios.Editar, Servicios.Desactivar, Servicios.Reactivar,
             Propuestas.Ver, Propuestas.Crear, Propuestas.Editar, Propuestas.Enviar, Propuestas.Aceptar, Propuestas.Rechazar,
-            Expedientes.Ver, Expedientes.Crear, Expedientes.Asignar, Expedientes.Reasignar, Expedientes.Cerrar, Expedientes.Aprobar, Expedientes.Devolver, Expedientes.Cargar, Expedientes.SerResponsable,
+            Expedientes.Ver, Expedientes.Crear, Expedientes.Asignar, Expedientes.Reasignar, Expedientes.Cerrar, Expedientes.Aprobar, Expedientes.Devolver, Expedientes.Cargar, Expedientes.SerResponsable, Expedientes.GestionarAjenas,
             Facturacion.Ver, Facturacion.Generar, Facturacion.Anular, Facturacion.Abono, Facturacion.Probono, Facturacion.AprobarProbono,
             Reportes.Conversion, Reportes.Ingresos, Reportes.Geo, Reportes.Carga, Reportes.Calidad,
             Auditoria.Ver,

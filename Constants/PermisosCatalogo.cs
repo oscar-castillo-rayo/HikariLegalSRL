@@ -112,6 +112,7 @@ namespace HikariLegalSRL.Constants
                     new() { Codigo = "expedientes.devolver",        Nombre = "Devolver entregable", Descripcion = "Devolver un entregable para corrección" },
                     new() { Codigo = "expedientes.cargar",          Nombre = "Cargar entregable",   Descripcion = "Subir un entregable de una tarea" },
                     new() { Codigo = "expedientes.ser_responsable", Nombre = "Ser responsable",     Descripcion = "Puede ser asignado como responsable a cargo de un expediente" },
+                    new() { Codigo = "expedientes.gestionar_ajenas", Nombre = "Gestionar tareas ajenas", Descripcion = "Iniciar o enviar a revisión tareas asignadas a otro colaborador" },
                 }
             },
             new PermisoModulo

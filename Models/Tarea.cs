@@ -20,5 +20,7 @@ namespace HikariLegalSRL.Models
         public EstadoTarea Estado { get; set; } = EstadoTarea.Pendiente;
 
         public DateTime FechaCreacion { get; set; }
+
+        public List<Entregable> Entregables { get; set; } = new();
     }
 }
