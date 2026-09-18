@@ -62,6 +62,7 @@ builder.Services.AddScoped<IFacturaService, FacturaService>();
 builder.Services.AddScoped<IProBonoService, ProBonoService>();
 builder.Services.AddScoped<INotificacionService, NotificacionService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IReporteService, ReporteService>();
 builder.Services.AddHostedService<RevisionVencimientosBackgroundService>();
 
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>

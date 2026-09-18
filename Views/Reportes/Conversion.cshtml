@@ -1,0 +1,138 @@
+@model HikariLegalSRL.Models.DTOs.ReporteConversionPropuestasDTO
+
+@{
+    ViewData["Title"] = "Tasa de Conversión de Propuestas";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/reportes.css" />
+}
+
+<div class="d-flex align-items-center gap-2 mb-4">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h2 class="fw-bold mb-0 reportes-titulo">
+        📈 Tasa de Conversión de Propuestas
+    </h2>
+</div>
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-3"></div>
+
+<form method="get" class="card p-3 mb-4 shadow-sm">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Período</label>
+            <select name="periodo" id="periodo" class="form-select">
+                <option value="semanal" selected="@(Model.Periodo == "semanal")">Semanal</option>
+                <option value="mensual" selected="@(Model.Periodo == "mensual")">Mensual</option>
+                <option value="cuatrimestral" selected="@(Model.Periodo == "cuatrimestral")">Cuatrimestral</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Desde</label>
+            <input type="date" name="desde" id="desde" class="form-control" value="@Model.Desde.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Hasta</label>
+            <input type="date" name="hasta" id="hasta" class="form-control" value="@Model.Hasta.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-outline-secondary w-100">
+                <i class="bi bi-search me-1"></i>Filtrar
+            </button>
+        </div>
+    </div>
+</form>
+
+@if (ViewData.ModelState.IsValid)
+{
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card text-white h-100 reportes-metrica-total">
+                <div class="card-body text-center">
+                    <div class="small opacity-75">Total propuestas</div>
+                    <div class="fs-2 fw-bold">@Model.Total</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white h-100 bg-primary">
+                <div class="card-body text-center">
+                    <div class="small opacity-75">Enviadas</div>
+                    <div class="fs-2 fw-bold">@Model.Enviadas</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white h-100 bg-success">
+                <div class="card-body text-center">
+                    <div class="small opacity-75">Aceptadas</div>
+                    <div class="fs-2 fw-bold">@Model.Aceptadas</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white h-100 bg-danger">
+                <div class="card-body text-center">
+                    <div class="small opacity-75">Rechazadas</div>
+                    <div class="fs-2 fw-bold">@Model.Rechazadas</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body text-center py-5">
+            <div class="display-4 fw-bold @(Model.TasaConversion >= 50 ? "reportes-tasa-alta" : "reportes-tasa-baja")">
+                @Model.TasaConversion%
+            </div>
+            <p class="text-muted mt-2 fs-5">Tasa de conversión</p>
+            <div class="progress mx-auto mt-3" style="max-width:400px; height:20px;">
+                <div class="progress-bar @(Model.TasaConversion >= 50 ? "bg-success" : "bg-warning")"
+                     style="width:@(Model.TasaConversion.ToString(System.Globalization.CultureInfo.InvariantCulture))%">
+                </div>
+            </div>
+            <p class="text-muted small mt-3">
+                Del @Model.Desde.ToString("dd/MM/yyyy") al @Model.Hasta.ToString("dd/MM/yyyy")
+            </p>
+            @if (Model.Total == 0)
+            {
+                <p class="text-muted small">No hay propuestas enviadas en este período.</p>
+            }
+        </div>
+    </div>
+
+    <div class="alert alert-light border mt-3 small text-muted">
+        <i class="bi bi-info-circle me-1"></i>
+        <strong>Fórmula:</strong>
+        Tasa de conversión = (Propuestas aceptadas ÷ Total de propuestas enviadas en el período) × 100.
+        Una propuesta "Enviada" aún está pendiente de respuesta del cliente.
+    </div>
+}
+
+@section Scripts {
+    <script>
+        document.getElementById('periodo').addEventListener('change', function () {
+            var hoy = new Date();
+            var hasta = new Date(hoy);
+            var desde = new Date(hoy);
+
+            switch (this.value) {
+                case 'semanal':
+                    desde.setDate(hoy.getDate() - 6);
+                    break;
+                case 'cuatrimestral':
+                    desde.setMonth(hoy.getMonth() - 4);
+                    break;
+                default:
+                    desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+                    break;
+            }
+
+            var aIso = function (d) { return d.toISOString().slice(0, 10); };
+            document.getElementById('desde').value = aIso(desde);
+            document.getElementById('hasta').value = aIso(hasta);
+        });
+    </script>
+}
