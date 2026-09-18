@@ -35,6 +35,7 @@ namespace HikariLegalSRL.Data
         public DbSet<Abono> Abonos { get; set; } = null!;
         public DbSet<Notificacion> Notificaciones { get; set; } = null!;
         public DbSet<BitacoraAuditoria> BitacoraAuditoria { get; set; } = null!;
+        public DbSet<SolicitudProBono> SolicitudesProBono { get; set; } = null!;
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -792,6 +793,69 @@ namespace HikariLegalSRL.Data
 
             modelBuilder.Entity<Abono>()
                 .HasIndex(a => a.FacturaId);
+
+            // SolicitudProBono
+            modelBuilder.Entity<SolicitudProBono>()
+                .HasKey(s => s.SolicitudProBonoId);
+
+            modelBuilder.Entity<SolicitudProBono>()
+                .Property(s => s.JustificacionEscrita).HasMaxLength(2000);
+
+            modelBuilder.Entity<SolicitudProBono>()
+                .Property(s => s.ComentarioResolucion).HasMaxLength(1000);
+
+            modelBuilder.Entity<SolicitudProBono>()
+                .Property(s => s.Decision)
+                .HasConversion(
+                    d => d == DecisionProBono.Pendiente ? "pendiente"
+                        : d == DecisionProBono.Aprobada ? "aprobada"
+                        : "rechazada",
+                    s => s == "pendiente" ? DecisionProBono.Pendiente
+                        : s == "aprobada" ? DecisionProBono.Aprobada
+                        : DecisionProBono.Rechazada)
+                .HasMaxLength(15);
+
+            modelBuilder.Entity<SolicitudProBono>()
+                .HasOne(s => s.Cliente)
+                .WithMany()
+                .HasForeignKey(s => s.ClienteId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<SolicitudProBono>()
+                .HasOne(s => s.Prospecto)
+                .WithMany()
+                .HasForeignKey(s => s.ProspectoId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<SolicitudProBono>()
+                .HasOne(s => s.Solicitante)
+                .WithMany()
+                .HasForeignKey(s => s.SolicitanteId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<SolicitudProBono>()
+                .HasOne(s => s.ResueltoPor)
+                .WithMany()
+                .HasForeignKey(s => s.ResueltoPorId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<SolicitudProBono>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_ProBono_Decision",
+                    "[Decision] IN ('pendiente', 'aprobada', 'rechazada')"
+                    ));
+
+            modelBuilder.Entity<SolicitudProBono>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_ProBono_Beneficiario",
+                    "([ClienteId] IS NOT NULL AND [ProspectoId] IS NULL) OR ([ClienteId] IS NULL AND [ProspectoId] IS NOT NULL)"
+                    ));
+
+            modelBuilder.Entity<SolicitudProBono>()
+                .HasIndex(s => s.SolicitanteId);
+
+            modelBuilder.Entity<SolicitudProBono>()
+                .HasIndex(s => s.Decision);
 
             // Notificacion
             modelBuilder.Entity<Notificacion>()
