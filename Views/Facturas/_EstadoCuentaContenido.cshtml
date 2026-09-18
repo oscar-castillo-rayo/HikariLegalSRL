@@ -2,6 +2,7 @@
 @using HikariLegalSRL.Models.Enums
 @{
     var puedeRegistrarAbono = await Authorization.TienePermiso(User, Permisos.Facturacion.Abono);
+    var puedeAnular = await Authorization.TienePermiso(User, Permisos.Facturacion.Anular);
 }
 
 <div class="row g-3 mb-4">
@@ -92,6 +93,20 @@
                                         data-saldo-numerico="@f.SaldoPendiente.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-simbolo="@simbolo">
                                     <i class="bi bi-cash-coin"></i>
                                 </button>
+                            }
+                            @if (puedeAnular && f.Estado != EstadoFactura.Pagada && f.Estado != EstadoFactura.Anulada)
+                            {
+                                <form asp-controller="Facturas" asp-action="Anular" asp-route-id="@f.Id" method="post"
+                                      class="form-confirmar d-inline"
+                                      data-titulo="¿Anular esta factura?"
+                                      data-texto="La factura #@f.Id quedará anulada. No podrán registrarse más abonos sobre ella y no podrá revertirse."
+                                      data-icono="warning"
+                                      data-btn-confirmar="Sí, anular">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Anular factura">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                </form>
                             }
                         </td>
                     </tr>
