@@ -1,0 +1,136 @@
+@model HikariLegalSRL.Models.DTOs.EstadoCuentaDTO
+@{
+    ViewData["Title"] = $"Estado de cuenta — {Model.ClienteNombre}";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/facturas.css" />
+}
+
+<div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+    <a asp-controller="Clientes" asp-action="Detalle" asp-route-id="@Model.ClienteId" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0 fw-bold facturas-titulo">Estado de cuenta — @Model.ClienteNombre</h4>
+</div>
+
+<div id="estado-cuenta-contenido">
+    @await Html.PartialAsync("_EstadoCuentaContenido", Model)
+</div>
+
+<div class="modal fade" id="modalAbono" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="abonoForm" enctype="multipart/form-data" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title">Registrar abono</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="abonoError" class="alert alert-danger py-2 small d-none"></div>
+
+                    <p class="small text-muted mb-3">Saldo pendiente: <span id="abonoSimbolo"></span><span id="abonoSaldoMax"></span></p>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Monto</label>
+                            <div class="input-group">
+                                <span class="input-group-text" id="abonoSimboloInput"></span>
+                                <input id="abonoMontoInput" name="Abono.Monto" class="form-control" type="number" step="0.01" min="0.01" required />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Fecha</label>
+                            <input name="Abono.Fecha" class="form-control" type="date" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Método de pago</label>
+                            <select name="Abono.MetodoPago" class="form-select" required>
+                                <option value="">-- Seleccione --</option>
+                                <option value="Transferencia">Transferencia bancaria</option>
+                                <option value="Sinpe">SINPE Móvil</option>
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Número de comprobante</label>
+                            <input name="Abono.NumeroComprobante" class="form-control" placeholder="Opcional" autocomplete="off" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Comprobante adjunto</label>
+                            <input name="Abono.Comprobante" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png" />
+                            <small class="text-muted">Opcional. PDF o imagen, máximo 10 MB.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-lg me-1"></i>Confirmar abono
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var modalEl = document.getElementById('modalAbono');
+            var modal = new bootstrap.Modal(modalEl);
+            var form = document.getElementById('abonoForm');
+            var facturaIdActual = null;
+
+            document.addEventListener('click', function (e) {
+                var btn = e.target.closest('.btn-abono-modal');
+                if (!btn) return;
+
+                facturaIdActual = btn.dataset.facturaId;
+                document.getElementById('abonoSaldoMax').textContent = btn.dataset.saldo;
+                document.getElementById('abonoSimbolo').textContent = btn.dataset.simbolo;
+                document.getElementById('abonoSimboloInput').textContent = btn.dataset.simbolo;
+                document.getElementById('abonoMontoInput').max = btn.dataset.saldoNumerico;
+                document.getElementById('abonoError').classList.add('d-none');
+                form.reset();
+                modal.show();
+            });
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                if (!facturaIdActual) return;
+
+                var errorBox = document.getElementById('abonoError');
+                errorBox.classList.add('d-none');
+
+                var submitBtn = form.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+
+                try {
+                    var formData = new FormData(form);
+                    var respuesta = await fetch('@Url.Action("RegistrarAbonoAjax")/' + facturaIdActual, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    if (respuesta.ok) {
+                        modal.hide();
+                        var contenido = await fetch(window.location.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                        if (contenido.ok) {
+                            document.getElementById('estado-cuenta-contenido').innerHTML = await contenido.text();
+                        }
+                    } else {
+                        var data = await respuesta.json().catch(function () { return { mensaje: 'Ocurrió un error inesperado.' }; });
+                        errorBox.textContent = data.mensaje;
+                        errorBox.classList.remove('d-none');
+                    }
+                } finally {
+                    submitBtn.disabled = false;
+                }
+            });
+        })();
+    </script>
+}
