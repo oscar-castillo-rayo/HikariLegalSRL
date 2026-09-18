@@ -1,0 +1,83 @@
+@model HikariLegalSRL.ViewModels.ProBono.SolicitudProBonoCreateViewModel
+
+@{
+    ViewData["Title"] = "Nueva solicitud pro bono";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/probono.css" />
+}
+
+<div class="d-flex align-items-center gap-2 mb-4">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0 fw-bold probono-titulo">Nueva solicitud pro bono</h4>
+</div>
+
+<div class="card shadow-sm border-0" style="max-width:650px;">
+    <div class="card-body p-4">
+        <div class="alert alert-info small mb-4">
+            <i class="bi bi-info-circle me-2"></i>
+            Un servicio pro bono es un servicio gratuito para un cliente o prospecto que no
+            puede pagar. Requiere aprobación del Administrador.
+        </div>
+
+        <form asp-action="Crear" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-3"></div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="Solicitud.ClienteId" class="form-label fw-semibold">Cliente</label>
+                    <select asp-for="Solicitud.ClienteId" id="selectCliente" class="form-select">
+                        <option value="">-- Ninguno --</option>
+                        @foreach (var c in Model.Clientes)
+                        {
+                            <option value="@c.Id">@c.Nombre</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Solicitud.ProspectoId" class="form-label fw-semibold">Prospecto</label>
+                    <select asp-for="Solicitud.ProspectoId" id="selectProspecto" class="form-select">
+                        <option value="">-- Ninguno --</option>
+                        @foreach (var p in Model.Prospectos)
+                        {
+                            <option value="@p.Id">@p.Nombre</option>
+                        }
+                    </select>
+                    <small class="text-muted">Seleccione cliente o prospecto, no ambos.</small>
+                </div>
+                <div class="col-12">
+                    <label asp-for="Solicitud.JustificacionEscrita" class="form-label fw-semibold">Justificación</label>
+                    <textarea asp-for="Solicitud.JustificacionEscrita" class="form-control" rows="5"
+                              placeholder="Explica por qué conviene ayudar a este beneficiario..."></textarea>
+                    <span asp-validation-for="Solicitud.JustificacionEscrita" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-send me-1"></i>Enviar solicitud
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScripts")
+    <script>
+        const selectCliente = document.getElementById('selectCliente');
+        const selectProspecto = document.getElementById('selectProspecto');
+
+        selectCliente.addEventListener('change', () => {
+            if (selectCliente.value) selectProspecto.value = '';
+        });
+        selectProspecto.addEventListener('change', () => {
+            if (selectProspecto.value) selectCliente.value = '';
+        });
+    </script>
+}

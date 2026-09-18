@@ -1,0 +1,125 @@
+@model HikariLegalSRL.Models.DTOs.SolicitudProBonoDetalleDTO
+@using HikariLegalSRL.Models.Enums
+
+@{
+    ViewData["Title"] = $"Solicitud pro bono #{Model.Id}";
+    var (bc, bt) = Model.Decision switch
+    {
+        DecisionProBono.Pendiente => ("warning text-dark", "Pendiente"),
+        DecisionProBono.Aprobada => ("success", "Aprobada"),
+        DecisionProBono.Rechazada => ("danger", "Rechazada"),
+        _ => ("secondary", Model.Decision.ToString())
+    };
+    var puedeResolver = await Authorization.TienePermiso(User, Permisos.Facturacion.AprobarProbono)
+        && Model.Decision == DecisionProBono.Pendiente;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/probono.css" />
+}
+
+<div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0 fw-bold probono-titulo">Solicitud pro bono #@Model.Id</h4>
+    <span class="badge bg-@bc fs-6">@bt</span>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-bold probono-card-header">
+                <i class="bi bi-file-earmark-text me-1"></i>Datos de la solicitud
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-5 text-muted small">Beneficiario</dt>
+                    <dd class="col-7 fw-semibold">@Model.Beneficiario</dd>
+
+                    <dt class="col-5 text-muted small">Solicitado por</dt>
+                    <dd class="col-7">@Model.SolicitanteNombre</dd>
+
+                    <dt class="col-5 text-muted small">Fecha de solicitud</dt>
+                    <dd class="col-7">@Model.FechaSolicitud.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+
+                    @if (Model.Decision != DecisionProBono.Pendiente)
+                    {
+                        <dt class="col-5 text-muted small">Resuelto por</dt>
+                        <dd class="col-7">@Model.ResueltoPorNombre</dd>
+
+                        <dt class="col-5 text-muted small">Fecha de resolución</dt>
+                        <dd class="col-7">@Model.FechaResolucion!.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                    }
+                </dl>
+                <hr />
+                <p class="small mb-0">
+                    <strong>Justificación:</strong><br />
+                    @Model.JustificacionEscrita
+                </p>
+                @if (!string.IsNullOrWhiteSpace(Model.ComentarioResolucion))
+                {
+                    <hr />
+                    <p class="small mb-0">
+                        <strong>Comentario de resolución:</strong><br />
+                        @Model.ComentarioResolucion
+                    </p>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (puedeResolver)
+    {
+        <div class="col-lg-7">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-bold probono-card-header">
+                    <i class="bi bi-gavel me-1"></i>Resolución
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Resolver" asp-route-id="@Model.Id" method="post"
+                          class="form-confirmar"
+                          data-titulo="¿Confirmar esta resolución?"
+                          data-texto="La decisión quedará registrada y no puede revertirse."
+                          data-icono="question"
+                          data-btn-confirmar="Sí, confirmar">
+                        @Html.AntiForgeryToken()
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Decisión</label>
+                                <div class="d-flex gap-3 mt-1">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="Decision"
+                                               value="@DecisionProBono.Aprobada" id="radioAprobada" required />
+                                        <label class="form-check-label text-success fw-semibold" for="radioAprobada">
+                                            <i class="bi bi-check-circle me-1"></i>Aprobar
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="Decision"
+                                               value="@DecisionProBono.Rechazada" id="radioRechazada" required />
+                                        <label class="form-check-label text-danger fw-semibold" for="radioRechazada">
+                                            <i class="bi bi-x-circle me-1"></i>Rechazar
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Comentario de resolución</label>
+                                <textarea name="ComentarioResolucion" class="form-control" rows="4"
+                                          placeholder="Explica la razón de la decisión..." required></textarea>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-gavel me-1"></i>Confirmar resolución
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+</div>
