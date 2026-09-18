@@ -576,6 +576,49 @@ namespace HikariLegalSRL.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HikariLegalSRL.Models.Notificacion", b =>
+                {
+                    b.Property<int>("NotificacionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("NotificacionId"));
+
+                    b.Property<int>("EntidadRelacionadaId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EntidadRelacionadaTipo")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("Leida")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Mensaje")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("UsuarioId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("NotificacionId");
+
+                    b.HasIndex("UsuarioId", "Leida");
+
+                    b.ToTable("Notificaciones");
+                });
+
             modelBuilder.Entity("HikariLegalSRL.Models.Pais", b =>
                 {
                     b.Property<int>("PaisId")
@@ -1241,6 +1284,17 @@ namespace HikariLegalSRL.Migrations
                     b.Navigation("Propuesta");
 
                     b.Navigation("Responsable");
+                });
+
+            modelBuilder.Entity("HikariLegalSRL.Models.Notificacion", b =>
+                {
+                    b.HasOne("HikariLegalSRL.Models.ApplicationUser", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Propuesta", b =>

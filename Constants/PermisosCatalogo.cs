@@ -113,6 +113,7 @@ namespace HikariLegalSRL.Constants
                     new() { Codigo = "expedientes.cargar",          Nombre = "Cargar entregable",   Descripcion = "Subir un entregable de una tarea" },
                     new() { Codigo = "expedientes.ser_responsable", Nombre = "Ser responsable",     Descripcion = "Puede ser asignado como responsable a cargo de un expediente" },
                     new() { Codigo = "expedientes.gestionar_ajenas", Nombre = "Gestionar tareas ajenas", Descripcion = "Iniciar o enviar a revisión tareas asignadas a otro colaborador" },
+                    new() { Codigo = "expedientes.supervisar", Nombre = "Supervisar", Descripcion = "Recibir notificaciones de escalamiento por vencimiento y de cambio de estado de tareas ajenas" },
                     new() { Codigo = "expedientes.gestionar_tareas_propias", Nombre = "Aprobar tareas propias", Descripcion = "Puede aprobar o devolver el entregable de una tarea asignada a sí mismo" },
                     new() { Codigo = "expedientes.editar_tarea", Nombre = "Editar tarea", Descripcion = "Modificar los datos de una tarea pendiente" },
                     new() { Codigo = "expedientes.eliminar_tarea", Nombre = "Eliminar tarea", Descripcion = "Eliminar una tarea pendiente" },

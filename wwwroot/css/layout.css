@@ -78,6 +78,20 @@ html, body {
     flex: 1;
 }
 
+.layout-campana {
+    color: #1F3864;
+    font-size: 1.15rem;
+    position: relative;
+}
+
+.layout-campana-badge {
+    font-size: .6rem;
+    left: 100%;
+    position: absolute;
+    top: -6px;
+    transform: translateX(-60%);
+}
+
 @media(min-width: 992px){
     body {
         height: 100vh;
