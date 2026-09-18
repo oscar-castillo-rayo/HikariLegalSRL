@@ -48,13 +48,24 @@ namespace HikariLegalSRL.Services.Implementations
         private static decimal CombinarHorasMinutos(int? horas, int? minutos)
             => Math.Round((horas ?? 0) + (minutos ?? 0) / 60m, 2);
 
-        // Ronda que corresponde al trabajo actual: mientras la tarea está en proceso (o recién
-        // devuelta) es la ronda siguiente a la última entregada; mientras está en revisión es la
-        // ronda del entregable que se está evaluando.
+        // Ronda que corresponde al trabajo actual. Mientras está en revisión, es la ronda del
+        // entregable que se está evaluando. En cualquier otro estado, si el último entregable
+        // ya tiene una revisión (fue aprobado o devuelto) esa ronda quedó cerrada y ahora se
+        // trabaja la siguiente; si el último entregable todavía NO tiene revisión, es el
+        // borrador de la ronda actual (creado al primer archivo adjuntado con
+        // AgregarArchivoEntregable, antes incluso de enviar la tarea a revisión), así que
+        // sigue siendo esa misma ronda — no una nueva — mientras se le sigan agregando archivos.
         private static int RondaActual(Tarea tarea)
         {
-            var ultimaRonda = tarea.Entregables.Count == 0 ? 0 : tarea.Entregables.Max(e => e.RondaRevision);
-            return tarea.Estado == EstadoTarea.ListaRevision ? ultimaRonda : ultimaRonda + 1;
+            if (tarea.Entregables.Count == 0)
+                return 1;
+
+            var ultimo = tarea.Entregables.OrderByDescending(e => e.RondaRevision).First();
+
+            if (tarea.Estado == EstadoTarea.ListaRevision)
+                return ultimo.RondaRevision;
+
+            return ultimo.Revisiones.Any() ? ultimo.RondaRevision + 1 : ultimo.RondaRevision;
         }
 
         private async Task<bool> PuedeGestionarTareaAjenaAsync(string usuarioActualId)
@@ -64,13 +75,34 @@ namespace HikariLegalSRL.Services.Implementations
                 && await _permisoEvaluador.TienePermisoAsync(usuarioActual, Permisos.Expedientes.GestionarAjenas);
         }
 
-        public async Task<List<ExpedienteListaDTO>> Listar()
+        private async Task<bool> PuedeGestionarTareasPropiasAsync(string usuarioActualId)
         {
-            return await _context.Expedientes
+            var usuarioActual = await _context.Users.FindAsync(usuarioActualId);
+            return usuarioActual is not null
+                && await _permisoEvaluador.TienePermisoAsync(usuarioActual, Permisos.Expedientes.GestionarTareasPropias);
+        }
+
+        public async Task<List<ExpedienteListaDTO>> Listar(string usuarioActualId)
+        {
+            var puedeVerTodos = await PuedeGestionarTareaAjenaAsync(usuarioActualId);
+
+            var query = _context.Expedientes
                 .AsNoTracking()
                 .Include(e => e.Cliente)
                 .Include(e => e.Responsable)
                 .Include(e => e.Tareas)
+                .AsQueryable();
+
+            // RF-007: el Administrador ve todos los expedientes; el Abogado/Asesor solo
+            // los de su cartera (donde es responsable); el Colaborador externo solo los
+            // que tienen alguna tarea asignada a él. No depende del rol, solo de los datos.
+            if (!puedeVerTodos)
+            {
+                query = query.Where(e => e.ResponsableId == usuarioActualId
+                    || e.Tareas.Any(t => t.ColaboradorResponsableId == usuarioActualId));
+            }
+
+            return await query
                 .OrderByDescending(e => e.FechaApertura)
                 .Select(e => new ExpedienteListaDTO
                 {
@@ -85,18 +117,28 @@ namespace HikariLegalSRL.Services.Implementations
                 .ToListAsync();
         }
 
-        public async Task<ExpedienteDetalleViewModel?> ObtenerDetalle(int id)
+        public async Task<ExpedienteDetalleViewModel?> ObtenerDetalle(int id, string usuarioActualId)
         {
             var expediente = await _context.Expedientes
                 .AsNoTracking()
                 .Include(e => e.Cliente)
                 .Include(e => e.Responsable)
                 .Include(e => e.Tareas).ThenInclude(t => t.ColaboradorResponsable)
-                .Include(e => e.Tareas).ThenInclude(t => t.Entregables)
+                .Include(e => e.Tareas).ThenInclude(t => t.Entregables).ThenInclude(en => en.Archivos)
+                .Include(e => e.Tareas).ThenInclude(t => t.Entregables).ThenInclude(en => en.Revisiones).ThenInclude(r => r.Revisor)
                 .Include(e => e.Tareas).ThenInclude(t => t.RegistrosHoras)
                 .FirstOrDefaultAsync(e => e.ExpedienteId == id);
 
             if (expediente is null)
+                return null;
+
+            // RF-007: mismo criterio de cartera que Listar().
+            var puedeVerTodos = await PuedeGestionarTareaAjenaAsync(usuarioActualId);
+            var tieneAcceso = puedeVerTodos
+                || expediente.ResponsableId == usuarioActualId
+                || expediente.Tareas.Any(t => t.ColaboradorResponsableId == usuarioActualId);
+
+            if (!tieneAcceso)
                 return null;
 
             return new ExpedienteDetalleViewModel
@@ -106,6 +148,7 @@ namespace HikariLegalSRL.Services.Implementations
                     Id = expediente.ExpedienteId,
                     ClienteNombre = expediente.Cliente.NombreEmpresaPersona,
                     PropuestaId = expediente.PropuestaId,
+                    ResponsableId = expediente.ResponsableId,
                     ResponsableNombre = expediente.Responsable.NombreCompleto,
                     PlazoComprometido = expediente.PlazoComprometido,
                     FechaApertura = expediente.FechaApertura,
@@ -124,14 +167,11 @@ namespace HikariLegalSRL.Services.Implementations
                             Prioridad = t.Prioridad,
                             Estado = t.Estado,
                             FechaCreacion = t.FechaCreacion,
-                            UltimoEntregableId = t.Entregables
-                                .OrderByDescending(en => en.RondaRevision)
-                                .Select(en => (int?)en.EntregableId)
-                                .FirstOrDefault(),
-                            TieneArchivoAdjunto = t.Entregables
-                                .OrderByDescending(en => en.RondaRevision)
-                                .Select(en => en.ArchivoRuta)
-                                .FirstOrDefault() != null,
+                            ArchivosRondaActual = t.Entregables
+                                .Where(en => en.RondaRevision == RondaActual(t))
+                                .SelectMany(en => en.Archivos)
+                                .Select(a => new ArchivoDTO { Id = a.EntregableArchivoId, NombreOriginal = a.NombreOriginal })
+                                .ToList(),
                             HorasColaborador = Math.Round((t.RegistrosHoras
                                 .Where(r => r.Rol == RolHoras.Colaborador)
                                 .Sum(r => (int?)r.Minutos) ?? 0) / 60m, 2),
@@ -140,7 +180,43 @@ namespace HikariLegalSRL.Services.Implementations
                                 .Sum(r => (int?)r.Minutos) ?? 0) / 60m, 2),
                             HorasRondaActual = Math.Round((t.RegistrosHoras
                                 .Where(r => r.Rol == RolHoras.Colaborador && r.RondaRevision == RondaActual(t))
-                                .Sum(r => (int?)r.Minutos) ?? 0) / 60m, 2)
+                                .Sum(r => (int?)r.Minutos) ?? 0) / 60m, 2),
+                            HorasRevisionRondaActual = Math.Round((t.RegistrosHoras
+                                .Where(r => r.Rol == RolHoras.Revisor && r.RondaRevision == RondaActual(t))
+                                .Sum(r => (int?)r.Minutos) ?? 0) / 60m, 2),
+                            Historial = t.Entregables
+                                .OrderByDescending(en => en.RondaRevision)
+                                .Select(en => new RondaHistorialDTO
+                                {
+                                    RondaRevision = en.RondaRevision,
+                                    EntregableId = en.EntregableId,
+                                    Archivos = en.Archivos
+                                        .Select(a => new ArchivoDTO { Id = a.EntregableArchivoId, NombreOriginal = a.NombreOriginal })
+                                        .ToList(),
+                                    HorasReales = en.HorasReales,
+                                    FechaCarga = en.FechaCarga,
+                                    RevisionId = en.Revisiones
+                                        .Select(r => (int?)r.RevisionId)
+                                        .FirstOrDefault(),
+                                    Resultado = en.Revisiones
+                                        .Select(r => (ResultadoRevision?)r.Resultado)
+                                        .FirstOrDefault(),
+                                    RevisorNombre = en.Revisiones
+                                        .Select(r => r.Revisor.NombreCompleto)
+                                        .FirstOrDefault(),
+                                    HorasRevision = en.Revisiones
+                                        .Select(r => (decimal?)r.HorasRevision)
+                                        .FirstOrDefault(),
+                                    Observaciones = en.Revisiones
+                                        .Select(r => r.Observaciones)
+                                        .FirstOrDefault(),
+                                    TieneArchivoRevision = en.Revisiones
+                                        .Select(r => r.ArchivoAdjunto)
+                                        .FirstOrDefault() != null,
+                                    FechaRevision = en.Revisiones
+                                        .Select(r => (DateTime?)r.FechaRevision)
+                                        .FirstOrDefault()
+                                }).ToList()
                         }).ToList()
                 },
                 Colaboradores = await ObtenerColaboradoresActivos(),
@@ -216,6 +292,117 @@ namespace HikariLegalSRL.Services.Implementations
             await _context.SaveChangesAsync();
         }
 
+        public async Task EditarTarea(int tareaId, TareaEdicionDTO dto, string usuarioActualId)
+        {
+            var tarea = await _context.Tareas
+                .Include(t => t.Expediente)
+                .FirstOrDefaultAsync(t => t.TareaId == tareaId)
+                ?? throw new ReglaNegocioException("La tarea indicada no existe.");
+
+            if (tarea.Expediente.Estado != EstadoExpediente.Abierto)
+                throw new ReglaNegocioException("Solo se pueden editar tareas de expedientes abiertos.");
+
+            // RF-008: el historial de revisión es inalterable una vez aprobado el entregable
+            // final; antes de eso (misma regla que para eliminar) sí se puede seguir editando.
+            if (tarea.Estado == EstadoTarea.Aprobada)
+                throw new ReglaNegocioException("No se puede editar una tarea ya aprobada.");
+
+            var colaborador = await _permisoEvaluador.UsuariosActivosConPermisoAsync(Permisos.Expedientes.Cargar);
+            if (!colaborador.Any(u => u.Id == dto.ColaboradorResponsableId))
+                throw new ReglaNegocioException("El colaborador seleccionado no existe o no está disponible para recibir tareas.");
+
+            var horasEstimadas = CombinarHorasMinutos(dto.HorasEstimadasHoras, dto.HorasEstimadasMinutos);
+            if (horasEstimadas <= 0)
+                throw new ReglaNegocioException("Las horas estimadas deben ser mayores a 0.");
+
+            var descripcionAnterior = tarea.Descripcion;
+
+            tarea.Descripcion = dto.Descripcion;
+            tarea.ColaboradorResponsableId = dto.ColaboradorResponsableId!;
+            tarea.FechaLimite = dto.FechaLimite!.Value;
+            tarea.HorasEstimadas = horasEstimadas;
+            tarea.Prioridad = dto.Prioridad!.Value;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new ReglaNegocioException(ex.Message);
+            }
+
+            await _bitacoraAuditoriaService.Registrar(
+                usuarioId: usuarioActualId,
+                tipoAccion: "editar",
+                moduloAfectado: "Expedientes",
+                registroAfectadoId: tareaId.ToString(),
+                valorAnterior: $"Tarea '{descripcionAnterior}'",
+                valorNuevo: $"Tarea '{tarea.Descripcion}'");
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task EliminarTarea(int tareaId, string usuarioActualId)
+        {
+            var tarea = await _context.Tareas
+                .Include(t => t.Expediente)
+                .Include(t => t.Entregables).ThenInclude(en => en.Archivos)
+                .Include(t => t.Entregables).ThenInclude(en => en.Revisiones)
+                .Include(t => t.RegistrosHoras)
+                .FirstOrDefaultAsync(t => t.TareaId == tareaId)
+                ?? throw new ReglaNegocioException("La tarea indicada no existe.");
+
+            if (tarea.Expediente.Estado != EstadoExpediente.Abierto)
+                throw new ReglaNegocioException("Solo se pueden eliminar tareas de expedientes abiertos.");
+
+            // RF-008: el historial de revisión es inalterable una vez aprobado el entregable
+            // final; antes de eso (incluso ya iniciada, con horas o entregables registrados)
+            // sí se puede eliminar por completo, para corregir una tarea creada por error.
+            if (tarea.Estado == EstadoTarea.Aprobada)
+                throw new ReglaNegocioException("No se puede eliminar una tarea ya aprobada.");
+
+            var descripcion = tarea.Descripcion;
+            var estadoAnterior = tarea.Estado.ToString();
+            var horasRegistradas = Math.Round(tarea.RegistrosHoras.Sum(r => r.Minutos) / 60m, 2);
+            var totalEntregables = tarea.Entregables.Count;
+
+            // Sin cascada automática en la base (FK en NoAction): hay que borrar primero los
+            // archivos físicos y las filas dependientes antes de la tarea misma.
+            foreach (var entregable in tarea.Entregables)
+            {
+                foreach (var archivo in entregable.Archivos)
+                {
+                    var rutaArchivo = Path.Combine(ObtenerCarpetaEntregables(), archivo.ArchivoRuta.Replace('/', Path.DirectorySeparatorChar));
+                    if (File.Exists(rutaArchivo))
+                        File.Delete(rutaArchivo);
+                }
+
+                foreach (var revision in entregable.Revisiones.Where(r => r.ArchivoAdjunto is not null))
+                {
+                    var rutaArchivo = Path.Combine(ObtenerCarpetaEntregables(), revision.ArchivoAdjunto!.Replace('/', Path.DirectorySeparatorChar));
+                    if (File.Exists(rutaArchivo))
+                        File.Delete(rutaArchivo);
+                }
+
+                _context.RevisionesEntregable.RemoveRange(entregable.Revisiones);
+                _context.EntregableArchivos.RemoveRange(entregable.Archivos);
+            }
+
+            _context.Entregables.RemoveRange(tarea.Entregables);
+            _context.RegistrosHoras.RemoveRange(tarea.RegistrosHoras);
+            _context.Tareas.Remove(tarea);
+
+            await _context.SaveChangesAsync();
+
+            await _bitacoraAuditoriaService.Registrar(
+                usuarioId: usuarioActualId,
+                tipoAccion: "eliminar",
+                moduloAfectado: "Expedientes",
+                registroAfectadoId: tareaId.ToString(),
+                valorAnterior: $"Tarea '{descripcion}' (estado: {estadoAnterior}, {horasRegistradas}h registradas, {totalEntregables} entregable(s))");
+        }
+
         public async Task ReasignarResponsable(int expedienteId, string? nuevoResponsableId, string usuarioActualId)
         {
             var expediente = await _context.Expedientes
@@ -262,12 +449,13 @@ namespace HikariLegalSRL.Services.Implementations
             if (tarea.Expediente.Estado != EstadoExpediente.Abierto)
                 throw new ReglaNegocioException("Solo se pueden iniciar tareas de expedientes abiertos.");
 
-            if (tarea.Estado != EstadoTarea.Pendiente)
-                throw new ReglaNegocioException("Solo se puede iniciar una tarea que esté pendiente.");
+            if (tarea.Estado is not (EstadoTarea.Pendiente or EstadoTarea.Devuelta))
+                throw new ReglaNegocioException("Solo se puede iniciar una tarea que esté pendiente o devuelta.");
 
             if (tarea.ColaboradorResponsableId != usuarioActualId && !await PuedeGestionarTareaAjenaAsync(usuarioActualId))
                 throw new ReglaNegocioException("Solo el colaborador asignado puede iniciar esta tarea.");
 
+            var estadoAnterior = tarea.Estado == EstadoTarea.Pendiente ? "pendiente" : "devuelta";
             tarea.Estado = EstadoTarea.EnProceso;
             await _context.SaveChangesAsync();
 
@@ -276,17 +464,17 @@ namespace HikariLegalSRL.Services.Implementations
                 tipoAccion: "cambiar_estado",
                 moduloAfectado: "Expedientes",
                 registroAfectadoId: tareaId.ToString(),
-                valorAnterior: "pendiente",
+                valorAnterior: estadoAnterior,
                 valorNuevo: "en_proceso");
 
             await _context.SaveChangesAsync();
         }
 
-        public async Task MarcarListaParaRevision(int tareaId, CargarEntregableDTO dto, string usuarioActualId)
+        public async Task MarcarListaParaRevision(int tareaId, string usuarioActualId)
         {
             var tarea = await _context.Tareas
                 .Include(t => t.Expediente)
-                .Include(t => t.Entregables)
+                .Include(t => t.Entregables).ThenInclude(en => en.Revisiones)
                 .FirstOrDefaultAsync(t => t.TareaId == tareaId)
                 ?? throw new ReglaNegocioException("La tarea indicada no existe.");
 
@@ -309,43 +497,25 @@ namespace HikariLegalSRL.Services.Implementations
 
             var horasReales = Math.Round(minutosRonda / 60m, 2);
 
-            var archivo = dto.Archivo;
-            if (archivo is not null)
+            // Los archivos ya se van adjuntando de a uno con AgregarArchivoEntregable mientras
+            // la tarea está en proceso; aquí solo se cierra la ronda con las horas reales.
+            var entregable = tarea.Entregables.FirstOrDefault(en => en.RondaRevision == rondaActual);
+            if (entregable is null)
             {
-                if (archivo.Length > TamanoMaximoArchivoBytes)
-                    throw new ReglaNegocioException("El archivo del entregable no puede superar los 20 MB.");
-
-                var extension = Path.GetExtension(archivo.FileName);
-                if (string.IsNullOrWhiteSpace(extension) || !ExtensionesPermitidas.Contains(extension))
-                    throw new ReglaNegocioException("El tipo de archivo del entregable no está permitido.");
-            }
-
-            var entregable = new Entregable
-            {
-                TareaId = tareaId,
-                RondaRevision = rondaActual,
-                HorasReales = horasReales,
-                TipoEntregable = TipoEntregable.Preliminar,
-                CargadoPorId = usuarioActualId,
-                FechaCarga = DateTime.UtcNow
-            };
-
-            _context.Entregables.Add(entregable);
-            await _context.SaveChangesAsync();
-
-            if (archivo is not null)
-            {
-                var nombreArchivo = Path.GetFileName(archivo.FileName);
-                var carpetaTarea = Path.Combine(ObtenerCarpetaEntregables(), tareaId.ToString(), entregable.EntregableId.ToString());
-                Directory.CreateDirectory(carpetaTarea);
-
-                var rutaFisica = Path.Combine(carpetaTarea, nombreArchivo);
-                using (var destino = File.Create(rutaFisica))
+                entregable = new Entregable
                 {
-                    await archivo.CopyToAsync(destino);
-                }
-
-                entregable.ArchivoRuta = $"{tareaId}/{entregable.EntregableId}/{nombreArchivo}";
+                    TareaId = tareaId,
+                    RondaRevision = rondaActual,
+                    HorasReales = horasReales,
+                    TipoEntregable = TipoEntregable.Preliminar,
+                    CargadoPorId = usuarioActualId,
+                    FechaCarga = DateTime.UtcNow
+                };
+                _context.Entregables.Add(entregable);
+            }
+            else
+            {
+                entregable.HorasReales = horasReales;
             }
 
             tarea.Estado = EstadoTarea.ListaRevision;
@@ -362,11 +532,139 @@ namespace HikariLegalSRL.Services.Implementations
             await _context.SaveChangesAsync();
         }
 
+        private async Task<Entregable> ObtenerOCrearEntregableRondaActualAsync(Tarea tarea, string usuarioActualId)
+        {
+            var rondaActual = RondaActual(tarea);
+            var entregable = await _context.Entregables
+                .FirstOrDefaultAsync(en => en.TareaId == tarea.TareaId && en.RondaRevision == rondaActual);
+
+            if (entregable is null)
+            {
+                entregable = new Entregable
+                {
+                    TareaId = tarea.TareaId,
+                    RondaRevision = rondaActual,
+                    HorasReales = 0,
+                    TipoEntregable = TipoEntregable.Preliminar,
+                    CargadoPorId = usuarioActualId,
+                    FechaCarga = DateTime.UtcNow
+                };
+                _context.Entregables.Add(entregable);
+                await _context.SaveChangesAsync();
+            }
+
+            return entregable;
+        }
+
+        public async Task AgregarArchivoEntregable(int tareaId, AgregarArchivoEntregableDTO dto, string usuarioActualId)
+        {
+            var tarea = await _context.Tareas
+                .Include(t => t.Expediente)
+                .Include(t => t.Entregables).ThenInclude(en => en.Revisiones)
+                .FirstOrDefaultAsync(t => t.TareaId == tareaId)
+                ?? throw new ReglaNegocioException("La tarea indicada no existe.");
+
+            if (tarea.Expediente.Estado != EstadoExpediente.Abierto)
+                throw new ReglaNegocioException("Solo se pueden adjuntar archivos en expedientes abiertos.");
+
+            if (tarea.Estado is not (EstadoTarea.EnProceso or EstadoTarea.Devuelta))
+                throw new ReglaNegocioException("Solo se pueden adjuntar archivos mientras la tarea está en proceso.");
+
+            if (tarea.ColaboradorResponsableId != usuarioActualId && !await PuedeGestionarTareaAjenaAsync(usuarioActualId))
+                throw new ReglaNegocioException("Solo el colaborador asignado puede adjuntar archivos a esta tarea.");
+
+            var archivos = dto.Archivos.Where(a => a.Length > 0).ToList();
+            if (archivos.Count == 0)
+                throw new ReglaNegocioException("Debe seleccionar al menos un archivo.");
+
+            foreach (var archivo in archivos)
+            {
+                if (archivo.Length > TamanoMaximoArchivoBytes)
+                    throw new ReglaNegocioException($"El archivo '{archivo.FileName}' no puede superar los 20 MB.");
+
+                var extensionArchivo = Path.GetExtension(archivo.FileName);
+                if (string.IsNullOrWhiteSpace(extensionArchivo) || !ExtensionesPermitidas.Contains(extensionArchivo))
+                    throw new ReglaNegocioException($"El tipo de archivo de '{archivo.FileName}' no está permitido.");
+            }
+
+            var entregable = await ObtenerOCrearEntregableRondaActualAsync(tarea, usuarioActualId);
+
+            var carpetaEntregable = Path.Combine(ObtenerCarpetaEntregables(), tareaId.ToString(), entregable.EntregableId.ToString());
+            Directory.CreateDirectory(carpetaEntregable);
+
+            var nombresArchivos = new List<string>();
+            foreach (var archivo in archivos)
+            {
+                var nombreArchivo = Path.GetFileName(archivo.FileName);
+                var nombreFisico = $"{Guid.NewGuid()}_{nombreArchivo}";
+                var rutaFisica = Path.Combine(carpetaEntregable, nombreFisico);
+                using (var destino = File.Create(rutaFisica))
+                {
+                    await archivo.CopyToAsync(destino);
+                }
+
+                _context.EntregableArchivos.Add(new EntregableArchivo
+                {
+                    EntregableId = entregable.EntregableId,
+                    ArchivoRuta = $"{tareaId}/{entregable.EntregableId}/{nombreFisico}",
+                    NombreOriginal = nombreArchivo,
+                    CargadoPorId = usuarioActualId,
+                    FechaCarga = DateTime.UtcNow
+                });
+
+                nombresArchivos.Add(nombreArchivo);
+            }
+
+            await _context.SaveChangesAsync();
+
+            await _bitacoraAuditoriaService.Registrar(
+                usuarioId: usuarioActualId,
+                tipoAccion: "crear",
+                moduloAfectado: "Expedientes",
+                registroAfectadoId: tareaId.ToString(),
+                valorNuevo: $"Archivo(s) adjuntado(s) en la ronda {entregable.RondaRevision}: {string.Join(", ", nombresArchivos)}");
+        }
+
+        public async Task EliminarArchivoEntregable(int archivoId, string usuarioActualId)
+        {
+            var archivo = await _context.EntregableArchivos
+                .Include(a => a.Entregable).ThenInclude(en => en.Tarea).ThenInclude(t => t.Expediente)
+                .FirstOrDefaultAsync(a => a.EntregableArchivoId == archivoId)
+                ?? throw new ReglaNegocioException("El archivo indicado no existe.");
+
+            var tarea = archivo.Entregable.Tarea;
+
+            if (tarea.Expediente.Estado != EstadoExpediente.Abierto)
+                throw new ReglaNegocioException("Solo se pueden eliminar archivos de expedientes abiertos.");
+
+            if (tarea.Estado is not (EstadoTarea.EnProceso or EstadoTarea.Devuelta))
+                throw new ReglaNegocioException("Solo se pueden eliminar archivos mientras la tarea está en proceso.");
+
+            if (tarea.ColaboradorResponsableId != usuarioActualId && !await PuedeGestionarTareaAjenaAsync(usuarioActualId))
+                throw new ReglaNegocioException("Solo el colaborador asignado puede eliminar archivos de esta tarea.");
+
+            var rutaFisica = Path.Combine(ObtenerCarpetaEntregables(), archivo.ArchivoRuta.Replace('/', Path.DirectorySeparatorChar));
+            var nombreOriginal = archivo.NombreOriginal;
+
+            _context.EntregableArchivos.Remove(archivo);
+            await _context.SaveChangesAsync();
+
+            if (File.Exists(rutaFisica))
+                File.Delete(rutaFisica);
+
+            await _bitacoraAuditoriaService.Registrar(
+                usuarioId: usuarioActualId,
+                tipoAccion: "eliminar",
+                moduloAfectado: "Expedientes",
+                registroAfectadoId: tarea.TareaId.ToString(),
+                valorAnterior: nombreOriginal);
+        }
+
         public async Task AgregarHoras(int tareaId, AgregarHorasDTO dto, string usuarioActualId)
         {
             var tarea = await _context.Tareas
                 .Include(t => t.Expediente)
-                .Include(t => t.Entregables)
+                .Include(t => t.Entregables).ThenInclude(en => en.Revisiones)
                 .FirstOrDefaultAsync(t => t.TareaId == tareaId)
                 ?? throw new ReglaNegocioException("La tarea indicada no existe.");
 
@@ -376,18 +674,25 @@ namespace HikariLegalSRL.Services.Implementations
             if (tarea.Estado is not (EstadoTarea.EnProceso or EstadoTarea.ListaRevision or EstadoTarea.Devuelta))
                 throw new ReglaNegocioException("Solo se pueden registrar horas en una tarea activa.");
 
-            var puedeRegistrar = tarea.ColaboradorResponsableId == usuarioActualId || await PuedeGestionarTareaAjenaAsync(usuarioActualId);
+            // El rol depende del momento del flujo en que se registra, no de quién lo registra:
+            // mientras se trabaja la tarea (en proceso o recién devuelta) cuenta como colaborador;
+            // mientras está en revisión cuenta como revisor. Por eso quién puede registrar
+            // también depende del estado: en proceso/devuelta, solo el colaborador asignado;
+            // en revisión, solo quien puede revisar el expediente (el responsable de la
+            // cartera) — si no, un Abogado/Asesor nunca podría registrar sus horas de revisión
+            // sobre tareas de otros colaboradores en su propia cartera.
+            var rol = tarea.Estado == EstadoTarea.ListaRevision ? RolHoras.Revisor : RolHoras.Colaborador;
+
+            var puedeRegistrar = rol == RolHoras.Revisor
+                ? tarea.Expediente.ResponsableId == usuarioActualId || await PuedeGestionarTareaAjenaAsync(usuarioActualId)
+                : tarea.ColaboradorResponsableId == usuarioActualId || await PuedeGestionarTareaAjenaAsync(usuarioActualId);
+
             if (!puedeRegistrar)
                 throw new ReglaNegocioException("No tiene permiso para registrar horas en esta tarea.");
 
             var minutos = (dto.Horas ?? 0) * 60 + (dto.Minutos ?? 0);
             if (minutos <= 0)
                 throw new ReglaNegocioException("Ingrese un tiempo válido.");
-
-            // El rol depende del momento del flujo en que se registra, no de quién lo registra:
-            // mientras se trabaja la tarea (en proceso o recién devuelta) cuenta como colaborador;
-            // mientras está en revisión cuenta como revisor.
-            var rol = tarea.Estado == EstadoTarea.ListaRevision ? RolHoras.Revisor : RolHoras.Colaborador;
 
             var registro = new RegistroHoras
             {
@@ -412,16 +717,120 @@ namespace HikariLegalSRL.Services.Implementations
             await _context.SaveChangesAsync();
         }
 
-        public async Task<(string RutaAbsoluta, string NombreArchivo, string ContentType)?> ObtenerArchivoEntregable(int entregableId)
+        public async Task AprobarEntregable(int entregableId, RevisarEntregableDTO dto, string usuarioActualId)
+            => await RevisarEntregable(entregableId, ResultadoRevision.Aprobada, dto, usuarioActualId);
+
+        public async Task DevolverEntregable(int entregableId, RevisarEntregableDTO dto, string usuarioActualId)
+            => await RevisarEntregable(entregableId, ResultadoRevision.Devuelta, dto, usuarioActualId);
+
+        private async Task RevisarEntregable(int entregableId, ResultadoRevision resultado, RevisarEntregableDTO dto, string usuarioActualId)
         {
             var entregable = await _context.Entregables
-                .AsNoTracking()
-                .FirstOrDefaultAsync(en => en.EntregableId == entregableId);
+                .Include(en => en.Tarea).ThenInclude(t => t.Expediente)
+                .FirstOrDefaultAsync(en => en.EntregableId == entregableId)
+                ?? throw new ReglaNegocioException("El entregable indicado no existe.");
 
-            if (entregable?.ArchivoRuta is null)
+            var tarea = entregable.Tarea;
+
+            if (tarea.Expediente.Estado != EstadoExpediente.Abierto)
+                throw new ReglaNegocioException("Solo se pueden revisar entregables de expedientes abiertos.");
+
+            if (tarea.Estado != EstadoTarea.ListaRevision)
+                throw new ReglaNegocioException("Solo se puede revisar una tarea que esté lista para revisión.");
+
+            // RF-008: el Administrador revisa cualquier expediente; el Abogado/Asesor solo
+            // los de su propia cartera (donde es el responsable asignado).
+            if (!await PuedeGestionarTareaAjenaAsync(usuarioActualId) && tarea.Expediente.ResponsableId != usuarioActualId)
+                throw new ReglaNegocioException("Solo el responsable del expediente puede revisar sus entregables.");
+
+            // RF-008: por defecto nadie puede aprobar o devolver el entregable de su propia
+            // tarea (equivale a que nadie lo revise); el permiso expedientes.gestionar_tareas_propias
+            // permite excepciones puntuales (ej. un despacho pequeño donde el Abogado/Asesor
+            // también ejecuta tareas y no hay nadie más para revisarlo).
+            if (tarea.ColaboradorResponsableId == usuarioActualId && !await PuedeGestionarTareasPropiasAsync(usuarioActualId))
+                throw new ReglaNegocioException("No puede aprobar o devolver el entregable de su propia tarea.");
+
+            if (resultado == ResultadoRevision.Devuelta && string.IsNullOrWhiteSpace(dto.Observaciones))
+                throw new ReglaNegocioException("Debe ingresar observaciones para devolver el entregable.");
+
+            var minutosRevision = await _context.RegistrosHoras
+                .Where(r => r.TareaId == tarea.TareaId && r.RondaRevision == entregable.RondaRevision && r.Rol == RolHoras.Revisor)
+                .SumAsync(r => (int?)r.Minutos) ?? 0;
+
+            if (minutosRevision <= 0)
+                throw new ReglaNegocioException("Debe registrar tiempo de revisión (con el botón + de horas) antes de aprobar o devolver.");
+
+            var horasRevision = Math.Round(minutosRevision / 60m, 2);
+
+            var archivo = dto.Archivo;
+            if (archivo is not null)
+            {
+                if (archivo.Length > TamanoMaximoArchivoBytes)
+                    throw new ReglaNegocioException("El archivo de la revisión no puede superar los 20 MB.");
+
+                var extension = Path.GetExtension(archivo.FileName);
+                if (string.IsNullOrWhiteSpace(extension) || !ExtensionesPermitidas.Contains(extension))
+                    throw new ReglaNegocioException("El tipo de archivo de la revisión no está permitido.");
+            }
+
+            var revision = new RevisionEntregable
+            {
+                EntregableId = entregableId,
+                RevisorId = usuarioActualId,
+                Resultado = resultado,
+                HorasRevision = horasRevision,
+                Observaciones = string.IsNullOrWhiteSpace(dto.Observaciones) ? null : dto.Observaciones,
+                FechaRevision = DateTime.UtcNow
+            };
+
+            _context.RevisionesEntregable.Add(revision);
+            await _context.SaveChangesAsync();
+
+            if (archivo is not null)
+            {
+                var nombreArchivo = Path.GetFileName(archivo.FileName);
+                var carpetaRevision = Path.Combine(ObtenerCarpetaEntregables(), tarea.TareaId.ToString(), "revisiones", revision.RevisionId.ToString());
+                Directory.CreateDirectory(carpetaRevision);
+
+                var rutaFisica = Path.Combine(carpetaRevision, nombreArchivo);
+                using (var destino = File.Create(rutaFisica))
+                {
+                    await archivo.CopyToAsync(destino);
+                }
+
+                revision.ArchivoAdjunto = $"{tarea.TareaId}/revisiones/{revision.RevisionId}/{nombreArchivo}";
+            }
+
+            tarea.Estado = resultado == ResultadoRevision.Aprobada ? EstadoTarea.Aprobada : EstadoTarea.Devuelta;
+
+            if (resultado == ResultadoRevision.Aprobada)
+                entregable.TipoEntregable = TipoEntregable.Final;
+
+            await _context.SaveChangesAsync();
+
+            await _bitacoraAuditoriaService.Registrar(
+                usuarioId: usuarioActualId,
+                tipoAccion: resultado == ResultadoRevision.Aprobada ? "aprobar" : "rechazar",
+                moduloAfectado: "Expedientes",
+                registroAfectadoId: tarea.TareaId.ToString(),
+                valorAnterior: "lista_revision",
+                valorNuevo: resultado == ResultadoRevision.Aprobada
+                    ? $"aprobada (horas revisión ronda {entregable.RondaRevision}: {horasRevision}h)"
+                    : $"devuelta (horas revisión ronda {entregable.RondaRevision}: {horasRevision}h) — {dto.Observaciones}");
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<(string RutaAbsoluta, string NombreArchivo, string ContentType)?> ObtenerArchivoRevision(int revisionId)
+        {
+            var revision = await _context.RevisionesEntregable
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.RevisionId == revisionId);
+
+            if (revision?.ArchivoAdjunto is null)
                 return null;
 
-            var rutaAbsoluta = Path.Combine(ObtenerCarpetaEntregables(), entregable.ArchivoRuta.Replace('/', Path.DirectorySeparatorChar));
+            var rutaAbsoluta = Path.Combine(ObtenerCarpetaEntregables(), revision.ArchivoAdjunto.Replace('/', Path.DirectorySeparatorChar));
             if (!File.Exists(rutaAbsoluta))
                 return null;
 
@@ -431,6 +840,26 @@ namespace HikariLegalSRL.Services.Implementations
                 contentType = "application/octet-stream";
 
             return (rutaAbsoluta, nombreArchivo, contentType);
+        }
+
+        public async Task<(string RutaAbsoluta, string NombreArchivo, string ContentType)?> ObtenerArchivoEntregable(int archivoId)
+        {
+            var archivo = await _context.EntregableArchivos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.EntregableArchivoId == archivoId);
+
+            if (archivo is null)
+                return null;
+
+            var rutaAbsoluta = Path.Combine(ObtenerCarpetaEntregables(), archivo.ArchivoRuta.Replace('/', Path.DirectorySeparatorChar));
+            if (!File.Exists(rutaAbsoluta))
+                return null;
+
+            var provider = new FileExtensionContentTypeProvider();
+            if (!provider.TryGetContentType(archivo.NombreOriginal, out var contentType))
+                contentType = "application/octet-stream";
+
+            return (rutaAbsoluta, archivo.NombreOriginal, contentType);
         }
     }
 }

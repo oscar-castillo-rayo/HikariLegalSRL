@@ -31,7 +31,7 @@ namespace HikariLegalSRL.Constants
                     Permisos.Propuestas.Enviar, Permisos.Propuestas.Rechazar,
                     Permisos.Expedientes.Ver, Permisos.Expedientes.Crear, Permisos.Expedientes.Asignar,
                     Permisos.Expedientes.Aprobar, Permisos.Expedientes.Devolver, Permisos.Expedientes.Cargar,
-                    Permisos.Expedientes.SerResponsable,
+                    Permisos.Expedientes.SerResponsable, Permisos.Expedientes.EditarTarea, Permisos.Expedientes.EliminarTarea,
                     Permisos.Facturacion.Ver, Permisos.Facturacion.Probono,
                 },
                 [ColaboradorExterno] = new[]
