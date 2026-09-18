@@ -22,6 +22,9 @@
     var puedeVerEstadoCuenta = await Authorization.TienePermiso(User, Permisos.Facturacion.Abono);
     var puedeRegistrarAbono = puedeVerEstadoCuenta
         && Model.Estado != EstadoFactura.Pagada && Model.Estado != EstadoFactura.Anulada;
+    var puedeAnular = await Authorization.TienePermiso(User, Permisos.Facturacion.Anular);
+    var puedeAnularFactura = puedeAnular
+        && Model.Estado != EstadoFactura.Pagada && Model.Estado != EstadoFactura.Anulada;
     var porcentajePagado = Model.MontoTotal > 0 ? (int)Math.Round(Model.MontoPagado / Model.MontoTotal * 100) : 0;
     var colorBarra = porcentajePagado >= 100 ? "success" : porcentajePagado > 0 ? "warning" : "danger";
 }
@@ -48,6 +51,20 @@
             <a asp-action="RegistrarAbono" asp-route-id="@Model.Id" class="btn btn-success btn-sm">
                 <i class="bi bi-cash-coin me-1"></i>Registrar abono
             </a>
+        }
+        @if (puedeAnularFactura)
+        {
+            <form asp-action="Anular" asp-route-id="@Model.Id" method="post"
+                  class="form-confirmar d-inline"
+                  data-titulo="¿Anular esta factura?"
+                  data-texto="La factura #@Model.Id quedará anulada. No podrán registrarse más abonos sobre ella y no podrá revertirse."
+                  data-icono="warning"
+                  data-btn-confirmar="Sí, anular">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-x-circle me-1"></i>Anular factura
+                </button>
+            </form>
         }
     </div>
 </div>
@@ -164,6 +181,11 @@
                                 <th>Método</th>
                                 <th>Comprobante</th>
                                 <th>Registrado por</th>
+                                <th class="text-center">Estado</th>
+                                @if (puedeAnular)
+                                {
+                                    <th class="text-end">Acciones</th>
+                                }
                             </tr>
                         </thead>
                         <tbody>
@@ -176,9 +198,9 @@
                                     MetodoPago.Efectivo => "Efectivo",
                                     _ => "Otro"
                                 };
-                                <tr>
+                                <tr class="@(a.EstaAnulado ? "text-muted" : "")">
                                     <td><small>@a.Fecha.ToString("dd/MM/yyyy")</small></td>
-                                    <td class="text-end fw-semibold text-success">@simboloMoneda@a.Monto.ToString("N2")</td>
+                                    <td class="text-end fw-semibold @(a.EstaAnulado ? "" : "text-success")">@simboloMoneda@a.Monto.ToString("N2")</td>
                                     <td><small>@textoMetodo@(string.IsNullOrWhiteSpace(a.NumeroComprobante) ? "" : $" ({a.NumeroComprobante})")</small></td>
                                     <td>
                                         @if (a.TieneComprobante)
@@ -193,6 +215,35 @@
                                         }
                                     </td>
                                     <td><small>@a.RegistradoPorNombre</small></td>
+                                    <td class="text-center">
+                                        @if (a.EstaAnulado)
+                                        {
+                                            <span class="badge bg-secondary" title="Anulado por @a.AnuladoPorNombre el @a.FechaAnulacion!.Value.ToLocalTime().ToString("dd/MM/yyyy")">Anulado</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">Activo</span>
+                                        }
+                                    </td>
+                                    @if (puedeAnular)
+                                    {
+                                        <td class="text-end">
+                                            @if (!a.EstaAnulado)
+                                            {
+                                                <form asp-action="AnularAbono" asp-route-abonoId="@a.Id" asp-route-facturaId="@Model.Id" method="post"
+                                                      class="form-confirmar d-inline"
+                                                      data-titulo="¿Anular este abono?"
+                                                      data-texto="El abono de @simboloMoneda@a.Monto.ToString("N2") quedará anulado y no contará hacia el saldo pagado de la factura. No puede revertirse."
+                                                      data-icono="warning"
+                                                      data-btn-confirmar="Sí, anular">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Anular abono">
+                                                        <i class="bi bi-x-circle"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                        </td>
+                                    }
                                 </tr>
                             }
                         </tbody>

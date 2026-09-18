@@ -52,6 +52,15 @@ namespace HikariLegalSRL.Services.Implementations
                 && await _permisoEvaluador.TienePermisoAsync(usuarioActual, Permisos.Facturacion.Abono);
         }
 
+        // RF-010: solo el Administrador puede anular una factura o un abono — un nivel de
+        // autoridad más estricto que registrar abonos (Administrador + Asistente).
+        private async Task<bool> PuedeAnularAsync(string usuarioActualId)
+        {
+            var usuarioActual = await _context.Users.FindAsync(usuarioActualId);
+            return usuarioActual is not null
+                && await _permisoEvaluador.TienePermisoAsync(usuarioActual, Permisos.Facturacion.Anular);
+        }
+
         private string ObtenerCarpetaAbonos()
         {
             var rutaConfigurada = _configuration["Almacenamiento:AbonosPath"] ?? "App_Data/abonos";
@@ -82,7 +91,7 @@ namespace HikariLegalSRL.Services.Implementations
                     ModalidadPago = f.ModalidadPago,
                     Moneda = f.Expediente.Propuesta.Moneda,
                     MontoTotal = f.MontoTotal,
-                    MontoPagado = _context.Abonos.Where(a => a.FacturaId == f.FacturaId).Sum(a => (decimal?)a.Monto) ?? 0,
+                    MontoPagado = _context.Abonos.Where(a => a.FacturaId == f.FacturaId && a.FechaAnulacion == null).Sum(a => (decimal?)a.Monto) ?? 0,
                     Estado = f.Estado,
                     FechaEmision = f.FechaEmision
                 })
@@ -109,11 +118,12 @@ namespace HikariLegalSRL.Services.Implementations
             var abonos = await _context.Abonos
                 .AsNoTracking()
                 .Include(a => a.RegistradoPor)
+                .Include(a => a.AnuladoPor)
                 .Where(a => a.FacturaId == facturaId)
                 .OrderBy(a => a.Fecha)
                 .ToListAsync();
 
-            var montoPagado = abonos.Sum(a => a.Monto);
+            var montoPagado = abonos.Where(a => a.FechaAnulacion is null).Sum(a => a.Monto);
 
             return new FacturaDetalleDTO
             {
@@ -146,7 +156,9 @@ namespace HikariLegalSRL.Services.Implementations
                     MetodoPago = a.MetodoPago,
                     NumeroComprobante = a.NumeroComprobante,
                     TieneComprobante = a.ComprobanteArchivo is not null,
-                    RegistradoPorNombre = a.RegistradoPor.NombreCompleto
+                    RegistradoPorNombre = a.RegistradoPor.NombreCompleto,
+                    FechaAnulacion = a.FechaAnulacion,
+                    AnuladoPorNombre = a.AnuladoPor != null ? a.AnuladoPor.NombreCompleto : null
                 }).ToList()
             };
         }
@@ -166,7 +178,7 @@ namespace HikariLegalSRL.Services.Implementations
                 return null;
 
             var montoPagado = await _context.Abonos
-                .Where(a => a.FacturaId == facturaId)
+                .Where(a => a.FacturaId == facturaId && a.FechaAnulacion == null)
                 .SumAsync(a => (decimal?)a.Monto) ?? 0;
 
             return new RegistrarAbonoViewModel
@@ -193,7 +205,7 @@ namespace HikariLegalSRL.Services.Implementations
                 throw new ReglaNegocioException("No se pueden registrar abonos sobre una factura anulada.");
 
             var montoPagado = await _context.Abonos
-                .Where(a => a.FacturaId == facturaId)
+                .Where(a => a.FacturaId == facturaId && a.FechaAnulacion == null)
                 .SumAsync(a => (decimal?)a.Monto) ?? 0;
 
             var saldoPendiente = factura.MontoTotal - montoPagado;
@@ -252,7 +264,7 @@ namespace HikariLegalSRL.Services.Implementations
             // Se recalcula la suma después del insert (en vez de usar montoPagado + dto.Monto)
             // para reflejar abonos concurrentes de otro usuario sobre la misma factura.
             var nuevoMontoPagado = await _context.Abonos
-                .Where(a => a.FacturaId == facturaId)
+                .Where(a => a.FacturaId == facturaId && a.FechaAnulacion == null)
                 .SumAsync(a => (decimal?)a.Monto) ?? 0;
 
             factura.Estado = nuevoMontoPagado >= factura.MontoTotal && factura.MontoTotal > 0
@@ -331,7 +343,7 @@ namespace HikariLegalSRL.Services.Implementations
                     ModalidadPago = f.ModalidadPago,
                     Moneda = f.Expediente.Propuesta.Moneda,
                     MontoTotal = f.MontoTotal,
-                    MontoPagado = _context.Abonos.Where(a => a.FacturaId == f.FacturaId).Sum(a => (decimal?)a.Monto) ?? 0,
+                    MontoPagado = _context.Abonos.Where(a => a.FacturaId == f.FacturaId && a.FechaAnulacion == null).Sum(a => (decimal?)a.Monto) ?? 0,
                     Estado = f.Estado,
                     FechaEmision = f.FechaEmision
                 })
@@ -360,6 +372,99 @@ namespace HikariLegalSRL.Services.Implementations
                 Totales = totales,
                 Facturas = facturas
             };
+        }
+
+        public async Task AnularFactura(int facturaId, string usuarioActualId)
+        {
+            var puedeAnular = await PuedeAnularAsync(usuarioActualId);
+            if (!puedeAnular)
+                throw new ReglaNegocioException("No tiene permiso para anular facturas.");
+
+            var factura = await _context.Facturas
+                .FirstOrDefaultAsync(f => f.FacturaId == facturaId)
+                ?? throw new ReglaNegocioException("La factura indicada no existe.");
+
+            if (factura.Estado == EstadoFactura.Anulada)
+                throw new ReglaNegocioException("La factura ya está anulada.");
+
+            if (factura.Estado == EstadoFactura.Pagada)
+                throw new ReglaNegocioException("No se puede anular una factura que ya está pagada.");
+
+            var estadoAnterior = factura.Estado;
+            factura.Estado = EstadoFactura.Anulada;
+            factura.FechaAnulacion = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            await _bitacoraAuditoriaService.Registrar(
+                usuarioId: usuarioActualId,
+                tipoAccion: "cambiar_estado",
+                moduloAfectado: "Facturación",
+                registroAfectadoId: facturaId.ToString(),
+                valorAnterior: estadoAnterior.ToString(),
+                valorNuevo: "anulada");
+
+            await _context.SaveChangesAsync();
+        }
+
+        // HU-024 (ampliación acordada con el usuario): anular un abono puntual sin anular toda
+        // la factura, ya que Factura.ExpedienteId es único 1:1 y anular la factura completa
+        // impide volver a facturar ese expediente. El abono nunca se borra — solo se marca,
+        // igual criterio que Bitácora de Auditoría y Evaluaciones de Calidad (inmutables).
+        public async Task AnularAbono(int abonoId, string usuarioActualId)
+        {
+            var puedeAnular = await PuedeAnularAsync(usuarioActualId);
+            if (!puedeAnular)
+                throw new ReglaNegocioException("No tiene permiso para anular abonos.");
+
+            var abono = await _context.Abonos
+                .Include(a => a.Factura)
+                .FirstOrDefaultAsync(a => a.AbonoId == abonoId)
+                ?? throw new ReglaNegocioException("El abono indicado no existe.");
+
+            if (abono.FechaAnulacion is not null)
+                throw new ReglaNegocioException("El abono ya está anulado.");
+
+            abono.FechaAnulacion = DateTime.UtcNow;
+            abono.AnuladoPorId = usuarioActualId;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new ReglaNegocioException(ex.InnerException?.Message ?? ex.Message);
+            }
+
+            var factura = abono.Factura;
+            var estadoAnterior = factura.Estado;
+
+            // Una factura ya anulada se queda anulada — anular uno de sus abonos no la revive.
+            if (factura.Estado != EstadoFactura.Anulada)
+            {
+                var montoPagado = await _context.Abonos
+                    .Where(a => a.FacturaId == factura.FacturaId && a.FechaAnulacion == null)
+                    .SumAsync(a => (decimal?)a.Monto) ?? 0;
+
+                factura.Estado = montoPagado >= factura.MontoTotal && factura.MontoTotal > 0
+                    ? EstadoFactura.Pagada
+                    : montoPagado > 0
+                        ? EstadoFactura.PagoParcial
+                        : EstadoFactura.Emitida;
+
+                await _context.SaveChangesAsync();
+            }
+
+            await _bitacoraAuditoriaService.Registrar(
+                usuarioId: usuarioActualId,
+                tipoAccion: "cambiar_estado",
+                moduloAfectado: "Facturación",
+                registroAfectadoId: factura.FacturaId.ToString(),
+                valorAnterior: $"abono {abono.Monto:N2} activo (factura {estadoAnterior})",
+                valorNuevo: $"abono {abono.Monto:N2} anulado -> factura {factura.Estado}");
+
+            await _context.SaveChangesAsync();
         }
     }
 }

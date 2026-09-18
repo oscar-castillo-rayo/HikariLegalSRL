@@ -773,6 +773,12 @@ namespace HikariLegalSRL.Data
                 .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<Abono>()
+                .HasOne(a => a.AnuladoPor)
+                .WithMany()
+                .HasForeignKey(a => a.AnuladoPorId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Abono>()
                 .ToTable(t => t.HasCheckConstraint(
                     "CK_Abono_Monto",
                     "[Monto] > 0"

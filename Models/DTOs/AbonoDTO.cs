@@ -11,5 +11,9 @@ namespace HikariLegalSRL.Models.DTOs
         public string? NumeroComprobante { get; set; }
         public bool TieneComprobante { get; set; }
         public string RegistradoPorNombre { get; set; } = null!;
+
+        public DateTime? FechaAnulacion { get; set; }
+        public string? AnuladoPorNombre { get; set; }
+        public bool EstaAnulado => FechaAnulacion is not null;
     }
 }
