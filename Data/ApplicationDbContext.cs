@@ -31,6 +31,7 @@ namespace HikariLegalSRL.Data
         public DbSet<EntregableArchivo> EntregableArchivos { get; set; } = null!;
         public DbSet<RegistroHoras> RegistrosHoras { get; set; } = null!;
         public DbSet<RevisionEntregable> RevisionesEntregable { get; set; } = null!;
+        public DbSet<Factura> Facturas { get; set; } = null!;
         public DbSet<Notificacion> Notificaciones { get; set; } = null!;
         public DbSet<BitacoraAuditoria> BitacoraAuditoria { get; set; } = null!;
 
@@ -668,6 +669,70 @@ namespace HikariLegalSRL.Data
                     "CK_Revision_ObservacionesSiDevuelta",
                     "[Resultado] <> 'devuelta' OR ([Observaciones] IS NOT NULL AND LEN([Observaciones]) > 0)"
                     ));
+
+            // Factura
+            modelBuilder.Entity<Factura>()
+                .HasKey(f => f.FacturaId);
+
+            modelBuilder.Entity<Factura>()
+                .Property(f => f.MontoTotal).HasColumnType("decimal(14,2)");
+
+            modelBuilder.Entity<Factura>()
+                .Property(f => f.ModalidadPago)
+                .HasConversion(
+                    m => m == ModalidadPago.ProBono ? "pro_bono" : m.ToString().ToLower(),
+                    s => s == "pro_bono" ? ModalidadPago.ProBono : (ModalidadPago)Enum.Parse(typeof(ModalidadPago), s, true))
+                .HasMaxLength(15);
+
+            modelBuilder.Entity<Factura>()
+                .Property(f => f.Estado)
+                .HasConversion(
+                    e => e == EstadoFactura.Emitida ? "emitida"
+                        : e == EstadoFactura.PagoParcial ? "pago_parcial"
+                        : e == EstadoFactura.Pagada ? "pagada"
+                        : "anulada",
+                    s => s == "emitida" ? EstadoFactura.Emitida
+                        : s == "pago_parcial" ? EstadoFactura.PagoParcial
+                        : s == "pagada" ? EstadoFactura.Pagada
+                        : EstadoFactura.Anulada)
+                .HasMaxLength(15);
+
+            modelBuilder.Entity<Factura>()
+                .HasOne(f => f.Expediente)
+                .WithMany()
+                .HasForeignKey(f => f.ExpedienteId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Factura>()
+                .HasIndex(f => f.ExpedienteId)
+                .IsUnique();
+
+            modelBuilder.Entity<Factura>()
+                .HasOne(f => f.Cliente)
+                .WithMany()
+                .HasForeignKey(f => f.ClienteId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Factura>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_Factura_ModalidadPago",
+                    "[ModalidadPago] IN ('contado', 'abono', 'pro_bono')"
+                    ));
+
+            modelBuilder.Entity<Factura>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_Factura_Estado",
+                    "[Estado] IN ('emitida', 'pago_parcial', 'pagada', 'anulada')"
+                    ));
+
+            modelBuilder.Entity<Factura>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_Factura_MontoTotal",
+                    "[MontoTotal] >= 0"
+                    ));
+
+            modelBuilder.Entity<Factura>()
+                .HasIndex(f => f.Estado);
 
             // Notificacion
             modelBuilder.Entity<Notificacion>()

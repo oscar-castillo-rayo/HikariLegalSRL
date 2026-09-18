@@ -13,6 +13,7 @@ namespace HikariLegalSRL.Models.DTOs
         public DateTime FechaApertura { get; set; }
         public DateTime? FechaCierre { get; set; }
         public EstadoExpediente Estado { get; set; }
+        public int? FacturaId { get; set; }
 
         public List<TareaListaDTO> Tareas { get; set; } = new();
     }

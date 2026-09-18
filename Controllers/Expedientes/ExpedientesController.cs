@@ -155,6 +155,27 @@ namespace HikariLegalSRL.Controllers.Expedientes
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Expedientes.Cerrar)]
+        public async Task<IActionResult> Cerrar(int id)
+        {
+            var usuarioActualId = _userManager.GetUserId(User)!;
+
+            try
+            {
+                await _expedienteService.CerrarExpediente(id, usuarioActualId);
+                TempData["Exito"] = "Expediente cerrado y factura generada.";
+            }
+            catch (ReglaNegocioException ex)
+            {
+                _logger.LogWarning(ex, "Error de regla de negocio al cerrar el expediente {ExpedienteId}", id);
+                TempData["Error"] = ex.Message;
+            }
+
+            return RedirectToAction(nameof(Detalle), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         [Permiso(Permisos.Expedientes.Cargar)]
         public async Task<IActionResult> IniciarTarea(int expedienteId, int tareaId)
         {

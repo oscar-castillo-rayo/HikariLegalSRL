@@ -576,6 +576,58 @@ namespace HikariLegalSRL.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HikariLegalSRL.Models.Factura", b =>
+                {
+                    b.Property<int>("FacturaId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FacturaId"));
+
+                    b.Property<int>("ClienteId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<int>("ExpedienteId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("FechaAnulacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaEmision")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ModalidadPago")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<decimal>("MontoTotal")
+                        .HasColumnType("decimal(14,2)");
+
+                    b.HasKey("FacturaId");
+
+                    b.HasIndex("ClienteId");
+
+                    b.HasIndex("Estado");
+
+                    b.HasIndex("ExpedienteId")
+                        .IsUnique();
+
+                    b.ToTable("Facturas", t =>
+                        {
+                            t.HasCheckConstraint("CK_Factura_Estado", "[Estado] IN ('emitida', 'pago_parcial', 'pagada', 'anulada')");
+
+                            t.HasCheckConstraint("CK_Factura_ModalidadPago", "[ModalidadPago] IN ('contado', 'abono', 'pro_bono')");
+
+                            t.HasCheckConstraint("CK_Factura_MontoTotal", "[MontoTotal] >= 0");
+                        });
+                });
+
             modelBuilder.Entity("HikariLegalSRL.Models.Notificacion", b =>
                 {
                     b.Property<int>("NotificacionId")
@@ -1284,6 +1336,25 @@ namespace HikariLegalSRL.Migrations
                     b.Navigation("Propuesta");
 
                     b.Navigation("Responsable");
+                });
+
+            modelBuilder.Entity("HikariLegalSRL.Models.Factura", b =>
+                {
+                    b.HasOne("HikariLegalSRL.Models.Cliente", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("HikariLegalSRL.Models.Expediente", "Expediente")
+                        .WithMany()
+                        .HasForeignKey("ExpedienteId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Cliente");
+
+                    b.Navigation("Expediente");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Notificacion", b =>

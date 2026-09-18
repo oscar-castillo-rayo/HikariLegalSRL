@@ -21,6 +21,8 @@ namespace HikariLegalSRL.Services.Interfaces
 
         Task ReasignarResponsable(int expedienteId, string? nuevoResponsableId, string usuarioActualId);
 
+        Task CerrarExpediente(int expedienteId, string usuarioActualId);
+
         Task IniciarTarea(int tareaId, string usuarioActualId);
 
         Task MarcarListaParaRevision(int tareaId, string usuarioActualId);
