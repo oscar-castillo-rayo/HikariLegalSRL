@@ -16,11 +16,14 @@
     var puedeEditarTarea = await Authorization.TienePermiso(User, Permisos.Expedientes.EditarTarea);
     var puedeEliminarTarea = await Authorization.TienePermiso(User, Permisos.Expedientes.EliminarTarea);
     var puedeReasignar = await Authorization.TienePermiso(User, Permisos.Expedientes.Reasignar);
+    var puedeCerrar = await Authorization.TienePermiso(User, Permisos.Expedientes.Cerrar);
+    var hayTareasSinAprobar = e.Tareas.Count == 0 || e.Tareas.Any(t => t.Estado != EstadoTarea.Aprobada);
     var puedeCargar = await Authorization.TienePermiso(User, Permisos.Expedientes.Cargar);
     var puedeAprobar = await Authorization.TienePermiso(User, Permisos.Expedientes.Aprobar);
     var puedeDevolver = await Authorization.TienePermiso(User, Permisos.Expedientes.Devolver);
     var puedeGestionarAjenas = await Authorization.TienePermiso(User, Permisos.Expedientes.GestionarAjenas);
     var puedeGestionarTareasPropias = await Authorization.TienePermiso(User, Permisos.Expedientes.GestionarTareasPropias);
+    var puedeVerFactura = await Authorization.TienePermiso(User, Permisos.Facturacion.Ver);
     var usuarioActualId = User.FindFirstValue(ClaimTypes.NameIdentifier);
     var puedeRevisarCartera = puedeGestionarAjenas || e.ResponsableId == usuarioActualId;
 
@@ -63,6 +66,12 @@
 
     <div class="ms-sm-auto d-flex flex-wrap align-items-center gap-2">
         <span class="badge bg-@bc">@bt</span>
+        @if (e.FacturaId is not null && puedeVerFactura)
+        {
+            <a asp-controller="Facturas" asp-action="Detalle" asp-route-id="@e.FacturaId" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-receipt me-1"></i>Ver factura
+            </a>
+        }
         @if (e.Estado == EstadoExpediente.Abierto)
         {
             <span class="badge fs-6 @claseDias">
@@ -81,6 +90,17 @@
                     data-bs-target="#modalReasignar" @(puedeReasignar ? null : "disabled")>
                 <i class="bi bi-person-gear me-1"></i>Cambiar asesor
             </button>
+            <form asp-action="Cerrar" asp-route-id="@e.Id" method="post" class="d-inline form-confirmar"
+                  data-titulo="¿Cerrar este expediente?"
+                  data-texto="Se generará automáticamente la factura correspondiente y no se podrá revertir."
+                  data-icono="warning" data-btn-confirmar="Sí, cerrar">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline-danger btn-sm expedientes-btn-accion"
+                        title="@(hayTareasSinAprobar ? "El expediente debe tener al menos una tarea, y todas deben estar aprobadas, para poder cerrarse" : null)"
+                        @((puedeCerrar && !hayTareasSinAprobar) ? null : "disabled")>
+                    <i class="bi bi-lock-fill me-1"></i>Cerrar expediente
+                </button>
+            </form>
         }
         @if (puedeAgregarTarea)
         {
