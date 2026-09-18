@@ -1,7 +1,7 @@
 using HikariLegalSRL.Authorization;
 using HikariLegalSRL.Data;
-using HikariLegalSRL.Models;
 using HikariLegalSRL.ModelBinding;
+using HikariLegalSRL.Models;
 using HikariLegalSRL.Services.Implementations;
 using HikariLegalSRL.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
