@@ -77,6 +77,7 @@ namespace HikariLegalSRL.Services.Implementations
                 {
                     Id = f.FacturaId,
                     ExpedienteId = f.ExpedienteId,
+                    ClienteId = f.ClienteId,
                     ClienteNombre = f.Cliente.NombreEmpresaPersona,
                     ModalidadPago = f.ModalidadPago,
                     Moneda = f.Expediente.Propuesta.Moneda,
@@ -118,6 +119,7 @@ namespace HikariLegalSRL.Services.Implementations
             {
                 Id = factura.FacturaId,
                 ExpedienteId = factura.ExpedienteId,
+                ClienteId = factura.ClienteId,
                 ClienteNombre = factura.Cliente.NombreEmpresaPersona,
                 ResponsableNombre = factura.Expediente.Responsable.NombreCompleto,
                 ModalidadPago = factura.ModalidadPago,
@@ -297,6 +299,67 @@ namespace HikariLegalSRL.Services.Implementations
                 contentType = "application/octet-stream";
 
             return (rutaAbsoluta, nombreArchivo, contentType);
+        }
+
+        // RF-010: el estado de cuenta agrega todas las facturas de un cliente (no una sola,
+        // como en ObtenerDetalle) y es exclusivo de quien puede registrar abonos
+        // (Administrador/Asistente) — el Abogado/Asesor no tiene acceso a esta vista.
+        public async Task<EstadoCuentaDTO?> ObtenerEstadoCuenta(int clienteId, string usuarioActualId)
+        {
+            var puedeVer = await PuedeVerTodasAsync(usuarioActualId);
+            if (!puedeVer)
+                return null;
+
+            var cliente = await _context.Clientes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.ClienteId == clienteId);
+
+            if (cliente is null)
+                return null;
+
+            var facturas = await _context.Facturas
+                .AsNoTracking()
+                .Include(f => f.Expediente).ThenInclude(e => e.Propuesta)
+                .Where(f => f.ClienteId == clienteId)
+                .OrderByDescending(f => f.FechaEmision)
+                .Select(f => new FacturaListaDTO
+                {
+                    Id = f.FacturaId,
+                    ExpedienteId = f.ExpedienteId,
+                    ClienteId = f.ClienteId,
+                    ClienteNombre = cliente.NombreEmpresaPersona,
+                    ModalidadPago = f.ModalidadPago,
+                    Moneda = f.Expediente.Propuesta.Moneda,
+                    MontoTotal = f.MontoTotal,
+                    MontoPagado = _context.Abonos.Where(a => a.FacturaId == f.FacturaId).Sum(a => (decimal?)a.Monto) ?? 0,
+                    Estado = f.Estado,
+                    FechaEmision = f.FechaEmision
+                })
+                .ToListAsync();
+
+            // Una factura anulada no cuenta hacia los totales (quedó sin efecto), aunque
+            // sigue apareciendo en el historial de la lista para trazabilidad. Se agrupa por
+            // moneda porque un mismo cliente puede tener propuestas en colones y en dólares:
+            // sumarlas directamente daría un total sin sentido.
+            var totales = facturas
+                .Where(f => f.Estado != EstadoFactura.Anulada)
+                .GroupBy(f => f.Moneda)
+                .Select(g => new TotalPorMonedaDTO
+                {
+                    Moneda = g.Key,
+                    TotalFacturado = g.Sum(f => f.MontoTotal),
+                    TotalPagado = g.Sum(f => f.MontoPagado)
+                })
+                .OrderBy(t => t.Moneda)
+                .ToList();
+
+            return new EstadoCuentaDTO
+            {
+                ClienteId = cliente.ClienteId,
+                ClienteNombre = cliente.NombreEmpresaPersona,
+                Totales = totales,
+                Facturas = facturas
+            };
         }
     }
 }

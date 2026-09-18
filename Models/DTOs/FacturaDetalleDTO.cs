@@ -6,6 +6,7 @@ namespace HikariLegalSRL.Models.DTOs
     {
         public int Id { get; set; }
         public int ExpedienteId { get; set; }
+        public int ClienteId { get; set; }
         public string ClienteNombre { get; set; } = null!;
         public string ResponsableNombre { get; set; } = null!;
         public ModalidadPago ModalidadPago { get; set; }
