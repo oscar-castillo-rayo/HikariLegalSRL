@@ -1,12 +1,146 @@
-﻿
-@section Styles {
-    <link rel="stylesheet" href="~/css/usuarios.css" />
+@model HikariLegalSRL.Models.DTOs.DashboardDTO
+@using HikariLegalSRL.Extensions
+
+@{
+    ViewData["Title"] = "Dashboard";
 }
 
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
-    <h4 class="mb-0 fw-bold usuarios-titulo">Dashboard</h4>
+@section Styles {
+    <link rel="stylesheet" href="~/css/dashboard.css" />
+}
+
+<h4 class="mb-4 fw-bold dashboard-titulo">Dashboard</h4>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card text-white h-100 dashboard-card-estimadas">
+            <div class="card-body text-center">
+                <div class="fs-1"><i class="bi bi-list-task"></i></div>
+                <div class="fs-2 fw-bold">@Model.TareasProximas.Count</div>
+                <div class="small opacity-75">Tareas activas por vencer</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white h-100 dashboard-card-proximas">
+            <div class="card-body text-center">
+                <div class="fs-1"><i class="bi bi-clock-history"></i></div>
+                <div class="fs-2 fw-bold">@Model.TareasPorVencer</div>
+                <div class="small opacity-75">Por vencer (3 días o menos)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white h-100 @(Model.TareasVencidas > 0 ? "dashboard-card-vencidas" : "dashboard-card-ok")">
+            <div class="card-body text-center">
+                <div class="fs-1"><i class="bi bi-exclamation-triangle"></i></div>
+                <div class="fs-2 fw-bold">@Model.TareasVencidas</div>
+                <div class="small opacity-75">Tareas vencidas</div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="card shadow-sm border-0">
-   
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-bold dashboard-card-header">
+                <i class="bi bi-list-task me-1"></i>Mis tareas próximas a vencer
+            </div>
+            @if (Model.TareasProximas.Count == 0)
+            {
+                <div class="card-body">
+                    <p class="text-center text-muted mb-0 py-3">
+                        <i class="bi bi-check-circle text-success d-block fs-2 mb-2"></i>
+                        No tienes tareas próximas a vencer.
+                    </p>
+                </div>
+            }
+            else
+            {
+                <div class="list-group list-group-flush">
+                    @foreach (var t in Model.TareasProximas)
+                    {
+                        var dias = (t.FechaLimite.Date - DateTime.Today).Days;
+                        var vencida = dias < 0;
+                        <a asp-controller="Expedientes" asp-action="Detalle" asp-route-id="@t.ExpedienteId"
+                           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(vencida ? "list-group-item-danger" : dias <= 3 ? "list-group-item-warning" : "")">
+                            <span>
+                                <strong>@t.Descripcion</strong>
+                                <br />
+                                <small>
+                                    <i class="bi bi-calendar-event me-1"></i>@t.FechaLimite.ToString("dd/MM/yyyy")
+                                    (@(vencida ? $"vencida hace {Math.Abs(dias)}d" : dias == 0 ? "vence hoy" : $"{dias}d restantes"))
+                                </small>
+                            </span>
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-bold dashboard-card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-bell me-1"></i>Notificaciones recientes</span>
+                <a asp-controller="Notificaciones" asp-action="Index" class="btn btn-sm btn-outline-secondary">Ver todas</a>
+            </div>
+            @{ var recientes = Model.Notificaciones.Take(5).ToList(); }
+            @if (recientes.Count == 0)
+            {
+                <div class="card-body">
+                    <p class="text-center text-muted mb-0 py-3">
+                        <i class="bi bi-check-circle text-success d-block fs-2 mb-2"></i>
+                        Sin notificaciones.
+                    </p>
+                </div>
+            }
+            else
+            {
+                <div class="list-group list-group-flush">
+                    @foreach (var n in recientes)
+                    {
+                        var (colorClase, icono) = n.Tipo.EstiloVisual();
+                        <a href="/Notificaciones/Ir/@n.Id" class="list-group-item list-group-item-action dashboard-notificacion-item @(n.Leida ? "text-muted" : "fw-semibold")">
+                            <i class="bi @icono text-@colorClase"></i>
+                            <span class="dashboard-notificacion-texto">
+                                @n.Mensaje
+                                <br />
+                                <small class="text-muted fw-normal">@n.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</small>
+                            </span>
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        const tareasVencidas = @Model.TareasVencidas;
+        const notificacionesNoLeidas = @Model.NotificacionesNoLeidas;
+
+        if (tareasVencidas > 0) {
+            mostrarToastDashboard('Tienes ' + tareasVencidas + ' tarea(s) vencida(s).', 'danger');
+        } else if (notificacionesNoLeidas > 0) {
+            mostrarToastDashboard('Tienes ' + notificacionesNoLeidas + ' notificación(es) sin leer.', 'warning');
+        }
+
+        function mostrarToastDashboard(mensaje, tipo) {
+            const toastEl = document.createElement('div');
+            toastEl.className = `toast align-items-center text-white bg-${tipo} border-0 position-fixed bottom-0 end-0 m-3`;
+            toastEl.setAttribute('role', 'alert');
+            toastEl.style.zIndex = '9999';
+            toastEl.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body fw-semibold">${mensaje}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>`;
+            document.body.appendChild(toastEl);
+            new bootstrap.Toast(toastEl, { delay: 6000 }).show();
+        }
+    </script>
+}
