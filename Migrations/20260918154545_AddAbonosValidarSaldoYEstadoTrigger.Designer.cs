@@ -4,6 +4,7 @@ using HikariLegalSRL.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HikariLegalSRL.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260918154545_AddAbonosValidarSaldoYEstadoTrigger")]
+    partial class AddAbonosValidarSaldoYEstadoTrigger
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -64,7 +67,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("UsuarioId");
 
-                    b.ToTable("BitacoraAuditoria", null, t =>
+                    b.ToTable("BitacoraAuditoria", t =>
                         {
                             t.HasCheckConstraint("CK_BitacoraAuditoria_TipoAccion", "[TipoAccion] IN ('crear', 'editar', 'eliminar', 'cambiar_estado', 'aprobar', 'rechazar')");
                         });
@@ -110,7 +113,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("RegistradoPorId");
 
-                    b.ToTable("Abonos", null, t =>
+                    b.ToTable("Abonos", t =>
                         {
                             t.HasCheckConstraint("CK_Abono_MetodoPago", "[MetodoPago] IN ('transferencia', 'sinpe', 'efectivo', 'otro')");
 
@@ -162,7 +165,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("UsuarioRegistroId");
 
-                    b.ToTable("ActividadesSeguimiento", null, t =>
+                    b.ToTable("ActividadesSeguimiento", t =>
                         {
                             t.HasCheckConstraint("CK_ActividadSeguimiento_TipoActividad", "[TipoActividad] IN ('llamada', 'reunion', 'correo', 'nota', 'propuesta', 'otro')");
                         });
@@ -302,7 +305,7 @@ namespace HikariLegalSRL.Migrations
                     b.HasIndex("ProvinciaId", "Nombre")
                         .IsUnique();
 
-                    b.ToTable("Cantones", (string)null);
+                    b.ToTable("Cantones");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.CatalogoServicio", b =>
@@ -342,7 +345,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasKey("ServicioId");
 
-                    b.ToTable("CatalogoServicios", null, t =>
+                    b.ToTable("CatalogoServicios", t =>
                         {
                             t.HasCheckConstraint("CK_CatalogoServicio_Estado", "[Estado] IN ('activo', 'inactivo')");
 
@@ -422,7 +425,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("ResponsableId");
 
-                    b.ToTable("Clientes", null, t =>
+                    b.ToTable("Clientes", t =>
                         {
                             t.HasCheckConstraint("CK_Cliente_Estado", "[Estado] IN ('activo', 'inactivo')");
 
@@ -462,7 +465,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("PaisId");
 
-                    b.ToTable("Direcciones", null, t =>
+                    b.ToTable("Direcciones", t =>
                         {
                             t.HasTrigger("TR_Direcciones_TipoUbicacion");
 
@@ -494,7 +497,7 @@ namespace HikariLegalSRL.Migrations
                     b.HasIndex("CantonId", "Nombre")
                         .IsUnique();
 
-                    b.ToTable("Distritos", (string)null);
+                    b.ToTable("Distritos");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Entregable", b =>
@@ -532,7 +535,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("TareaId");
 
-                    b.ToTable("Entregables", null, t =>
+                    b.ToTable("Entregables", t =>
                         {
                             t.HasCheckConstraint("CK_Entregable_HorasReales", "[HorasReales] >= 0");
 
@@ -574,7 +577,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("EntregableId");
 
-                    b.ToTable("EntregableArchivos", (string)null);
+                    b.ToTable("EntregableArchivos");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Expediente", b =>
@@ -618,7 +621,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("ResponsableId");
 
-                    b.ToTable("Expedientes", null, t =>
+                    b.ToTable("Expedientes", t =>
                         {
                             t.HasCheckConstraint("CK_Expediente_Estado", "[Estado] IN ('abierto', 'cerrado')");
                         });
@@ -666,7 +669,7 @@ namespace HikariLegalSRL.Migrations
                     b.HasIndex("ExpedienteId")
                         .IsUnique();
 
-                    b.ToTable("Facturas", null, t =>
+                    b.ToTable("Facturas", t =>
                         {
                             t.HasCheckConstraint("CK_Factura_Estado", "[Estado] IN ('emitida', 'pago_parcial', 'pagada', 'anulada')");
 
@@ -716,7 +719,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("UsuarioId", "Leida");
 
-                    b.ToTable("Notificaciones", (string)null);
+                    b.ToTable("Notificaciones");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Pais", b =>
@@ -739,7 +742,7 @@ namespace HikariLegalSRL.Migrations
                     b.HasIndex("Nombre")
                         .IsUnique();
 
-                    b.ToTable("Paises", (string)null);
+                    b.ToTable("Paises");
 
                     b.HasData(
                         new
@@ -810,7 +813,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("ProspectoId");
 
-                    b.ToTable("Propuestas", null, t =>
+                    b.ToTable("Propuestas", t =>
                         {
                             t.HasCheckConstraint("CK_Propuesta_Destinatario", "([ProspectoId] IS NOT NULL AND [ClienteId] IS NULL) OR ([ProspectoId] IS NULL AND [ClienteId] IS NOT NULL)");
 
@@ -856,7 +859,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("ServicioId");
 
-                    b.ToTable("PropuestaServicios", null, t =>
+                    b.ToTable("PropuestaServicios", t =>
                         {
                             t.HasCheckConstraint("CK_PropuestaServicio_Precio", "[Precio] >= 0");
 
@@ -930,7 +933,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("UsuarioCreadorId");
 
-                    b.ToTable("Prospectos", null, t =>
+                    b.ToTable("Prospectos", t =>
                         {
                             t.HasCheckConstraint("CK_Prospecto_Calificacion", "[Calificacion] IS NULL OR ([Calificacion] BETWEEN 1 AND 5)");
 
@@ -958,7 +961,7 @@ namespace HikariLegalSRL.Migrations
                     b.HasIndex("PaisId", "Nombre")
                         .IsUnique();
 
-                    b.ToTable("Provincias", (string)null);
+                    b.ToTable("Provincias");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.RegistroHoras", b =>
@@ -996,7 +999,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("UsuarioId");
 
-                    b.ToTable("RegistrosHoras", null, t =>
+                    b.ToTable("RegistrosHoras", t =>
                         {
                             t.HasCheckConstraint("CK_RegistroHoras_Minutos", "[Minutos] > 0");
 
@@ -1044,7 +1047,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("RevisorId");
 
-                    b.ToTable("RevisionesEntregable", null, t =>
+                    b.ToTable("RevisionesEntregable", t =>
                         {
                             t.HasCheckConstraint("CK_RevisionEntregable_HorasRevision", "[HorasRevision] >= 0");
 
@@ -1101,7 +1104,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("ExpedienteId");
 
-                    b.ToTable("Tareas", null, t =>
+                    b.ToTable("Tareas", t =>
                         {
                             t.HasCheckConstraint("CK_Tarea_Estado", "[Estado] IN ('pendiente', 'en_proceso', 'lista_revision', 'aprobada', 'devuelta')");
 
