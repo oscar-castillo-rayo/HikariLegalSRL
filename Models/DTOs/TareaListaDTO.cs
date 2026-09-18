@@ -14,13 +14,15 @@ namespace HikariLegalSRL.Models.DTOs
         public EstadoTarea Estado { get; set; }
         public DateTime FechaCreacion { get; set; }
 
-        public int? UltimoEntregableId { get; set; }
-        public bool TieneArchivoAdjunto { get; set; }
-
         public decimal HorasColaborador { get; set; }
         public decimal HorasRevisor { get; set; }
         public decimal HorasRealesTotal => HorasColaborador + HorasRevisor;
 
         public decimal HorasRondaActual { get; set; }
+        public decimal HorasRevisionRondaActual { get; set; }
+
+        public List<ArchivoDTO> ArchivosRondaActual { get; set; } = new();
+
+        public List<RondaHistorialDTO> Historial { get; set; } = new();
     }
 }
