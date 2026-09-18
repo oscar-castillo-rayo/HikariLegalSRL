@@ -32,6 +32,7 @@ namespace HikariLegalSRL.Data
         public DbSet<RegistroHoras> RegistrosHoras { get; set; } = null!;
         public DbSet<RevisionEntregable> RevisionesEntregable { get; set; } = null!;
         public DbSet<Factura> Facturas { get; set; } = null!;
+        public DbSet<Abono> Abonos { get; set; } = null!;
         public DbSet<Notificacion> Notificaciones { get; set; } = null!;
         public DbSet<BitacoraAuditoria> BitacoraAuditoria { get; set; } = null!;
 
@@ -733,6 +734,58 @@ namespace HikariLegalSRL.Data
 
             modelBuilder.Entity<Factura>()
                 .HasIndex(f => f.Estado);
+
+            // Abono
+            // El trigger TR_Abonos_ValidarSaldoYEstado (AFTER INSERT) impide que SQL Server use el
+            // OUTPUT clause que EF Core genera por defecto para leer el identity insertado.
+            modelBuilder.Entity<Abono>()
+                .ToTable(tb => tb.UseSqlOutputClause(false));
+
+            modelBuilder.Entity<Abono>()
+                .HasKey(a => a.AbonoId);
+
+            modelBuilder.Entity<Abono>()
+                .Property(a => a.Monto).HasColumnType("decimal(14,2)");
+
+            modelBuilder.Entity<Abono>()
+                .Property(a => a.NumeroComprobante).HasMaxLength(50);
+
+            modelBuilder.Entity<Abono>()
+                .Property(a => a.ComprobanteArchivo).HasMaxLength(500);
+
+            modelBuilder.Entity<Abono>()
+                .Property(a => a.MetodoPago)
+                .HasConversion(
+                    m => m.ToString().ToLower(),
+                    s => (MetodoPago)Enum.Parse(typeof(MetodoPago), s, true))
+                .HasMaxLength(20);
+
+            modelBuilder.Entity<Abono>()
+                .HasOne(a => a.Factura)
+                .WithMany()
+                .HasForeignKey(a => a.FacturaId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Abono>()
+                .HasOne(a => a.RegistradoPor)
+                .WithMany()
+                .HasForeignKey(a => a.RegistradoPorId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Abono>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_Abono_Monto",
+                    "[Monto] > 0"
+                    ));
+
+            modelBuilder.Entity<Abono>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_Abono_MetodoPago",
+                    "[MetodoPago] IN ('transferencia', 'sinpe', 'efectivo', 'otro')"
+                    ));
+
+            modelBuilder.Entity<Abono>()
+                .HasIndex(a => a.FacturaId);
 
             // Notificacion
             modelBuilder.Entity<Notificacion>()
