@@ -17,5 +17,9 @@ namespace HikariLegalSRL.Models
 
         public string RegistradoPorId { get; set; } = null!;
         public ApplicationUser RegistradoPor { get; set; } = null!;
+
+        public DateTime? FechaAnulacion { get; set; }
+        public string? AnuladoPorId { get; set; }
+        public ApplicationUser? AnuladoPor { get; set; }
     }
 }
