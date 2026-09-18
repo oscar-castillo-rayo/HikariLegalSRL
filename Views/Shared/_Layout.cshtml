@@ -1,4 +1,5 @@
 ﻿@using System.Security.Claims
+@inject HikariLegalSRL.Services.Interfaces.INotificacionService NotificacionService
 
 <!DOCTYPE html>
 <html lang="es">
@@ -23,6 +24,10 @@
         : "nav-link";
 
         var hideShell = (ViewData["HideShell"] as bool?) ?? false;
+        var usuarioActualId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var notificacionesNoLeidas = (!hideShell && usuarioActualId is not null)
+            ? await NotificacionService.ContarNoLeidas(usuarioActualId)
+            : 0;
     }
 
     @* ── Sidebar ─────────────────────────────────────────── *@
@@ -145,9 +150,18 @@
                     </button>
                     <span class="fw-semibold text-muted">@ViewData["Title"]</span>
                 </div>
-                <span class="badge" style="background:#1F3864;">
-                    @rolUsuario
-                </span>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="/Notificaciones/Index" class="layout-campana" title="Notificaciones">
+                        <i class="bi bi-bell"></i>
+                        @if (notificacionesNoLeidas > 0)
+                        {
+                            <span class="badge rounded-pill bg-danger layout-campana-badge">@notificacionesNoLeidas</span>
+                        }
+                    </a>
+                    <span class="badge" style="background:#1F3864;">
+                        @rolUsuario
+                    </span>
+                </div>
             </div>
         }
 

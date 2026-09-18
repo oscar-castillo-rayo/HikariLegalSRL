@@ -31,6 +31,7 @@ namespace HikariLegalSRL.Data
         public DbSet<EntregableArchivo> EntregableArchivos { get; set; } = null!;
         public DbSet<RegistroHoras> RegistrosHoras { get; set; } = null!;
         public DbSet<RevisionEntregable> RevisionesEntregable { get; set; } = null!;
+        public DbSet<Notificacion> Notificaciones { get; set; } = null!;
         public DbSet<BitacoraAuditoria> BitacoraAuditoria { get; set; } = null!;
 
 
@@ -668,6 +669,33 @@ namespace HikariLegalSRL.Data
                     "[Resultado] <> 'devuelta' OR ([Observaciones] IS NOT NULL AND LEN([Observaciones]) > 0)"
                     ));
 
+            // Notificacion
+            modelBuilder.Entity<Notificacion>()
+                .HasKey(n => n.NotificacionId);
+
+            modelBuilder.Entity<Notificacion>()
+                .Property(n => n.Mensaje).HasMaxLength(500);
+
+            modelBuilder.Entity<Notificacion>()
+                .Property(n => n.Tipo)
+                .HasConversion(e => TipoNotificacionATexto(e), s => TextoATipoNotificacion(s))
+                .HasMaxLength(40);
+
+            modelBuilder.Entity<Notificacion>()
+                .Property(n => n.EntidadRelacionadaTipo)
+                .HasConversion(e => e.ToString(),
+                s => (EntidadNotificacion)Enum.Parse(typeof(EntidadNotificacion), s, ignoreCase: true))
+                .HasMaxLength(30);
+
+            modelBuilder.Entity<Notificacion>()
+                .HasOne(n => n.Usuario)
+                .WithMany()
+                .HasForeignKey(n => n.UsuarioId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Notificacion>()
+                .HasIndex(n => new { n.UsuarioId, n.Leida });
+
             // Bitacora Auditoría
             modelBuilder.Entity<BitacoraAuditoria>()
                 .Property(b => b.TipoAccion).HasMaxLength(20);
@@ -691,5 +719,33 @@ namespace HikariLegalSRL.Data
 
 
         }
+
+        private static string TipoNotificacionATexto(TipoNotificacion tipo) => tipo switch
+        {
+            TipoNotificacion.AlertaTareaProxima => "alerta_tarea_3dias",
+            TipoNotificacion.AlertaTareaVencida => "alerta_tarea_vencida",
+            TipoNotificacion.AlertaExpedienteProximo => "alerta_expediente_5dias",
+            TipoNotificacion.AlertaExpedienteVencido => "alerta_expediente_vencido",
+            TipoNotificacion.AlertaSeguimientoProximo => "alerta_seguimiento_proximo",
+            TipoNotificacion.EscalamientoAdminTarea => "escalamiento_admin_tarea",
+            TipoNotificacion.EscalamientoAdminExpediente => "escalamiento_admin_expediente",
+            TipoNotificacion.CambioEstadoTarea => "cambio_estado_tarea",
+            TipoNotificacion.ReasignacionExpediente => "reasignacion_expediente",
+            _ => "reasignacion_tarea"
+        };
+
+        private static TipoNotificacion TextoATipoNotificacion(string texto) => texto switch
+        {
+            "alerta_tarea_3dias" => TipoNotificacion.AlertaTareaProxima,
+            "alerta_tarea_vencida" => TipoNotificacion.AlertaTareaVencida,
+            "alerta_expediente_5dias" => TipoNotificacion.AlertaExpedienteProximo,
+            "alerta_expediente_vencido" => TipoNotificacion.AlertaExpedienteVencido,
+            "alerta_seguimiento_proximo" => TipoNotificacion.AlertaSeguimientoProximo,
+            "escalamiento_admin_tarea" => TipoNotificacion.EscalamientoAdminTarea,
+            "escalamiento_admin_expediente" => TipoNotificacion.EscalamientoAdminExpediente,
+            "cambio_estado_tarea" => TipoNotificacion.CambioEstadoTarea,
+            "reasignacion_expediente" => TipoNotificacion.ReasignacionExpediente,
+            _ => TipoNotificacion.ReasignacionTarea
+        };
     }
 }

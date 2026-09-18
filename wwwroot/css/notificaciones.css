@@ -1,0 +1,33 @@
+.notificaciones-item {
+    align-items: center;
+    display: flex;
+    gap: .5rem;
+}
+
+.notificaciones-item-icono {
+    flex-shrink: 0;
+    font-size: 1.25rem;
+}
+
+.notificaciones-item-leida {
+    background: #f8f9fa;
+    opacity: .7;
+}
+
+.notificaciones-item-link {
+    align-items: center;
+    color: inherit;
+    display: flex;
+    flex: 1;
+    gap: .75rem;
+    min-width: 0;
+    text-decoration: none;
+}
+
+.notificaciones-item-texto {
+    min-width: 0;
+}
+
+.notificaciones-titulo {
+    color: #1F3864;
+}
