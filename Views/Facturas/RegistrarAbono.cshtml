@@ -1,0 +1,108 @@
+@model HikariLegalSRL.ViewModels.Facturas.RegistrarAbonoViewModel
+@using HikariLegalSRL.Models.Enums
+
+@{
+    ViewData["Title"] = $"Registrar abono — Factura #{Model.FacturaId}";
+    var simboloMoneda = Model.Moneda == Moneda.Dolares ? "$" : "₡";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/facturas.css" />
+}
+
+<div class="d-flex align-items-center gap-2 mb-4">
+    <a asp-action="Detalle" asp-route-id="@Model.FacturaId" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0 fw-bold facturas-titulo">Registrar abono — Factura #@Model.FacturaId</h4>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-bold facturas-card-header">
+                <i class="bi bi-receipt me-1"></i>Resumen de la factura
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-6 small text-muted">Cliente</dt>
+                    <dd class="col-6 fw-semibold">@Model.ClienteNombre</dd>
+
+                    <dt class="col-6 small text-muted">Monto total</dt>
+                    <dd class="col-6">@simboloMoneda@Model.MontoTotal.ToString("N2")</dd>
+
+                    <dt class="col-6 small text-muted">Saldo pendiente</dt>
+                    <dd class="col-6 text-danger fw-bold fs-5">@simboloMoneda@Model.SaldoPendiente.ToString("N2")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header fw-bold facturas-card-header">
+                <i class="bi bi-cash-coin me-1"></i>Datos del abono
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="RegistrarAbono" asp-route-id="@Model.FacturaId" method="post" enctype="multipart/form-data" novalidate>
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-3"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Abono.Monto" class="form-label fw-semibold">Monto</label>
+                            <div class="input-group">
+                                <span class="input-group-text">@simboloMoneda</span>
+                                <input asp-for="Abono.Monto" class="form-control" type="number" step="0.01" min="0.01" max="@Model.SaldoPendiente.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+                            </div>
+                            <span asp-validation-for="Abono.Monto" class="text-danger small"></span>
+                            <small class="text-muted">Máximo: @simboloMoneda@Model.SaldoPendiente.ToString("N2")</small>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Abono.Fecha" class="form-label fw-semibold">Fecha</label>
+                            <input asp-for="Abono.Fecha" class="form-control" type="date" />
+                            <span asp-validation-for="Abono.Fecha" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Abono.MetodoPago" class="form-label fw-semibold">Método de pago</label>
+                            <select asp-for="Abono.MetodoPago" class="form-select">
+                                <option value="">-- Seleccione --</option>
+                                <option value="@MetodoPago.Transferencia">Transferencia bancaria</option>
+                                <option value="@MetodoPago.Sinpe">SINPE Móvil</option>
+                                <option value="@MetodoPago.Efectivo">Efectivo</option>
+                                <option value="@MetodoPago.Otro">Otro</option>
+                            </select>
+                            <span asp-validation-for="Abono.MetodoPago" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Abono.NumeroComprobante" class="form-label fw-semibold">Número de comprobante</label>
+                            <input asp-for="Abono.NumeroComprobante" class="form-control" placeholder="Opcional" autocomplete="off" />
+                            <span asp-validation-for="Abono.NumeroComprobante" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Abono.Comprobante" class="form-label fw-semibold">Comprobante adjunto</label>
+                            <input asp-for="Abono.Comprobante" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png" />
+                            <small class="text-muted">Opcional. PDF o imagen, máximo 10 MB.</small>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-column flex-sm-row justify-content-sm-end gap-2 mt-4">
+                        <a asp-action="Detalle" asp-route-id="@Model.FacturaId" class="btn btn-outline-danger order-2 order-sm-1">Cancelar</a>
+                        <button type="submit" class="btn btn-success fw-semibold px-4 order-1 order-sm-2">
+                            <i class="bi bi-check-lg me-1"></i>Confirmar abono
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

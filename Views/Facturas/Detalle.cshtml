@@ -19,6 +19,10 @@
         ModalidadPago.ProBono => "Pro bono",
         _ => Model.ModalidadPago.ToString()
     };
+    var puedeRegistrarAbono = await Authorization.TienePermiso(User, Permisos.Facturacion.Abono)
+        && Model.Estado != EstadoFactura.Pagada && Model.Estado != EstadoFactura.Anulada;
+    var porcentajePagado = Model.MontoTotal > 0 ? (int)Math.Round(Model.MontoPagado / Model.MontoTotal * 100) : 0;
+    var colorBarra = porcentajePagado >= 100 ? "success" : porcentajePagado > 0 ? "warning" : "danger";
 }
 
 @section Styles {
@@ -31,6 +35,12 @@
     </a>
     <h4 class="mb-0 fw-bold facturas-titulo">Factura #@Model.Id</h4>
     <span class="badge bg-@bc fs-6">@bt</span>
+    @if (puedeRegistrarAbono)
+    {
+        <a asp-action="RegistrarAbono" asp-route-id="@Model.Id" class="btn btn-success btn-sm ms-auto">
+            <i class="bi bi-cash-coin me-1"></i>Registrar abono
+        </a>
+    }
 </div>
 
 <div class="row g-3">
@@ -67,6 +77,24 @@
                     <dt class="col-5">Monto total</dt>
                     <dd class="col-7 fw-bold fs-5">@simboloMoneda@Model.MontoTotal.ToString("N2")</dd>
                 </dl>
+
+                <hr />
+
+                <div class="mb-2 d-flex justify-content-between small fw-semibold">
+                    <span>Progreso de pago</span>
+                    <span>@porcentajePagado%</span>
+                </div>
+                <div class="progress mb-3" style="height:12px;">
+                    <div class="progress-bar bg-@colorBarra" style="width:@porcentajePagado%"></div>
+                </div>
+
+                <dl class="row mb-0">
+                    <dt class="col-5">Monto pagado</dt>
+                    <dd class="col-7 text-success fw-semibold">@simboloMoneda@Model.MontoPagado.ToString("N2")</dd>
+
+                    <dt class="col-5">Saldo pendiente</dt>
+                    <dd class="col-7 @(Model.SaldoPendiente > 0 ? "text-danger fw-bold" : "text-success fw-bold")">@simboloMoneda@Model.SaldoPendiente.ToString("N2")</dd>
+                </dl>
             </div>
         </div>
     </div>
@@ -99,6 +127,67 @@
                             <span class="text-nowrap fw-semibold">@simboloMoneda@s.Precio.ToString("N2")</span>
                         </div>
                     }
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header fw-bold facturas-card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-cash-stack me-1"></i>Historial de pagos</span>
+                <span class="badge bg-primary">@Model.Abonos.Count abono(s)</span>
+            </div>
+            @if (Model.Abonos.Count == 0)
+            {
+                <div class="card-body">
+                    <p class="text-center text-muted mb-0 py-3">Sin abonos registrados aún.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha</th>
+                                <th class="text-end">Monto</th>
+                                <th>Método</th>
+                                <th>Comprobante</th>
+                                <th>Registrado por</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var a in Model.Abonos)
+                            {
+                                var textoMetodo = a.MetodoPago switch
+                                {
+                                    MetodoPago.Transferencia => "Transferencia",
+                                    MetodoPago.Sinpe => "SINPE Móvil",
+                                    MetodoPago.Efectivo => "Efectivo",
+                                    _ => "Otro"
+                                };
+                                <tr>
+                                    <td><small>@a.Fecha.ToString("dd/MM/yyyy")</small></td>
+                                    <td class="text-end fw-semibold text-success">@simboloMoneda@a.Monto.ToString("N2")</td>
+                                    <td><small>@textoMetodo@(string.IsNullOrWhiteSpace(a.NumeroComprobante) ? "" : $" ({a.NumeroComprobante})")</small></td>
+                                    <td>
+                                        @if (a.TieneComprobante)
+                                        {
+                                            <a asp-action="DescargarComprobante" asp-route-abonoId="@a.Id" class="small">
+                                                <i class="bi bi-paperclip me-1"></i>Ver
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted">—</small>
+                                        }
+                                    </td>
+                                    <td><small>@a.RegistradoPorNombre</small></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
             }
         </div>
