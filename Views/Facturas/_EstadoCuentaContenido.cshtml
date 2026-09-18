@@ -1,0 +1,102 @@
+@model HikariLegalSRL.Models.DTOs.EstadoCuentaDTO
+@using HikariLegalSRL.Models.Enums
+@{
+    var puedeRegistrarAbono = await Authorization.TienePermiso(User, Permisos.Facturacion.Abono);
+}
+
+<div class="row g-3 mb-4">
+    @foreach (var t in Model.Totales)
+    {
+        var simbolo = t.Moneda == Moneda.Dolares ? "$" : "₡";
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-bold facturas-card-header">
+                    @(t.Moneda == Moneda.Dolares ? "Dólares" : "Colones")
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-7">Total facturado</dt>
+                        <dd class="col-5 text-end fw-semibold">@simbolo@t.TotalFacturado.ToString("N2")</dd>
+
+                        <dt class="col-7">Total pagado</dt>
+                        <dd class="col-5 text-end text-success fw-semibold">@simbolo@t.TotalPagado.ToString("N2")</dd>
+
+                        <dt class="col-7">Saldo pendiente</dt>
+                        <dd class="col-5 text-end fw-bold @(t.TotalPendiente > 0 ? "text-danger" : "text-success")">@simbolo@t.TotalPendiente.ToString("N2")</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    }
+    @if (Model.Totales.Count == 0)
+    {
+        <div class="col-12">
+            <p class="text-muted mb-0">Este cliente no tiene facturas registradas.</p>
+        </div>
+    }
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header fw-bold facturas-card-header">
+        <i class="bi bi-receipt me-1"></i>Historial de facturas
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 facturas-tabla">
+            <thead>
+                <tr>
+                    <th>Factura</th>
+                    <th>Expediente</th>
+                    <th class="text-end">Monto total</th>
+                    <th class="text-end">Pagado</th>
+                    <th class="text-end">Pendiente</th>
+                    <th class="text-center">Estado</th>
+                    <th>Emisión</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Facturas.Count == 0)
+                {
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">Sin facturas registradas.</td>
+                    </tr>
+                }
+                @foreach (var f in Model.Facturas)
+                {
+                    var (bc, bt) = f.Estado switch
+                    {
+                        EstadoFactura.Emitida => ("primary", "Emitida"),
+                        EstadoFactura.PagoParcial => ("warning text-dark", "Pago parcial"),
+                        EstadoFactura.Pagada => ("success", "Pagada"),
+                        EstadoFactura.Anulada => ("secondary", "Anulada"),
+                        _ => ("secondary", f.Estado.ToString())
+                    };
+                    var simbolo = f.Moneda == Moneda.Dolares ? "$" : "₡";
+                    var puedeAbonarEstaFactura = puedeRegistrarAbono && f.Estado != EstadoFactura.Pagada && f.Estado != EstadoFactura.Anulada;
+                    <tr>
+                        <td class="fw-semibold">#@f.Id</td>
+                        <td><a asp-controller="Expedientes" asp-action="Detalle" asp-route-id="@f.ExpedienteId">#@f.ExpedienteId</a></td>
+                        <td class="text-end">@simbolo@f.MontoTotal.ToString("N2")</td>
+                        <td class="text-end text-success">@simbolo@f.MontoPagado.ToString("N2")</td>
+                        <td class="text-end @(f.SaldoPendiente > 0 ? "text-danger fw-semibold" : "")">@simbolo@f.SaldoPendiente.ToString("N2")</td>
+                        <td class="text-center"><span class="badge bg-@bc">@bt</span></td>
+                        <td><small>@f.FechaEmision.ToLocalTime().ToString("dd/MM/yyyy")</small></td>
+                        <td class="text-end">
+                            <a asp-action="Detalle" asp-route-id="@f.Id" class="btn btn-sm btn-outline-primary" title="Ver factura">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            @if (puedeAbonarEstaFactura)
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-success btn-abono-modal" title="Registrar abono"
+                                        data-factura-id="@f.Id" data-saldo="@f.SaldoPendiente.ToString("N2")"
+                                        data-saldo-numerico="@f.SaldoPendiente.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-simbolo="@simbolo">
+                                    <i class="bi bi-cash-coin"></i>
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
