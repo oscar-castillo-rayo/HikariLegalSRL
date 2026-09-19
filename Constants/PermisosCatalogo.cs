@@ -142,6 +142,7 @@ namespace HikariLegalSRL.Constants
                     new() { Codigo = "reportes.geo",        Nombre = "Segmentación geográfica", Descripcion = "Clientes por país, provincia y cantón" },
                     new() { Codigo = "reportes.carga",      Nombre = "Carga por colaborador", Descripcion = "Carga de trabajo por colaborador" },
                     new() { Codigo = "reportes.calidad",    Nombre = "Evaluación de calidad", Descripcion = "Reporte de evaluaciones de calidad" },
+                    new() { Codigo = "reportes.servicios",  Nombre = "Comparativo de servicios", Descripcion = "Servicios ofrecidos vs. solicitados" },
                 }
             },
             new PermisoModulo
