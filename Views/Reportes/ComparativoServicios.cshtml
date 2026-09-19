@@ -1,0 +1,186 @@
+@model HikariLegalSRL.Models.DTOs.ReporteComparativoServiciosDTO
+@using HikariLegalSRL.Models.Enums
+
+@{
+    ViewData["Title"] = "Comparativo de Servicios";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/reportes.css" />
+}
+
+<div class="d-flex align-items-center gap-2 mb-4">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h2 class="fw-bold mb-0 reportes-titulo">
+        📋 Comparativo de Servicios Ofrecidos vs. Solicitados
+    </h2>
+</div>
+
+<form method="get" class="card p-3 mb-4 shadow-sm">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Período</label>
+            <select name="periodo" id="periodo" class="form-select">
+                <option value="semanal" selected="@(Model.Periodo == "semanal")">Semanal</option>
+                <option value="mensual" selected="@(Model.Periodo == "mensual")">Mensual</option>
+                <option value="cuatrimestral" selected="@(Model.Periodo == "cuatrimestral")">Cuatrimestral</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Desde</label>
+            <input type="date" name="desde" id="desde" class="form-control" value="@Model.Desde.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Hasta</label>
+            <input type="date" name="hasta" id="hasta" class="form-control" value="@Model.Hasta.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-outline-secondary w-100">
+                <i class="bi bi-search me-1"></i>Filtrar
+            </button>
+        </div>
+    </div>
+</form>
+
+<div class="row g-3 mb-4 row-cols-2 row-cols-lg-5">
+    <div class="col">
+        <div class="card shadow-sm text-center py-3 px-2 h-100" style="border-left:4px solid #1F3864;">
+            <div class="small text-muted">Servicios en catálogo</div>
+            <div class="fs-3 fw-bold reportes-titulo">@Model.ServiciosEnCatalogo</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card shadow-sm text-center py-3 px-2 h-100" style="border-left:4px solid #2E5FA3;">
+            <div class="small text-muted">Servicios ofrecidos</div>
+            <div class="fs-3 fw-bold" style="color:#2E5FA3;">@Model.ServiciosOfrecidos</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card shadow-sm text-center py-3 px-2 h-100" style="border-left:4px solid #1D6A3A;">
+            <div class="small text-muted">Servicios solicitados</div>
+            <div class="fs-3 fw-bold text-success">@Model.ServiciosSolicitados</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card shadow-sm text-center py-3 px-2 h-100" style="border-left:4px solid #f5a623;">
+            <div class="small text-muted">Servicios sin demanda</div>
+            <div class="fs-3 fw-bold" style="color:#f5a623;">@Model.ServiciosSinDemanda</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card shadow-sm text-center py-3 px-2 h-100" style="border-left:4px solid #6f42c1;">
+            <div class="small text-muted">Propuestas aceptadas</div>
+            <div class="fs-3 fw-bold" style="color:#6f42c1;">@Model.PropuestasAceptadas</div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header fw-bold" style="background:#EAF0FB;">
+        Detalle por servicio
+        <small class="text-muted fw-normal ms-2">
+            — Del @Model.Desde.ToString("dd/MM/yyyy") al @Model.Hasta.ToString("dd/MM/yyyy")
+        </small>
+    </div>
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle table-hover">
+            <thead style="background:#1F3864; color:white;">
+                <tr>
+                    <th>Servicio</th>
+                    <th>Área</th>
+                    <th class="text-center">Tipo</th>
+                    <th class="text-center">Veces solicitado</th>
+                    <th class="text-center">% del total</th>
+                    <th class="text-center">Estado demanda</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Servicios.Count == 0)
+                {
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            No hay servicios en el catálogo.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var servicio in Model.Servicios)
+                    {
+                        var (colorDemanda, iconoDemanda, textoDemanda) = servicio.Demanda switch
+                        {
+                            EstadoDemanda.Alta => ("text-bg-success", "🔥", "Alta"),
+                            EstadoDemanda.Media => ("text-bg-warning", "📈", "Media"),
+                            EstadoDemanda.Baja => ("text-bg-secondary", "📉", "Baja"),
+                            _ => ("text-bg-danger", "⚠️", "Sin demanda")
+                        };
+
+                        <tr class="@(servicio.VecesSolicitado == 0 ? "table-light text-muted" : "")">
+                            <td class="fw-semibold">@servicio.Nombre</td>
+                            <td>
+                                <span class="badge reportes-area">@servicio.AreaCategoria</span>
+                            </td>
+                            <td class="text-center">
+                                @if (servicio.Tipo == TipoServicio.Ofrecido)
+                                {
+                                    <span class="badge text-bg-primary">Ofrecido</span>
+                                }
+                                else
+                                {
+                                    <span class="badge text-bg-success">Solicitado</span>
+                                }
+                                @if (!servicio.Activo)
+                                {
+                                    <div class="small text-muted">Inactivo</div>
+                                }
+                            </td>
+                            <td class="text-center fw-semibold">
+                                @(servicio.VecesSolicitado > 0 ? servicio.VecesSolicitado.ToString() : "—")
+                            </td>
+                            <td class="reportes-distribucion">
+                                @if (servicio.VecesSolicitado > 0)
+                                {
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1 reportes-progreso">
+                                            <div class="progress-bar reportes-barra" role="progressbar"
+                                                 style="width:@servicio.Porcentaje.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%"
+                                                 aria-valuenow="@servicio.Porcentaje.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)"
+                                                 aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <small class="reportes-porcentaje">@servicio.Porcentaje%</small>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">Sin solicitudes</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <span class="badge @colorDemanda">@iconoDemanda @textoDemanda</span>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="alert alert-light border mt-4 small text-muted">
+    <i class="bi bi-info-circle me-1"></i>
+    Un servicio cuenta como usado cuando una propuesta que lo incluye fue <strong>aceptada</strong> en el período
+    (por su fecha de aceptación); las propuestas en borrador, enviadas sin resolver o rechazadas no cuentan.
+    Si el servicio está registrado en el catálogo como <strong>solicitado</strong> por el cliente suma a los servicios
+    solicitados, y si está registrado como <strong>ofrecido</strong> por la firma suma a los ofrecidos.
+    El porcentaje es la parte de todos los usos del período que corresponde a ese servicio:
+    demanda <strong>alta</strong> desde @Model.UmbralDemandaAlta%,
+    <strong>media</strong> desde @Model.UmbralDemandaMedia%,
+    <strong>baja</strong> por debajo de eso y <strong>sin demanda</strong> si no se usó.
+    Los servicios sin demanda pueden ser candidatos para revisión estratégica del catálogo.
+</div>
+
+@section Scripts {
+    <script src="~/js/reportes-periodo.js" asp-append-version="true"></script>
+}

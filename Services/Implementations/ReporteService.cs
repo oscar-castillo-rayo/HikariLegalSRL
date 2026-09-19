@@ -18,6 +18,8 @@ namespace HikariLegalSRL.Services.Implementations
 
         private const int UmbralCargaMedia = 3;
         private const int UmbralCargaAlta = 6;
+        private const int UmbralDemandaMedia = 8;
+        private const int UmbralDemandaAlta = 20;
 
         private readonly ApplicationDbContext _context;
         private readonly IPermisoEvaluador _permisoEvaluador;
@@ -289,6 +291,72 @@ namespace HikariLegalSRL.Services.Implementations
                 UmbralCargaMedia = UmbralCargaMedia,
                 UmbralCargaAlta = UmbralCargaAlta,
                 Colaboradores = colaboradores
+            };
+        }
+
+        public async Task<ReporteComparativoServiciosDTO> ObtenerComparativoServicios(string periodo, DateTime? desde, DateTime? hasta)
+        {
+            var (desdeFinal, hastaFinal) = ResolverRango(periodo, desde, hasta);
+
+            var usos = await _context.PropuestaServicios
+                .AsNoTracking()
+                .Where(ps => ps.Propuesta.Estado == EstadoPropuesta.Aceptada
+                    && ps.Propuesta.FechaResolucion != null
+                    && ps.Propuesta.FechaResolucion.Value.Date >= desdeFinal
+                    && ps.Propuesta.FechaResolucion.Value.Date <= hastaFinal)
+                .Select(ps => new { ps.ServicioId, ps.PropuestaId })
+                .ToListAsync();
+
+            var propuestasAceptadas = usos.Select(u => u.PropuestaId).Distinct().Count();
+
+            var vecesPorServicio = usos
+                .GroupBy(u => u.ServicioId)
+                .ToDictionary(g => g.Key, g => g.Select(u => u.PropuestaId).Distinct().Count());
+
+            var totalUsos = vecesPorServicio.Values.Sum();
+
+            var catalogo = await _context.CatalogoServicios
+                .AsNoTracking()
+                .Select(s => new { s.ServicioId, s.Nombre, s.AreaCategoria, s.TipoServicio, s.Estado })
+                .ToListAsync();
+
+            var servicios = catalogo
+                .Select(s =>
+                {
+                    var veces = vecesPorServicio.GetValueOrDefault(s.ServicioId);
+                    var porcentaje = totalUsos == 0 ? 0 : Math.Round((decimal)veces / totalUsos * 100, 1);
+
+                    return new DemandaServicioDTO
+                    {
+                        Nombre = s.Nombre,
+                        AreaCategoria = s.AreaCategoria,
+                        Tipo = s.TipoServicio,
+                        Activo = s.Estado == EstadoServicio.Activo,
+                        VecesSolicitado = veces,
+                        Porcentaje = porcentaje,
+                        Demanda = veces == 0 ? EstadoDemanda.SinDemanda
+                            : porcentaje >= UmbralDemandaAlta ? EstadoDemanda.Alta
+                            : porcentaje >= UmbralDemandaMedia ? EstadoDemanda.Media
+                            : EstadoDemanda.Baja
+                    };
+                })
+                .OrderByDescending(s => s.VecesSolicitado)
+                .ThenBy(s => s.Nombre)
+                .ToList();
+
+            return new ReporteComparativoServiciosDTO
+            {
+                Periodo = periodo,
+                Desde = desdeFinal,
+                Hasta = hastaFinal,
+                ServiciosEnCatalogo = servicios.Count,
+                ServiciosOfrecidos = servicios.Where(s => s.Tipo == TipoServicio.Ofrecido).Sum(s => s.VecesSolicitado),
+                ServiciosSolicitados = servicios.Where(s => s.Tipo == TipoServicio.Solicitado).Sum(s => s.VecesSolicitado),
+                ServiciosSinDemanda = servicios.Count(s => s.VecesSolicitado == 0),
+                PropuestasAceptadas = propuestasAceptadas,
+                UmbralDemandaAlta = UmbralDemandaAlta,
+                UmbralDemandaMedia = UmbralDemandaMedia,
+                Servicios = servicios
             };
         }
 
