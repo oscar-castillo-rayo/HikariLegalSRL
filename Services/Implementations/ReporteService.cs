@@ -1,4 +1,5 @@
 using System.Globalization;
+using HikariLegalSRL.Constants;
 using HikariLegalSRL.Data;
 using HikariLegalSRL.Models.DTOs;
 using HikariLegalSRL.Models.Enums;
@@ -15,11 +16,16 @@ namespace HikariLegalSRL.Services.Implementations
         private const string NivelDistrito = "distrito";
         private const string ZonaExtranjero = "Extranjero";
 
-        private readonly ApplicationDbContext _context;
+        private const int UmbralCargaMedia = 3;
+        private const int UmbralCargaAlta = 6;
 
-        public ReporteService(ApplicationDbContext context)
+        private readonly ApplicationDbContext _context;
+        private readonly IPermisoEvaluador _permisoEvaluador;
+
+        public ReporteService(ApplicationDbContext context, IPermisoEvaluador permisoEvaluador)
         {
             _context = context;
+            _permisoEvaluador = permisoEvaluador;
         }
 
         // RF-012: tasa de conversión = propuestas Aceptadas ÷ total de propuestas Enviadas en el
@@ -228,6 +234,61 @@ namespace HikariLegalSRL.Services.Implementations
                 Nivel = nivelFinal,
                 TotalClientes = total,
                 Zonas = zonas
+            };
+        }
+
+        public async Task<ReporteCargaTrabajoDTO> ObtenerCargaTrabajo()
+        {
+            var hoy = DateTime.Today;
+
+            var tareasAbiertas = await _context.Tareas
+                .AsNoTracking()
+                .Where(t => t.Estado != EstadoTarea.Aprobada && t.Estado != EstadoTarea.ListaRevision)
+                .Select(t => new
+                {
+                    t.ColaboradorResponsableId,
+                    t.ColaboradorResponsable.NombreCompleto,
+                    t.ColaboradorResponsable.Especialidad,
+                    t.Estado,
+                    t.FechaLimite
+                })
+                .ToListAsync();
+
+            var asignables = await _permisoEvaluador.UsuariosActivosConPermisoAsync(Permisos.Expedientes.Cargar);
+
+            var colaboradores = asignables
+                .Select(u => (Id: u.Id, u.NombreCompleto, u.Especialidad))
+                .Concat(tareasAbiertas.Select(t => (Id: t.ColaboradorResponsableId, t.NombreCompleto, t.Especialidad)))
+                .DistinctBy(c => c.Id)
+                .Select(c =>
+                {
+                    var tareas = tareasAbiertas.Where(t => t.ColaboradorResponsableId == c.Id).ToList();
+                    var total = tareas.Count;
+
+                    return new CargaColaboradorDTO
+                    {
+                        ColaboradorId = c.Id,
+                        NombreCompleto = c.NombreCompleto,
+                        Especialidad = c.Especialidad,
+                        Pendientes = tareas.Count(t => t.Estado == EstadoTarea.Pendiente),
+                        EnProceso = tareas.Count(t => t.Estado is EstadoTarea.EnProceso or EstadoTarea.Devuelta),
+                        Vencidas = tareas.Count(t => t.FechaLimite.Date < hoy),
+                        TotalActivas = total,
+                        Nivel = total >= UmbralCargaAlta ? NivelCarga.Alta
+                            : total >= UmbralCargaMedia ? NivelCarga.Media
+                            : NivelCarga.Baja
+                    };
+                })
+                .OrderByDescending(c => c.TotalActivas)
+                .ThenByDescending(c => c.Vencidas)
+                .ThenBy(c => c.NombreCompleto)
+                .ToList();
+
+            return new ReporteCargaTrabajoDTO
+            {
+                UmbralCargaMedia = UmbralCargaMedia,
+                UmbralCargaAlta = UmbralCargaAlta,
+                Colaboradores = colaboradores
             };
         }
 

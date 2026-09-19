@@ -16,7 +16,8 @@ namespace HikariLegalSRL.Controllers.Reportes
         {
             Permisos.Reportes.Conversion,
             Permisos.Reportes.Ingresos,
-            Permisos.Reportes.Geo
+            Permisos.Reportes.Geo,
+            Permisos.Reportes.Carga
         };
 
         private readonly IReporteService _reporteService;
@@ -74,6 +75,14 @@ namespace HikariLegalSRL.Controllers.Reportes
         public async Task<IActionResult> DistribucionGeografica(string nivel = "provincia")
         {
             var reporte = await _reporteService.ObtenerDistribucionGeografica(nivel);
+            return View(reporte);
+        }
+
+        [HttpGet]
+        [Permiso(Permisos.Reportes.Carga)]
+        public async Task<IActionResult> CargaTrabajo()
+        {
+            var reporte = await _reporteService.ObtenerCargaTrabajo();
             return View(reporte);
         }
 
