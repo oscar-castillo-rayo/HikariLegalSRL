@@ -9,17 +9,33 @@ namespace HikariLegalSRL.Controllers.Reportes
     [Authorize]
     public class ReportesController : Controller
     {
-        private readonly IReporteService _reporteService;
+        // Cada reporte tiene su propio permiso (Reportes.Conversion, Reportes.Ingresos, ...) y el
+        // Index es el hub de todos ellos: no puede exigir uno solo, porque un usuario con acceso
+        // a un reporte pero no a otro igual debe poder entrar y ver el que sí le corresponde.
+        private static readonly string[] PermisosDeReportes =
+        {
+            Permisos.Reportes.Conversion,
+            Permisos.Reportes.Ingresos
+        };
 
-        public ReportesController(IReporteService reporteService)
+        private readonly IReporteService _reporteService;
+        private readonly IPermisoEvaluador _permisoEvaluador;
+
+        public ReportesController(IReporteService reporteService, IPermisoEvaluador permisoEvaluador)
         {
             _reporteService = reporteService;
+            _permisoEvaluador = permisoEvaluador;
         }
 
-        [Permiso(Permisos.Reportes.Conversion)]
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            foreach (var permiso in PermisosDeReportes)
+            {
+                if (await _permisoEvaluador.TienePermisoAsync(User, permiso))
+                    return View();
+            }
+
+            return Forbid();
         }
 
         [HttpGet]
@@ -39,6 +55,16 @@ namespace HikariLegalSRL.Controllers.Reportes
             DescartarRangoFechasInvalido(ref desde, ref hasta);
 
             var reporte = await _reporteService.ObtenerConversionProspectos(periodo, desde, hasta);
+            return View(reporte);
+        }
+
+        [HttpGet]
+        [Permiso(Permisos.Reportes.Ingresos)]
+        public async Task<IActionResult> IngresosPorServicio(string periodo = "mensual", DateTime? desde = null, DateTime? hasta = null)
+        {
+            DescartarRangoFechasInvalido(ref desde, ref hasta);
+
+            var reporte = await _reporteService.ObtenerIngresosPorServicio(periodo, desde, hasta);
             return View(reporte);
         }
 

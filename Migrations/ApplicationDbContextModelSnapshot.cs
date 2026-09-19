@@ -1097,6 +1097,9 @@ namespace HikariLegalSRL.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<int?>("PropuestaConsumidaId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("ProspectoId")
                         .HasColumnType("int");
 
@@ -1112,6 +1115,8 @@ namespace HikariLegalSRL.Migrations
                     b.HasIndex("ClienteId");
 
                     b.HasIndex("Decision");
+
+                    b.HasIndex("PropuestaConsumidaId");
 
                     b.HasIndex("ProspectoId");
 
@@ -1632,6 +1637,11 @@ namespace HikariLegalSRL.Migrations
                         .HasForeignKey("ClienteId")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("HikariLegalSRL.Models.Propuesta", "PropuestaConsumida")
+                        .WithMany()
+                        .HasForeignKey("PropuestaConsumidaId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("HikariLegalSRL.Models.Prospecto", "Prospecto")
                         .WithMany()
                         .HasForeignKey("ProspectoId")
@@ -1649,6 +1659,8 @@ namespace HikariLegalSRL.Migrations
                         .IsRequired();
 
                     b.Navigation("Cliente");
+
+                    b.Navigation("PropuestaConsumida");
 
                     b.Navigation("Prospecto");
 
