@@ -12,6 +12,8 @@ namespace HikariLegalSRL.Services.Interfaces
 
         Task<List<ServicioOpcionDTO>> ObtenerServiciosActivos();
 
+        Task<BeneficiariosProBonoDTO> ObtenerBeneficiariosProBonoDisponibles(int? propuestaId = null);
+
         Task<List<PropuestaListaDTO>> Listar(string? buscar, EstadoPropuesta? estado);
 
         Task<PropuestaDetalleDTO?> ObtenerDetalle(int id);

@@ -77,8 +77,9 @@
                             <option value="">-- Seleccione --</option>
                             <option value="@ModalidadPago.Contado">Contado</option>
                             <option value="@ModalidadPago.Abono">Abono</option>
-                            <option value="@ModalidadPago.ProBono">Pro Bono</option>
+                            <option id="optProBono" value="@ModalidadPago.ProBono">Pro Bono</option>
                         </select>
+                        <div id="ayudaProBono" class="form-text"></div>
                         <span asp-validation-for="Propuesta.ModalidadPago" class="text-danger small"></span>
                     </div>
                     <div class="col-12">
@@ -144,6 +145,11 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         window.propuestaServiciosIniciales = @Html.Raw(JsonSerializer.Serialize(serviciosIniciales));
+        window.propuestaProBonoDisponible = @Html.Raw(JsonSerializer.Serialize(new
+        {
+            clientes = Model.BeneficiariosProBono.Clientes,
+            prospectos = Model.BeneficiariosProBono.Prospectos
+        }));
     </script>
     <script src="~/js/propuestas-crear.js" asp-append-version="true"></script>
 }

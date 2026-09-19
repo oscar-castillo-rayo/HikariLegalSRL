@@ -18,7 +18,8 @@ namespace HikariLegalSRL.Controllers.Reportes
             Permisos.Reportes.Ingresos,
             Permisos.Reportes.Geo,
             Permisos.Reportes.Carga,
-            Permisos.Reportes.Servicios
+            Permisos.Reportes.Servicios,
+            Permisos.Reportes.Rentabilidad
         };
 
         private readonly IReporteService _reporteService;
@@ -94,6 +95,16 @@ namespace HikariLegalSRL.Controllers.Reportes
             DescartarRangoFechasInvalido(ref desde, ref hasta);
 
             var reporte = await _reporteService.ObtenerComparativoServicios(periodo, desde, hasta);
+            return View(reporte);
+        }
+
+        [HttpGet]
+        [Permiso(Permisos.Reportes.Rentabilidad)]
+        public async Task<IActionResult> Rentabilidad(string periodo = "mensual", DateTime? desde = null, DateTime? hasta = null)
+        {
+            DescartarRangoFechasInvalido(ref desde, ref hasta);
+
+            var reporte = await _reporteService.ObtenerRentabilidad(periodo, desde, hasta);
             return View(reporte);
         }
 

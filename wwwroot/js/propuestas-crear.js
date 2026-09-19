@@ -22,10 +22,50 @@
         }
     }
 
+    const selectModalidad = document.getElementById('Propuesta_ModalidadPago');
+    const opcionProBono = document.getElementById('optProBono');
+    const ayudaProBono = document.getElementById('ayudaProBono');
+    const proBonoDisponible = window.propuestaProBonoDisponible || { clientes: [], prospectos: [] };
+
+    function actualizarProBono() {
+        if (!selectModalidad || !opcionProBono || !ayudaProBono) return;
+
+        const clienteId = parseInt(selectCliente.value, 10);
+        const prospectoId = parseInt(selectProspecto.value, 10);
+        const hayDestinatario = !isNaN(clienteId) || !isNaN(prospectoId);
+        const disponible = (!isNaN(clienteId) && proBonoDisponible.clientes.includes(clienteId))
+            || (!isNaN(prospectoId) && proBonoDisponible.prospectos.includes(prospectoId));
+
+        if (disponible) {
+            if (opcionProBono.parentNode !== selectModalidad) {
+                selectModalidad.appendChild(opcionProBono);
+            }
+        } else {
+            if (selectModalidad.value === opcionProBono.value) {
+                selectModalidad.value = '';
+            }
+            opcionProBono.remove();
+        }
+
+        ayudaProBono.classList.toggle('text-success', disponible);
+        ayudaProBono.classList.toggle('text-muted', !disponible);
+
+        if (!hayDestinatario) {
+            ayudaProBono.textContent = 'Seleccione un prospecto o cliente para poder elegir Pro Bono.';
+        } else if (disponible) {
+            ayudaProBono.textContent = 'Este destinatario tiene una solicitud pro bono aprobada y disponible.';
+        } else {
+            ayudaProBono.textContent = 'Pro Bono no está disponible: este destinatario no tiene una solicitud pro bono aprobada y libre (módulo Pro Bono).';
+        }
+    }
+
     if (selectProspecto && selectCliente) {
         selectProspecto.addEventListener('change', alternarDestinatario);
         selectCliente.addEventListener('change', alternarDestinatario);
+        selectProspecto.addEventListener('change', actualizarProBono);
+        selectCliente.addEventListener('change', actualizarProBono);
         alternarDestinatario();
+        actualizarProBono();
     }
 
     let itemIndex = 0;

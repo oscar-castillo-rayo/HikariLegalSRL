@@ -1,231 +1,232 @@
-﻿@using System.Security.Claims
-@inject HikariLegalSRL.Services.Interfaces.INotificacionService NotificacionService
-
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] — Hikari Legal</title>
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
-    <link rel="stylesheet" href="~/css/layout.css" />
-    @await RenderSectionAsync("Styles", required: false)
-</head>
-<body>
-    @{
-        var controladorActual = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
-        var rolUsuario = User.FindFirst(ClaimTypes.Role)?.Value ?? "Sin Rol";
-        string NavClass(string controlador) =>
-        controladorActual.Equals(controlador, StringComparison.OrdinalIgnoreCase)
-        ? "nav-link active"
-        : "nav-link";
-
-        var hideShell = (ViewData["HideShell"] as bool?) ?? false;
-        var usuarioActualId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var notificacionesNoLeidas = (!hideShell && usuarioActualId is not null)
-            ? await NotificacionService.ContarNoLeidas(usuarioActualId)
-            : 0;
-    }
-
-    @* ── Sidebar ─────────────────────────────────────────── *@
-    @if (!hideShell)
-    {
-        <nav class="offcanvas-lg offcanvas-start" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarLabel">
-            <div class="offcanvas-header d-lg-none">
-                <h5 class="offcanvas-title text-white" id="sidebarLabel">Menú</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebarOffcanvas"></button>
-            </div>
-
-            <div class="offcanvas-body p-0 d-flex flex-column">
-
-                <div class="brand">
-                    <img src="~/images/fulllogo.png" alt="Hikari Legal" style="max-width:50px; width:100%;" />
-                    Hikari Legal
-                </div>
-
-                <div class="pt-2">
-
-                    <div class="nav-section">General</div>
-                    <a class="@NavClass("Dashboard")" asp-controller="Dashboard" asp-action="Index">
-                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
-                    </a>
-
-                    <div class="nav-section">Comercial</div>
-                    @if (await Authorization.TienePermiso(User, Permisos.Prospectos.Ver))
-                    {
-                        <a class="@NavClass("Prospectos")" asp-controller="Prospectos" asp-action="Index">
-                            <i class="bi bi-person-plus me-2"></i>Prospectos
-                        </a>
-                    }
-                    @if (await Authorization.TienePermiso(User, Permisos.Clientes.Ver))
-                    {
-                        <a class="@NavClass("Clientes")" asp-controller="Clientes" asp-action="Index">
-                            <i class="bi bi-people me-2"></i>Clientes
-                        </a>
-                    }
-                    @if (await Authorization.TienePermiso(User, Permisos.Propuestas.Ver))
-                    {
-                        <a class="@NavClass("Propuestas")" asp-controller="Propuestas" asp-action="Index">
-                            <i class="bi bi-file-earmark-text me-2"></i>Propuestas
-                        </a>
-                    }
-
-                    <div class="nav-section">Operaciones</div>
-                    @if (await Authorization.TienePermiso(User, Permisos.Expedientes.Ver))
-                    {
-                        <a class="@NavClass("Expedientes")" asp-controller="Expedientes" asp-action="Index">
-                            <i class="bi bi-folder2-open me-2"></i>Expedientes
-                        </a>
-                    }
-                    @if (await Authorization.TienePermiso(User, Permisos.Facturacion.Ver))
-                    {
-                        <a class="@NavClass("Facturas")" asp-controller="Facturas" asp-action="Index">
-                            <i class="bi bi-receipt me-2"></i>Facturación
-                        </a>
-                    }
-                    @if (await Authorization.TienePermiso(User, Permisos.Facturacion.Probono))
-                    {
-                        <a class="@NavClass("ProBono")" asp-controller="ProBono" asp-action="Index">
-                            <i class="bi bi-heart me-2"></i>Pro Bono
-                        </a>
-                    }
-                    @if (await Authorization.TienePermiso(User, Permisos.Calidad.Ver))
-                    {
-                        <a class="@NavClass("Calidad")" asp-controller="Calidad" asp-action="Index">
-                            <i class="bi bi-star me-2"></i>Calidad
-                        </a>
-                    }
-
-                    <div class="nav-section">Administración</div>
-                    @if (await Authorization.TienePermiso(User, Permisos.Usuarios.Ver))
-                    {
-                        <a class="@NavClass("Usuarios")" asp-controller="Usuarios" asp-action="Index">
-                            <i class="bi bi-person-gear me-2"></i>Usuarios
-                        </a>
-                    }
-                    @if (await Authorization.TienePermiso(User, Permisos.Servicios.Ver))
-                    {
-                        <a class="@NavClass("Servicios")" asp-controller="Servicios" asp-action="Index">
-                            <i class="bi bi-grid me-2"></i>Catálogo Servicios
-                        </a>
-                    }
-                    @if (await Authorization.TienePermiso(User, Permisos.Reportes.Conversion)
-                        || await Authorization.TienePermiso(User, Permisos.Reportes.Ingresos)
-                        || await Authorization.TienePermiso(User, Permisos.Reportes.Geo)
-                        || await Authorization.TienePermiso(User, Permisos.Reportes.Carga)
-                        || await Authorization.TienePermiso(User, Permisos.Reportes.Servicios))
-                    {
-                        <a class="@NavClass("Reportes")" asp-controller="Reportes" asp-action="Index">
-                            <i class="bi bi-bar-chart me-2"></i>Reportes
-                        </a>
-                    }
-                    @if (await Authorization.TienePermiso(User, Permisos.Auditoria.Ver))
-                    {
-                        <a class="@NavClass("Auditoria")" asp-controller="Auditoria" asp-action="Index">
-                            <i class="bi bi-journal-text me-2"></i>Auditoría
-                        </a>
-                    }
-
-                </div>
-
-            </div>
-             <div class="logout-area">
-                    <div class="small text-white-50 mb-2">
-                        <i class="bi bi-person-circle me-1"></i>
-                        @User.Identity?.Name
-                    </div>
-                    <form asp-controller="Account" asp-action="Logout" method="post">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-sm btn-outline-light w-100">
-                            <i class="bi bi-box-arrow-left me-1"></i>Cerrar sesión
-                        </button>
-                    </form>
-                </div>
-        </nav>
-    }
-
-    @* ── Contenido principal ─────────────────────────────── *@
-    <div id="main-content">
-        @if (!hideShell)
-        {
-            <div id="topbar">
-                <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-outline-secondary btn-sm d-lg-none" type="button"
-                            data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas"
-                            aria-controls="sidebarOffcanvas" aria-label="Abrir menú">
-                        <i class="bi bi-list"></i>
-                    </button>
-                    <span class="fw-semibold text-muted">@ViewData["Title"]</span>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <a href="/Notificaciones/Index" class="layout-campana" title="Notificaciones">
-                        <i class="bi bi-bell"></i>
-                        @if (notificacionesNoLeidas > 0)
-                        {
-                            <span class="badge rounded-pill bg-danger layout-campana-badge">@notificacionesNoLeidas</span>
-                        }
-                    </a>
-                    <span class="badge" style="background:#1F3864;">
-                        @rolUsuario
-                    </span>
-                </div>
-            </div>
-        }
-
-        <div id="page-content">
-            @RenderBody()
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
-    <!-- Intercepta los mensajes del Controlador usando SweetAlert -->
-    @if (TempData["Exito"] != null)
-    {
-        <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    Swal.fire({
-                        icon: 'success',
-                        title: '¡Éxito!',
-                        text: @Json.Serialize(TempData["Exito"]),
-                        timer: 3000,
-                        showConfirmButton: false
-                    });
-                });
-        </script>
-    }
-
-    @if (TempData["Error"] != null)
-    {
-        <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Acción denegada',
-                        text: @Json.Serialize(TempData["Error"]),
-                        confirmButtonColor: '#0d6efd'
-                    });
-                });
-        </script>
-    }
-
-    @if (TempData["Info"] != null)
-    {
-        <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Información',
-                        text: @Json.Serialize(TempData["Info"]),
-                        confirmButtonColor: '#0d6efd'
-                    });
-                });
-        </script>
-    }
-</body>
+﻿@using System.Security.Claims
+@inject HikariLegalSRL.Services.Interfaces.INotificacionService NotificacionService
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — Hikari Legal</title>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+    <link rel="stylesheet" href="~/css/layout.css" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    @{
+        var controladorActual = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+        var rolUsuario = User.FindFirst(ClaimTypes.Role)?.Value ?? "Sin Rol";
+        string NavClass(string controlador) =>
+        controladorActual.Equals(controlador, StringComparison.OrdinalIgnoreCase)
+        ? "nav-link active"
+        : "nav-link";
+
+        var hideShell = (ViewData["HideShell"] as bool?) ?? false;
+        var usuarioActualId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var notificacionesNoLeidas = (!hideShell && usuarioActualId is not null)
+            ? await NotificacionService.ContarNoLeidas(usuarioActualId)
+            : 0;
+    }
+
+    @* ── Sidebar ─────────────────────────────────────────── *@
+    @if (!hideShell)
+    {
+        <nav class="offcanvas-lg offcanvas-start" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarLabel">
+            <div class="offcanvas-header d-lg-none">
+                <h5 class="offcanvas-title text-white" id="sidebarLabel">Menú</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebarOffcanvas"></button>
+            </div>
+
+            <div class="offcanvas-body p-0 d-flex flex-column">
+
+                <div class="brand">
+                    <img src="~/images/fulllogo.png" alt="Hikari Legal" style="max-width:50px; width:100%;" />
+                    Hikari Legal
+                </div>
+
+                <div class="pt-2">
+
+                    <div class="nav-section">General</div>
+                    <a class="@NavClass("Dashboard")" asp-controller="Dashboard" asp-action="Index">
+                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                    </a>
+
+                    <div class="nav-section">Comercial</div>
+                    @if (await Authorization.TienePermiso(User, Permisos.Prospectos.Ver))
+                    {
+                        <a class="@NavClass("Prospectos")" asp-controller="Prospectos" asp-action="Index">
+                            <i class="bi bi-person-plus me-2"></i>Prospectos
+                        </a>
+                    }
+                    @if (await Authorization.TienePermiso(User, Permisos.Clientes.Ver))
+                    {
+                        <a class="@NavClass("Clientes")" asp-controller="Clientes" asp-action="Index">
+                            <i class="bi bi-people me-2"></i>Clientes
+                        </a>
+                    }
+                    @if (await Authorization.TienePermiso(User, Permisos.Propuestas.Ver))
+                    {
+                        <a class="@NavClass("Propuestas")" asp-controller="Propuestas" asp-action="Index">
+                            <i class="bi bi-file-earmark-text me-2"></i>Propuestas
+                        </a>
+                    }
+
+                    <div class="nav-section">Operaciones</div>
+                    @if (await Authorization.TienePermiso(User, Permisos.Expedientes.Ver))
+                    {
+                        <a class="@NavClass("Expedientes")" asp-controller="Expedientes" asp-action="Index">
+                            <i class="bi bi-folder2-open me-2"></i>Expedientes
+                        </a>
+                    }
+                    @if (await Authorization.TienePermiso(User, Permisos.Facturacion.Ver))
+                    {
+                        <a class="@NavClass("Facturas")" asp-controller="Facturas" asp-action="Index">
+                            <i class="bi bi-receipt me-2"></i>Facturación
+                        </a>
+                    }
+                    @if (await Authorization.TienePermiso(User, Permisos.Facturacion.Probono))
+                    {
+                        <a class="@NavClass("ProBono")" asp-controller="ProBono" asp-action="Index">
+                            <i class="bi bi-heart me-2"></i>Pro Bono
+                        </a>
+                    }
+                    @if (await Authorization.TienePermiso(User, Permisos.Calidad.Ver))
+                    {
+                        <a class="@NavClass("Calidad")" asp-controller="Calidad" asp-action="Index">
+                            <i class="bi bi-star me-2"></i>Calidad
+                        </a>
+                    }
+
+                    <div class="nav-section">Administración</div>
+                    @if (await Authorization.TienePermiso(User, Permisos.Usuarios.Ver))
+                    {
+                        <a class="@NavClass("Usuarios")" asp-controller="Usuarios" asp-action="Index">
+                            <i class="bi bi-person-gear me-2"></i>Usuarios
+                        </a>
+                    }
+                    @if (await Authorization.TienePermiso(User, Permisos.Servicios.Ver))
+                    {
+                        <a class="@NavClass("Servicios")" asp-controller="Servicios" asp-action="Index">
+                            <i class="bi bi-grid me-2"></i>Catálogo Servicios
+                        </a>
+                    }
+                    @if (await Authorization.TienePermiso(User, Permisos.Reportes.Conversion)
+                        || await Authorization.TienePermiso(User, Permisos.Reportes.Ingresos)
+                        || await Authorization.TienePermiso(User, Permisos.Reportes.Geo)
+                        || await Authorization.TienePermiso(User, Permisos.Reportes.Carga)
+                        || await Authorization.TienePermiso(User, Permisos.Reportes.Servicios)
+                        || await Authorization.TienePermiso(User, Permisos.Reportes.Rentabilidad))
+                    {
+                        <a class="@NavClass("Reportes")" asp-controller="Reportes" asp-action="Index">
+                            <i class="bi bi-bar-chart me-2"></i>Reportes
+                        </a>
+                    }
+                    @if (await Authorization.TienePermiso(User, Permisos.Auditoria.Ver))
+                    {
+                        <a class="@NavClass("Auditoria")" asp-controller="Auditoria" asp-action="Index">
+                            <i class="bi bi-journal-text me-2"></i>Auditoría
+                        </a>
+                    }
+
+                </div>
+
+            </div>
+             <div class="logout-area">
+                    <div class="small text-white-50 mb-2">
+                        <i class="bi bi-person-circle me-1"></i>
+                        @User.Identity?.Name
+                    </div>
+                    <form asp-controller="Account" asp-action="Logout" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-sm btn-outline-light w-100">
+                            <i class="bi bi-box-arrow-left me-1"></i>Cerrar sesión
+                        </button>
+                    </form>
+                </div>
+        </nav>
+    }
+
+    @* ── Contenido principal ─────────────────────────────── *@
+    <div id="main-content">
+        @if (!hideShell)
+        {
+            <div id="topbar">
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-outline-secondary btn-sm d-lg-none" type="button"
+                            data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas"
+                            aria-controls="sidebarOffcanvas" aria-label="Abrir menú">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <span class="fw-semibold text-muted">@ViewData["Title"]</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="/Notificaciones/Index" class="layout-campana" title="Notificaciones">
+                        <i class="bi bi-bell"></i>
+                        @if (notificacionesNoLeidas > 0)
+                        {
+                            <span class="badge rounded-pill bg-danger layout-campana-badge">@notificacionesNoLeidas</span>
+                        }
+                    </a>
+                    <span class="badge" style="background:#1F3864;">
+                        @rolUsuario
+                    </span>
+                </div>
+            </div>
+        }
+
+        <div id="page-content">
+            @RenderBody()
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+    <!-- Intercepta los mensajes del Controlador usando SweetAlert -->
+    @if (TempData["Exito"] != null)
+    {
+        <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Éxito!',
+                        text: @Json.Serialize(TempData["Exito"]),
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                });
+        </script>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Acción denegada',
+                        text: @Json.Serialize(TempData["Error"]),
+                        confirmButtonColor: '#0d6efd'
+                    });
+                });
+        </script>
+    }
+
+    @if (TempData["Info"] != null)
+    {
+        <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Información',
+                        text: @Json.Serialize(TempData["Info"]),
+                        confirmButtonColor: '#0d6efd'
+                    });
+                });
+        </script>
+    }
+</body>
 </html>
