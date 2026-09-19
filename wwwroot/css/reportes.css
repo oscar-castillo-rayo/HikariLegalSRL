@@ -1,5 +1,5 @@
-.reportes-titulo {
-    color: #1F3864;
+.reportes-barra {
+    background: #2E5FA3;
 }
 
 .reportes-btn {
@@ -12,8 +12,21 @@
         color: #fff;
     }
 
+.reportes-distribucion {
+    min-width: 200px;
+}
+
 .reportes-metrica-total {
     background: #1F3864;
+}
+
+.reportes-porcentaje {
+    min-width: 3rem;
+    text-align: right;
+}
+
+.reportes-progreso {
+    height: 10px;
 }
 
 .reportes-tasa-alta {
@@ -22,6 +35,10 @@
 
 .reportes-tasa-baja {
     color: #B85C00;
+}
+
+.reportes-titulo {
+    color: #1F3864;
 }
 
 @media (max-width: 576px) {

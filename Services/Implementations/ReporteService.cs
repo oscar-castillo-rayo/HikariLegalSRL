@@ -9,6 +9,12 @@ namespace HikariLegalSRL.Services.Implementations
 {
     public class ReporteService : IReporteService
     {
+        private const string NivelPais = "pais";
+        private const string NivelProvincia = "provincia";
+        private const string NivelCanton = "canton";
+        private const string NivelDistrito = "distrito";
+        private const string ZonaExtranjero = "Extranjero";
+
         private readonly ApplicationDbContext _context;
 
         public ReporteService(ApplicationDbContext context)
@@ -177,6 +183,51 @@ namespace HikariLegalSRL.Services.Implementations
                 Desde = desdeFinal,
                 Hasta = hastaFinal,
                 Monedas = monedas
+            };
+        }
+
+        public async Task<ReporteDistribucionGeograficaDTO> ObtenerDistribucionGeografica(string nivel)
+        {
+            var nivelFinal = nivel is NivelPais or NivelCanton or NivelDistrito ? nivel : NivelProvincia;
+
+            var ubicaciones = await _context.Clientes
+                .AsNoTracking()
+                .Select(c => new
+                {
+                    Pais = c.Direccion.Pais.Nombre,
+                    Provincia = c.Direccion.Distrito != null ? c.Direccion.Distrito.Canton.Provincia.Nombre : null,
+                    Canton = c.Direccion.Distrito != null ? c.Direccion.Distrito.Canton.Nombre : null,
+                    Distrito = c.Direccion.Distrito != null ? c.Direccion.Distrito.Nombre : null
+                })
+                .ToListAsync();
+
+            var total = ubicaciones.Count;
+
+            var zonas = ubicaciones
+                .GroupBy(u => nivelFinal switch
+                {
+                    NivelPais => (Nombre: u.Pais, Detalle: (string?)null),
+                    NivelDistrito when u.Distrito is not null => (Nombre: u.Distrito, Detalle: $"{u.Canton}, {u.Provincia}"),
+                    NivelCanton when u.Canton is not null => (Nombre: u.Canton, Detalle: u.Provincia),
+                    NivelProvincia when u.Provincia is not null => (Nombre: u.Provincia, Detalle: (string?)null),
+                    _ => (Nombre: ZonaExtranjero, Detalle: (string?)null)
+                })
+                .Select(g => new ZonaGeograficaDTO
+                {
+                    Nombre = g.Key.Nombre,
+                    Detalle = g.Key.Detalle,
+                    Cantidad = g.Count(),
+                    Porcentaje = Math.Round((decimal)g.Count() / total * 100, 1)
+                })
+                .OrderByDescending(z => z.Cantidad)
+                .ThenBy(z => z.Nombre)
+                .ToList();
+
+            return new ReporteDistribucionGeograficaDTO
+            {
+                Nivel = nivelFinal,
+                TotalClientes = total,
+                Zonas = zonas
             };
         }
 
