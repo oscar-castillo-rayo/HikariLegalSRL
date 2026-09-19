@@ -108,6 +108,12 @@ namespace HikariLegalSRL.Constants
             public const string Servicios  = "reportes.servicios";
         }
 
+        public static class Calidad
+        {
+            public const string Ver       = "calidad.ver";
+            public const string Registrar = "calidad.registrar";
+        }
+
         public static class Auditoria
         {
             public const string Ver = "auditoria.ver";
@@ -125,6 +131,7 @@ namespace HikariLegalSRL.Constants
             Expedientes.Ver, Expedientes.Crear, Expedientes.Asignar, Expedientes.Reasignar, Expedientes.Cerrar, Expedientes.Aprobar, Expedientes.Devolver, Expedientes.Cargar, Expedientes.SerResponsable, Expedientes.GestionarAjenas, Expedientes.Supervisar, Expedientes.GestionarTareasPropias, Expedientes.EditarTarea, Expedientes.EliminarTarea,
             Facturacion.Ver, Facturacion.Generar, Facturacion.Anular, Facturacion.Abono, Facturacion.Probono, Facturacion.AprobarProbono,
             Reportes.Conversion, Reportes.Ingresos, Reportes.Geo, Reportes.Carga, Reportes.Calidad, Reportes.Servicios,
+            Calidad.Ver, Calidad.Registrar,
             Auditoria.Ver,
         };
     }

@@ -3,6 +3,8 @@
 
 @{
     ViewData["Title"] = "Expedientes";
+    var puedeRegistrarCalidad = await Authorization.TienePermiso(User, Permisos.Calidad.Registrar);
+    var puedeVerCalidad = await Authorization.TienePermiso(User, Permisos.Calidad.Ver);
 }
 
 @section Styles {
@@ -69,6 +71,25 @@
                             <span class="badge bg-light text-dark border">@e.TareasAprobadas / @e.TotalTareas</span>
                         </td>
                         <td class="text-end">
+                            @if (e.Estado == EstadoExpediente.Cerrado)
+                            {
+                                @if (e.Evaluado)
+                                {
+                                    <a asp-controller="Calidad" asp-action="Index"
+                                       class="btn btn-sm btn-warning expedientes-btn-accion @(puedeVerCalidad ? null : "disabled")"
+                                       title="Evaluación registrada — ver evaluaciones de calidad">
+                                        <i class="bi bi-star-fill"></i>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a asp-controller="Calidad" asp-action="Registrar" asp-route-id="@e.Id"
+                                       class="btn btn-sm btn-outline-warning expedientes-btn-accion @(puedeRegistrarCalidad ? null : "disabled")"
+                                       title="Evaluar calidad del servicio">
+                                        <i class="bi bi-star"></i>
+                                    </a>
+                                }
+                            }
                             <a asp-action="Detalle" asp-route-id="@e.Id" class="btn btn-sm btn-outline-primary" title="Ver expediente / Kanban">
                                 <i class="bi bi-kanban"></i>
                             </a>
