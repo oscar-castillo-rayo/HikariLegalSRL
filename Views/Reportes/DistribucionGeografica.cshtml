@@ -1,0 +1,93 @@
+@model HikariLegalSRL.Models.DTOs.ReporteDistribucionGeograficaDTO
+
+@{
+    ViewData["Title"] = "Distribución Geográfica";
+
+    var niveles = new[]
+    {
+        (Valor: "pais", Etiqueta: "País", Icono: "bi-globe-americas"),
+        (Valor: "provincia", Etiqueta: "Provincia", Icono: "bi-geo-alt"),
+        (Valor: "canton", Etiqueta: "Cantón", Icono: "bi-buildings"),
+        (Valor: "distrito", Etiqueta: "Distrito", Icono: "bi-signpost-split")
+    };
+
+    var etiquetaNivel = niveles.First(n => n.Valor == Model.Nivel).Etiqueta;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/reportes.css" />
+}
+
+<div class="d-flex align-items-center gap-2 mb-4">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h2 class="fw-bold mb-0 reportes-titulo">
+        🗺️ Distribución Geográfica de Clientes
+    </h2>
+</div>
+
+<div class="mb-4 d-flex flex-wrap gap-2">
+    @foreach (var nivel in niveles)
+    {
+        <a asp-action="DistribucionGeografica" asp-route-nivel="@nivel.Valor"
+           class="btn btn-sm @(Model.Nivel == nivel.Valor ? "reportes-btn" : "btn-outline-secondary")">
+            <i class="bi @nivel.Icono me-1"></i>@nivel.Etiqueta
+        </a>
+    }
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header fw-bold d-flex flex-wrap justify-content-between gap-2" style="background:#EAF0FB;">
+        <span>Clientes por @etiquetaNivel.ToLower()</span>
+        <span class="reportes-titulo">Total: @Model.TotalClientes</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle table-hover">
+            <thead style="background:#1F3864; color:white;">
+                <tr>
+                    <th>@etiquetaNivel</th>
+                    <th class="text-center">Clientes</th>
+                    <th>Distribución</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Zonas.Count == 0)
+                {
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-4">
+                            Aún no hay clientes registrados.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var zona in Model.Zonas)
+                    {
+                        <tr>
+                            <td>
+                                <span class="fw-semibold">@zona.Nombre</span>
+                                @if (zona.Detalle is not null)
+                                {
+                                    <div class="text-muted small">@zona.Detalle</div>
+                                }
+                            </td>
+                            <td class="text-center">@zona.Cantidad</td>
+                            <td class="reportes-distribucion">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1 reportes-progreso">
+                                        <div class="progress-bar reportes-barra" role="progressbar"
+                                             style="width:@zona.Porcentaje.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%"
+                                             aria-valuenow="@zona.Porcentaje.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)"
+                                             aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <small class="reportes-porcentaje">@zona.Porcentaje%</small>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
