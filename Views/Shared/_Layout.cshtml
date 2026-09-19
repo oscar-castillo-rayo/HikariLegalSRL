@@ -106,7 +106,8 @@
                             <i class="bi bi-grid me-2"></i>Catálogo Servicios
                         </a>
                     }
-                    @if (await Authorization.TienePermiso(User, Permisos.Reportes.Conversion))
+                    @if (await Authorization.TienePermiso(User, Permisos.Reportes.Conversion)
+                        || await Authorization.TienePermiso(User, Permisos.Reportes.Ingresos))
                     {
                         <a class="@NavClass("Reportes")" asp-controller="Reportes" asp-action="Index">
                             <i class="bi bi-bar-chart me-2"></i>Reportes

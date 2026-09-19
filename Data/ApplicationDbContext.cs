@@ -840,6 +840,12 @@ namespace HikariLegalSRL.Data
                 .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<SolicitudProBono>()
+                .HasOne(s => s.PropuestaConsumida)
+                .WithMany()
+                .HasForeignKey(s => s.PropuestaConsumidaId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<SolicitudProBono>()
                 .ToTable(t => t.HasCheckConstraint(
                     "CK_ProBono_Decision",
                     "[Decision] IN ('pendiente', 'aprobada', 'rechazada')"

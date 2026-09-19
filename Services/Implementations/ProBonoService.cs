@@ -81,7 +81,8 @@ namespace HikariLegalSRL.Services.Implementations
                     Decision = s.Decision,
                     FechaSolicitud = s.FechaSolicitud,
                     ResueltoPorNombre = s.ResueltoPor != null ? s.ResueltoPor.NombreCompleto : null,
-                    FechaResolucion = s.FechaResolucion
+                    FechaResolucion = s.FechaResolucion,
+                    PropuestaConsumidaId = s.PropuestaConsumidaId
                 })
                 .ToListAsync();
         }
@@ -117,7 +118,8 @@ namespace HikariLegalSRL.Services.Implementations
                 ComentarioResolucion = solicitud.ComentarioResolucion,
                 ResueltoPorNombre = solicitud.ResueltoPor?.NombreCompleto,
                 FechaSolicitud = solicitud.FechaSolicitud,
-                FechaResolucion = solicitud.FechaResolucion
+                FechaResolucion = solicitud.FechaResolucion,
+                PropuestaConsumidaId = solicitud.PropuestaConsumidaId
             };
         }
 
@@ -191,7 +193,6 @@ namespace HikariLegalSRL.Services.Implementations
                 throw new ReglaNegocioException("No tiene permiso para resolver solicitudes pro bono.");
 
             var solicitud = await _context.SolicitudesProBono
-                .Include(s => s.Cliente)
                 .FirstOrDefaultAsync(s => s.SolicitudProBonoId == id)
                 ?? throw new ReglaNegocioException("La solicitud indicada no existe.");
 
@@ -206,18 +207,15 @@ namespace HikariLegalSRL.Services.Implementations
             solicitud.ResueltoPorId = usuarioActualId;
             solicitud.FechaResolucion = DateTime.UtcNow;
 
-            // RF-011: un servicio pro bono no genera factura por su monto real (queda en
-            // cero) — el único mecanismo que ya implementa eso hoy es Cliente.ModalidadPago
-            // == ProBono (ver ExpedienteService.CerrarExpediente / HU-021), que sigue
-            // generando la fila de Factura para trazabilidad, solo que con MontoTotal = 0.
-            // Se decidió con el usuario (2026-09-18) que aprobar esta solicitud actualice
-            // automáticamente esa modalidad cuando el beneficiario ya es un Cliente, para
-            // que la aprobación formal realmente garantice el efecto que pide el RF, sin
-            // pasos manuales aparte. Si el beneficiario es un Prospecto, no hay Cliente
-            // todavía sobre el cual aplicar esto — queda pendiente de que, al convertirlo,
-            // quien lo haga elija manualmente "Pro Bono" como modalidad de pago.
-            if (solicitud.Decision == DecisionProBono.Aprobada && solicitud.Cliente is not null)
-                solicitud.Cliente.ModalidadPago = ModalidadPago.ProBono;
+            // RF-011: aprobar la solicitud solo la deja disponible para respaldar una propuesta
+            // pro bono futura — ya no toca Cliente.ModalidadPago directamente (rediseñado
+            // 2026-09-18, a pedido del usuario: la versión anterior marcaba al cliente entero
+            // como pro bono para siempre, así que cualquier expediente futuro de ese cliente,
+            // sin relación con esta solicitud, también facturaba en cero). Quien crea o edita la
+            // propuesta la elige como "Pro Bono" y PropuestaService valida ahí que exista una
+            // solicitud aprobada y sin usar para ese mismo beneficiario, y la marca consumida
+            // (ver PropuestaService.ValidarYReservarSolicitudProBono). CerrarExpediente ahora
+            // decide el monto cero según Propuesta.ModalidadPago, no Cliente.ModalidadPago.
 
             await _bitacoraAuditoriaService.Registrar(
                 usuarioId: usuarioActualId,

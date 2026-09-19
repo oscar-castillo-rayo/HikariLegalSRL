@@ -51,6 +51,26 @@
                         <dt class="col-5 text-muted small">Fecha de resolución</dt>
                         <dd class="col-7">@Model.FechaResolucion!.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
                     }
+
+                    @if (Model.Decision == DecisionProBono.Aprobada)
+                    {
+                        <dt class="col-5 text-muted small">Uso</dt>
+                        <dd class="col-7">
+                            @if (Model.PropuestaConsumidaId is null)
+                            {
+                                <span class="badge bg-info text-dark">Disponible para una propuesta</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">
+                                    Usada en
+                                    <a asp-controller="Propuestas" asp-action="Detalle" asp-route-id="@Model.PropuestaConsumidaId" class="link-light">
+                                        Propuesta #@Model.PropuestaConsumidaId
+                                    </a>
+                                </span>
+                            }
+                        </dd>
+                    }
                 </dl>
                 <hr />
                 <p class="small mb-0">
