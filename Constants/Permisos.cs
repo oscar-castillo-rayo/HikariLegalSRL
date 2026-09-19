@@ -105,6 +105,7 @@ namespace HikariLegalSRL.Constants
             public const string Geo        = "reportes.geo";
             public const string Carga      = "reportes.carga";
             public const string Calidad    = "reportes.calidad";
+            public const string Servicios  = "reportes.servicios";
         }
 
         public static class Auditoria
@@ -123,7 +124,7 @@ namespace HikariLegalSRL.Constants
             Propuestas.Ver, Propuestas.Crear, Propuestas.Editar, Propuestas.Enviar, Propuestas.Aceptar, Propuestas.Rechazar,
             Expedientes.Ver, Expedientes.Crear, Expedientes.Asignar, Expedientes.Reasignar, Expedientes.Cerrar, Expedientes.Aprobar, Expedientes.Devolver, Expedientes.Cargar, Expedientes.SerResponsable, Expedientes.GestionarAjenas, Expedientes.Supervisar, Expedientes.GestionarTareasPropias, Expedientes.EditarTarea, Expedientes.EliminarTarea,
             Facturacion.Ver, Facturacion.Generar, Facturacion.Anular, Facturacion.Abono, Facturacion.Probono, Facturacion.AprobarProbono,
-            Reportes.Conversion, Reportes.Ingresos, Reportes.Geo, Reportes.Carga, Reportes.Calidad,
+            Reportes.Conversion, Reportes.Ingresos, Reportes.Geo, Reportes.Carga, Reportes.Calidad, Reportes.Servicios,
             Auditoria.Ver,
         };
     }

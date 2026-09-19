@@ -17,7 +17,8 @@ namespace HikariLegalSRL.Controllers.Reportes
             Permisos.Reportes.Conversion,
             Permisos.Reportes.Ingresos,
             Permisos.Reportes.Geo,
-            Permisos.Reportes.Carga
+            Permisos.Reportes.Carga,
+            Permisos.Reportes.Servicios
         };
 
         private readonly IReporteService _reporteService;
@@ -83,6 +84,16 @@ namespace HikariLegalSRL.Controllers.Reportes
         public async Task<IActionResult> CargaTrabajo()
         {
             var reporte = await _reporteService.ObtenerCargaTrabajo();
+            return View(reporte);
+        }
+
+        [HttpGet]
+        [Permiso(Permisos.Reportes.Servicios)]
+        public async Task<IActionResult> ComparativoServicios(string periodo = "mensual", DateTime? desde = null, DateTime? hasta = null)
+        {
+            DescartarRangoFechasInvalido(ref desde, ref hasta);
+
+            var reporte = await _reporteService.ObtenerComparativoServicios(periodo, desde, hasta);
             return View(reporte);
         }
 
