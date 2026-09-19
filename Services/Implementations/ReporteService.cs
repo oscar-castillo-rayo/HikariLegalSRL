@@ -1,3 +1,4 @@
+using System.Globalization;
 using HikariLegalSRL.Data;
 using HikariLegalSRL.Models.DTOs;
 using HikariLegalSRL.Models.Enums;
@@ -47,6 +48,67 @@ namespace HikariLegalSRL.Services.Implementations
                 Rechazadas = rechazadas,
                 TasaConversion = total == 0 ? 0 : Math.Round((decimal)aceptadas / total * 100, 1)
             };
+        }
+
+        // RF-012: mismo criterio que ObtenerConversionPropuestas — el período filtra por la fecha
+        // de registro del prospecto (no hay una fecha de conversión/descarte propia en el modelo),
+        // y sobre ese mismo grupo se cuenta cuántos quedaron en cada estado actual. La tasa usa el
+        // total de prospectos registrados en el período como base (convertidos ÷ total), tal como
+        // pide la HU literalmente.
+        public async Task<ReporteConversionProspectosDTO> ObtenerConversionProspectos(string periodo, DateTime? desde, DateTime? hasta)
+        {
+            var (desdeFinal, hastaFinal) = ResolverRango(periodo, desde, hasta);
+
+            var prospectos = await _context.Prospectos
+                .AsNoTracking()
+                .Where(p => p.FechaCreacion.Date >= desdeFinal && p.FechaCreacion.Date <= hastaFinal)
+                .Select(p => new { p.FechaCreacion, p.Estado })
+                .ToListAsync();
+
+            var total = prospectos.Count;
+            var convertidos = prospectos.Count(p => p.Estado == EstadoProspecto.Convertido);
+            var descartados = prospectos.Count(p => p.Estado == EstadoProspecto.Descartado);
+            var activos = prospectos.Count(p => p.Estado == EstadoProspecto.Activo);
+
+            var culturaEs = CultureInfo.GetCultureInfo("es-CR");
+
+            var detalleMensual = prospectos
+                .GroupBy(p => new { p.FechaCreacion.Year, p.FechaCreacion.Month })
+                .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month)
+                .Select(g =>
+                {
+                    var registrados = g.Count();
+                    var convertidosMes = g.Count(p => p.Estado == EstadoProspecto.Convertido);
+
+                    return new DetalleMensualProspectosDTO
+                    {
+                        NombreMes = CapitalizarPrimeraLetra(new DateTime(g.Key.Year, g.Key.Month, 1).ToString("MMMM yyyy", culturaEs), culturaEs),
+                        Registrados = registrados,
+                        Convertidos = convertidosMes,
+                        Descartados = g.Count(p => p.Estado == EstadoProspecto.Descartado),
+                        Activos = g.Count(p => p.Estado == EstadoProspecto.Activo),
+                        TasaConversion = registrados == 0 ? 0 : Math.Round((decimal)convertidosMes / registrados * 100, 1)
+                    };
+                })
+                .ToList();
+
+            return new ReporteConversionProspectosDTO
+            {
+                Periodo = periodo,
+                Desde = desdeFinal,
+                Hasta = hastaFinal,
+                Total = total,
+                Convertidos = convertidos,
+                Descartados = descartados,
+                Activos = activos,
+                TasaConversion = total == 0 ? 0 : Math.Round((decimal)convertidos / total * 100, 1),
+                DetalleMensual = detalleMensual
+            };
+        }
+
+        private static string CapitalizarPrimeraLetra(string texto, CultureInfo cultura)
+        {
+            return texto.Length == 0 ? texto : char.ToUpper(texto[0], cultura) + texto[1..];
         }
 
         // Mismo criterio de zona horaria ya usado en RevisionVencimientosBackgroundService
