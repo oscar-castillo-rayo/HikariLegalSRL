@@ -147,6 +147,15 @@ namespace HikariLegalSRL.Constants
             },
             new PermisoModulo
             {
+                Nombre = "Calidad",
+                Acciones = new()
+                {
+                    new() { Codigo = "calidad.ver",       Nombre = "Consultar evaluaciones", Descripcion = "Ver las evaluaciones de calidad post-servicio" },
+                    new() { Codigo = "calidad.registrar", Nombre = "Registrar evaluación",   Descripcion = "Registrar la evaluación de un expediente cerrado" },
+                }
+            },
+            new PermisoModulo
+            {
                 Nombre = "Auditoría",
                 Acciones = new()
                 {

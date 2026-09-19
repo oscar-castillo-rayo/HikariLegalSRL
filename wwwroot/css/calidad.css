@@ -1,0 +1,61 @@
+.calidad-card-header {
+    background: #EAF0FB;
+    color: #1F3864;
+}
+
+.calidad-comentario {
+    max-width: 360px;
+    overflow-wrap: anywhere;
+}
+
+.calidad-comentario-completo {
+    max-height: 320px;
+    overflow-wrap: anywhere;
+    overflow-y: auto;
+    white-space: pre-line;
+}
+
+.calidad-estrella-label {
+    color: #ccc;
+    cursor: pointer;
+    font-size: 2.25rem;
+    line-height: 1;
+}
+
+    .calidad-estrella-label.activa {
+        color: #f5a623;
+    }
+
+.calidad-estrella-radio:focus-visible + .calidad-estrella-label {
+    outline: 2px solid #1F3864;
+    outline-offset: 2px;
+}
+
+.calidad-estrellas {
+    color: #f5a623;
+    white-space: nowrap;
+}
+
+.calidad-tabla thead th {
+    background: #1F3864;
+    border-bottom: none;
+    color: #fff;
+}
+
+.calidad-titulo {
+    color: #1F3864;
+}
+
+@media (max-width: 576px) {
+    .calidad-estrella-label {
+        font-size: 2rem;
+    }
+
+    .calidad-tabla {
+        font-size: .875rem;
+    }
+
+    .calidad-titulo {
+        font-size: 1.15rem;
+    }
+}

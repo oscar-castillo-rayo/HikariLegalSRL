@@ -137,7 +137,8 @@ namespace HikariLegalSRL.Services.Implementations
                     PlazoComprometido = e.PlazoComprometido,
                     Estado = e.Estado,
                     TotalTareas = e.Tareas.Count,
-                    TareasAprobadas = e.Tareas.Count(t => t.Estado == EstadoTarea.Aprobada)
+                    TareasAprobadas = e.Tareas.Count(t => t.Estado == EstadoTarea.Aprobada),
+                    Evaluado = _context.EvaluacionesCalidad.Any(ev => ev.ExpedienteId == e.ExpedienteId)
                 })
                 .ToListAsync();
         }
@@ -173,6 +174,9 @@ namespace HikariLegalSRL.Services.Implementations
                     .FirstOrDefaultAsync()
                 : null;
 
+            var evaluado = expediente.Estado == EstadoExpediente.Cerrado
+                && await _context.EvaluacionesCalidad.AnyAsync(ev => ev.ExpedienteId == id);
+
             return new ExpedienteDetalleViewModel
             {
                 Expediente = new ExpedienteDetalleDTO
@@ -187,6 +191,7 @@ namespace HikariLegalSRL.Services.Implementations
                     FechaCierre = expediente.FechaCierre,
                     Estado = expediente.Estado,
                     FacturaId = facturaId,
+                    Evaluado = evaluado,
                     Tareas = expediente.Tareas
                         .OrderBy(t => t.FechaLimite)
                         .Select(t => new TareaListaDTO

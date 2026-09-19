@@ -587,6 +587,48 @@ namespace HikariLegalSRL.Migrations
                     b.ToTable("EntregableArchivos");
                 });
 
+            modelBuilder.Entity("HikariLegalSRL.Models.EvaluacionCalidad", b =>
+                {
+                    b.Property<int>("EvaluacionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EvaluacionId"));
+
+                    b.Property<string>("Comentario")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("EvaluadoPorId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("ExpedienteId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FechaEvaluacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte>("Puntuacion")
+                        .HasColumnType("tinyint");
+
+                    b.HasKey("EvaluacionId");
+
+                    b.HasIndex("EvaluadoPorId");
+
+                    b.HasIndex("ExpedienteId")
+                        .IsUnique();
+
+                    b.ToTable("EvaluacionesCalidad", t =>
+                        {
+                            t.HasTrigger("TR_EvaluacionesCalidad_Inmutable");
+
+                            t.HasCheckConstraint("CK_EvaluacionCalidad_Puntuacion", "[Puntuacion] BETWEEN 1 AND 5");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
             modelBuilder.Entity("HikariLegalSRL.Models.Expediente", b =>
                 {
                     b.Property<int>("ExpedienteId")
@@ -1459,6 +1501,25 @@ namespace HikariLegalSRL.Migrations
                     b.Navigation("CargadoPor");
 
                     b.Navigation("Entregable");
+                });
+
+            modelBuilder.Entity("HikariLegalSRL.Models.EvaluacionCalidad", b =>
+                {
+                    b.HasOne("HikariLegalSRL.Models.ApplicationUser", "EvaluadoPor")
+                        .WithMany()
+                        .HasForeignKey("EvaluadoPorId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("HikariLegalSRL.Models.Expediente", "Expediente")
+                        .WithMany()
+                        .HasForeignKey("ExpedienteId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("EvaluadoPor");
+
+                    b.Navigation("Expediente");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Expediente", b =>
