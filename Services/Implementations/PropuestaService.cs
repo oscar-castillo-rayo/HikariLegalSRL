@@ -244,6 +244,22 @@ namespace HikariLegalSRL.Services.Implementations
             return propuesta.PropuestaId;
         }
 
+        public async Task<BeneficiariosProBonoDTO> ObtenerBeneficiariosProBonoDisponibles(int? propuestaId = null)
+        {
+            var solicitudes = await _context.SolicitudesProBono
+                .AsNoTracking()
+                .Where(s => s.Decision == DecisionProBono.Aprobada
+                    && (s.PropuestaConsumidaId == null || (propuestaId != null && s.PropuestaConsumidaId == propuestaId)))
+                .Select(s => new { s.ClienteId, s.ProspectoId })
+                .ToListAsync();
+
+            return new BeneficiariosProBonoDTO
+            {
+                Clientes = solicitudes.Where(s => s.ClienteId != null).Select(s => s.ClienteId!.Value).Distinct().ToList(),
+                Prospectos = solicitudes.Where(s => s.ProspectoId != null).Select(s => s.ProspectoId!.Value).Distinct().ToList()
+            };
+        }
+
         public async Task<PropuestaEditViewModel?> ObtenerParaEditar(int id)
         {
             var propuesta = await _context.Propuestas
@@ -320,7 +336,8 @@ namespace HikariLegalSRL.Services.Implementations
                 },
                 Prospectos = prospectos,
                 Clientes = clientes,
-                Servicios = servicios
+                Servicios = servicios,
+                BeneficiariosProBono = await ObtenerBeneficiariosProBonoDisponibles(propuesta.PropuestaId)
             };
         }
 

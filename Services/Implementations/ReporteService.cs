@@ -360,6 +360,152 @@ namespace HikariLegalSRL.Services.Implementations
             };
         }
 
+        public async Task<ReporteRentabilidadDTO> ObtenerRentabilidad(string periodo, DateTime? desde, DateTime? hasta)
+        {
+            var (desdeFinal, hastaFinal) = ResolverRango(periodo, desde, hasta);
+
+            var expedientes = await _context.Expedientes
+                .AsNoTracking()
+                .Where(e => e.Estado == EstadoExpediente.Cerrado
+                    && e.FechaCierre != null
+                    && e.FechaCierre.Value.Date >= desdeFinal
+                    && e.FechaCierre.Value.Date <= hastaFinal)
+                .Select(e => new
+                {
+                    e.ExpedienteId,
+                    e.PropuestaId,
+                    ClienteNombre = e.Cliente.NombreEmpresaPersona,
+                    e.Propuesta.Moneda,
+                    EsProBono = e.Propuesta.ModalidadPago == ModalidadPago.ProBono
+                })
+                .ToListAsync();
+
+            var expedienteIds = expedientes.Select(e => e.ExpedienteId).ToList();
+            var propuestaIds = expedientes.Select(e => e.PropuestaId).ToList();
+
+            var montos = await _context.Facturas
+                .AsNoTracking()
+                .Where(f => expedienteIds.Contains(f.ExpedienteId) && f.Estado != EstadoFactura.Anulada)
+                .Select(f => new { f.ExpedienteId, f.MontoTotal })
+                .ToDictionaryAsync(f => f.ExpedienteId, f => f.MontoTotal);
+
+            var horasEstimadas = await _context.Tareas
+                .AsNoTracking()
+                .Where(t => expedienteIds.Contains(t.ExpedienteId))
+                .GroupBy(t => t.ExpedienteId)
+                .Select(g => new { ExpedienteId = g.Key, Horas = g.Sum(t => t.HorasEstimadas) })
+                .ToDictionaryAsync(g => g.ExpedienteId, g => g.Horas);
+
+            var minutosPorRol = await _context.RegistrosHoras
+                .AsNoTracking()
+                .Where(r => expedienteIds.Contains(r.Tarea.ExpedienteId))
+                .GroupBy(r => new { r.Tarea.ExpedienteId, r.Rol })
+                .Select(g => new { g.Key.ExpedienteId, g.Key.Rol, Minutos = g.Sum(r => r.Minutos) })
+                .ToListAsync();
+
+            var minutosColaborador = minutosPorRol
+                .Where(m => m.Rol == RolHoras.Colaborador)
+                .ToDictionary(m => m.ExpedienteId, m => m.Minutos);
+
+            var minutosRevisor = minutosPorRol
+                .Where(m => m.Rol == RolHoras.Revisor)
+                .ToDictionary(m => m.ExpedienteId, m => m.Minutos);
+
+            var serviciosPorPropuesta = (await _context.PropuestaServicios
+                .AsNoTracking()
+                .Where(ps => propuestaIds.Contains(ps.PropuestaId))
+                .Select(ps => new { ps.PropuestaId, ps.Precio, ps.Servicio.AreaCategoria })
+                .ToListAsync())
+                .GroupBy(ps => ps.PropuestaId)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(ps => ps.Precio).First().AreaCategoria);
+
+            var filas = expedientes
+                .Where(e => montos.ContainsKey(e.ExpedienteId))
+                .Select(e =>
+                {
+                    var monto = montos[e.ExpedienteId];
+                    var horasEst = horasEstimadas.GetValueOrDefault(e.ExpedienteId);
+                    var minutosColab = minutosColaborador.GetValueOrDefault(e.ExpedienteId);
+                    var minutosRev = minutosRevisor.GetValueOrDefault(e.ExpedienteId);
+                    var horasReal = Math.Round((minutosColab + minutosRev) / 60m, 2);
+                    var valorHoraEst = !e.EsProBono && horasEst > 0 ? Math.Round(monto / horasEst, 2) : (decimal?)null;
+                    var valorHoraReal = !e.EsProBono && horasReal > 0 ? Math.Round(monto / horasReal, 2) : (decimal?)null;
+                    var eficiencia = horasEst > 0 && horasReal > 0 ? Math.Round(horasEst / horasReal * 100, 1) : (decimal?)null;
+
+                    return new RentabilidadExpedienteDTO
+                    {
+                        ExpedienteId = e.ExpedienteId,
+                        ClienteNombre = e.ClienteNombre,
+                        AreaCategoria = serviciosPorPropuesta.GetValueOrDefault(e.PropuestaId, "Sin servicio"),
+                        Moneda = e.Moneda,
+                        EsProBono = e.EsProBono,
+                        MontoFacturado = monto,
+                        HorasEstimadas = horasEst,
+                        HorasReales = horasReal,
+                        HorasColaborador = minutosColab / 60m,
+                        HorasRevisor = minutosRev / 60m,
+                        ValorHoraEstimado = valorHoraEst,
+                        ValorHoraReal = valorHoraReal,
+                        Diferencia = valorHoraEst.HasValue && valorHoraReal.HasValue ? valorHoraReal - valorHoraEst : null,
+                        Eficiencia = eficiencia,
+                        Rentable = !e.EsProBono && eficiencia.HasValue ? eficiencia >= 100 : null
+                    };
+                })
+                .OrderBy(f => f.AreaCategoria)
+                .ThenByDescending(f => f.ExpedienteId)
+                .ToList();
+
+            var conCobro = filas.Where(f => !f.EsProBono).ToList();
+            var proBono = filas.Where(f => f.EsProBono).ToList();
+
+            var porTipoServicio = conCobro
+                .GroupBy(f => new { f.AreaCategoria, f.Moneda })
+                .Select(g =>
+                {
+                    var monto = g.Sum(f => f.MontoFacturado);
+                    var horasEst = g.Sum(f => f.HorasEstimadas);
+                    var horasReal = g.Sum(f => f.HorasReales);
+
+                    return new RentabilidadTipoServicioDTO
+                    {
+                        AreaCategoria = g.Key.AreaCategoria,
+                        Moneda = g.Key.Moneda,
+                        Expedientes = g.Count(),
+                        MontoFacturado = monto,
+                        HorasEstimadas = horasEst,
+                        HorasReales = horasReal,
+                        HorasColaborador = g.Sum(f => f.HorasColaborador),
+                        HorasRevisor = g.Sum(f => f.HorasRevisor),
+                        ValorHoraEstimado = horasEst > 0 ? Math.Round(monto / horasEst, 2) : null,
+                        ValorHoraReal = horasReal > 0 ? Math.Round(monto / horasReal, 2) : null,
+                        Eficiencia = horasEst > 0 && horasReal > 0 ? Math.Round(horasEst / horasReal * 100, 1) : null
+                    };
+                })
+                .OrderBy(g => g.AreaCategoria)
+                .ThenBy(g => g.Moneda)
+                .ToList();
+
+            var conDatos = conCobro.Where(f => f.Eficiencia.HasValue).ToList();
+            var horasEstGlobal = conDatos.Sum(f => f.HorasEstimadas);
+            var horasRealGlobal = conDatos.Sum(f => f.HorasReales);
+
+            return new ReporteRentabilidadDTO
+            {
+                Periodo = periodo,
+                Desde = desdeFinal,
+                Hasta = hastaFinal,
+                TotalExpedientes = filas.Count,
+                Rentables = filas.Count(f => f.Rentable == true),
+                NoRentables = filas.Count(f => f.Rentable == false),
+                SinHoras = conCobro.Count(f => !f.Eficiencia.HasValue),
+                ProBono = proBono.Count,
+                HorasProBono = proBono.Sum(f => f.HorasReales),
+                EficienciaGlobal = horasRealGlobal > 0 ? Math.Round(horasEstGlobal / horasRealGlobal * 100, 1) : null,
+                PorTipoServicio = porTipoServicio,
+                Expedientes = filas
+            };
+        }
+
         private static string CapitalizarPrimeraLetra(string texto, CultureInfo cultura)
         {
             return texto.Length == 0 ? texto : char.ToUpper(texto[0], cultura) + texto[1..];
