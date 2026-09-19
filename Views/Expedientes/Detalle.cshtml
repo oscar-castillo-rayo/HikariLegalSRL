@@ -24,6 +24,8 @@
     var puedeGestionarAjenas = await Authorization.TienePermiso(User, Permisos.Expedientes.GestionarAjenas);
     var puedeGestionarTareasPropias = await Authorization.TienePermiso(User, Permisos.Expedientes.GestionarTareasPropias);
     var puedeVerFactura = await Authorization.TienePermiso(User, Permisos.Facturacion.Ver);
+    var puedeRegistrarCalidad = await Authorization.TienePermiso(User, Permisos.Calidad.Registrar);
+    var puedeVerCalidad = await Authorization.TienePermiso(User, Permisos.Calidad.Ver);
     var usuarioActualId = User.FindFirstValue(ClaimTypes.NameIdentifier);
     var puedeRevisarCartera = puedeGestionarAjenas || e.ResponsableId == usuarioActualId;
 
@@ -83,6 +85,23 @@
             <span class="badge fs-6 bg-light text-dark border">
                 <i class="bi bi-calendar-event me-1"></i>@e.PlazoComprometido.ToString("dd/MM/yyyy")
             </span>
+        }
+        @if (e.Estado == EstadoExpediente.Cerrado)
+        {
+            @if (e.Evaluado)
+            {
+                <a asp-controller="Calidad" asp-action="Index"
+                   class="btn btn-warning btn-sm expedientes-btn-accion @(puedeVerCalidad ? null : "disabled")">
+                    <i class="bi bi-star-fill me-1"></i>Evaluación registrada
+                </a>
+            }
+            else
+            {
+                <a asp-controller="Calidad" asp-action="Registrar" asp-route-id="@e.Id"
+                   class="btn btn-outline-warning btn-sm expedientes-btn-accion @(puedeRegistrarCalidad ? null : "disabled")">
+                    <i class="bi bi-star me-1"></i>Evaluar calidad
+                </a>
+            }
         }
         @if (esAbierto)
         {

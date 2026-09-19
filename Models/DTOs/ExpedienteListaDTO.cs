@@ -11,5 +11,6 @@ namespace HikariLegalSRL.Models.DTOs
         public EstadoExpediente Estado { get; set; }
         public int TotalTareas { get; set; }
         public int TareasAprobadas { get; set; }
+        public bool Evaluado { get; set; }
     }
 }
