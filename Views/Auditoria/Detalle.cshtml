@@ -1,0 +1,88 @@
+@model HikariLegalSRL.Models.DTOs.BitacoraDetalleDTO
+
+@{
+    ViewData["Title"] = $"Registro de auditoría #{Model.Id}";
+
+    var (colorAccion, etiquetaAccion) = Model.TipoAccion switch
+    {
+        "crear" => ("text-bg-success", "Crear"),
+        "editar" => ("text-bg-primary", "Editar"),
+        "eliminar" => ("text-bg-danger", "Eliminar"),
+        "cambiar_estado" => ("text-bg-warning", "Cambiar estado"),
+        "aprobar" => ("text-bg-info", "Aprobar"),
+        "rechazar" => ("text-bg-secondary", "Rechazar"),
+        _ => ("text-bg-secondary", Model.TipoAccion)
+    };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/auditoria.css" />
+}
+
+<div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0 fw-bold auditoria-titulo">Registro de auditoría #@Model.Id</h4>
+    <span class="badge @colorAccion fs-6">@etiquetaAccion</span>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-bold auditoria-card-header">
+                <i class="bi bi-info-circle me-1"></i>Datos del registro
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-5 text-muted small">Fecha y hora</dt>
+                    <dd class="col-7">@Model.FechaHora.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</dd>
+
+                    <dt class="col-5 text-muted small">Usuario</dt>
+                    <dd class="col-7 fw-semibold">@Model.UsuarioNombre</dd>
+
+                    <dt class="col-5 text-muted small">Correo</dt>
+                    <dd class="col-7">@(Model.UsuarioCorreo ?? "—")</dd>
+
+                    <dt class="col-5 text-muted small">Módulo</dt>
+                    <dd class="col-7">@Model.ModuloAfectado</dd>
+
+                    <dt class="col-5 text-muted small">Registro afectado</dt>
+                    <dd class="col-7">#@Model.RegistroAfectadoId</dd>
+
+                    <dt class="col-5 text-muted small">Acción</dt>
+                    <dd class="col-7">@etiquetaAccion</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-bold auditoria-card-header">
+                <i class="bi bi-arrow-left-right me-1"></i>Cambio registrado
+            </div>
+            <div class="card-body">
+                <div class="text-muted small mb-1">Valor anterior</div>
+                @if (string.IsNullOrWhiteSpace(Model.ValorAnterior))
+                {
+                    <p class="text-muted mb-3">—</p>
+                }
+                else
+                {
+                    <pre class="auditoria-valor-completo mb-3">@Model.ValorAnterior</pre>
+                }
+
+                <div class="text-muted small mb-1">Valor nuevo</div>
+                @if (string.IsNullOrWhiteSpace(Model.ValorNuevo))
+                {
+                    <p class="text-muted mb-0">—</p>
+                }
+                else
+                {
+                    <pre class="auditoria-valor-completo">@Model.ValorNuevo</pre>
+                }
+            </div>
+        </div>
+    </div>
+</div>
