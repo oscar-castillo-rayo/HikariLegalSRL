@@ -25,6 +25,8 @@ namespace HikariLegalSRL.Services.Implementations
         private readonly INotificacionService _notificacionService;
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IConfiguration _configuration;
+        private readonly ITransaccionService _transaccionService;
+        private readonly ILogger<ExpedienteService> _logger;
 
         public ExpedienteService(
             ApplicationDbContext context,
@@ -32,7 +34,9 @@ namespace HikariLegalSRL.Services.Implementations
             IBitacoraAuditoriaService bitacoraAuditoriaService,
             INotificacionService notificacionService,
             IWebHostEnvironment webHostEnvironment,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            ITransaccionService transaccionService,
+            ILogger<ExpedienteService> logger)
         {
             _context = context;
             _permisoEvaluador = permisoEvaluador;
@@ -40,6 +44,8 @@ namespace HikariLegalSRL.Services.Implementations
             _notificacionService = notificacionService;
             _webHostEnvironment = webHostEnvironment;
             _configuration = configuration;
+            _transaccionService = transaccionService;
+            _logger = logger;
         }
 
         // RF-009: notifica cambio de estado de una tarea al colaborador asignado, al
@@ -323,7 +329,7 @@ namespace HikariLegalSRL.Services.Implementations
             await _bitacoraAuditoriaService.Registrar(
                 usuarioId: usuarioActualId,
                 tipoAccion: "crear",
-                moduloAfectado: "Expedientes",
+                moduloAfectado: "Tareas",
                 registroAfectadoId: tarea.TareaId.ToString(),
                 valorNuevo: $"Tarea '{tarea.Descripcion}' asignada, expediente #{expedienteId}");
 
@@ -374,7 +380,7 @@ namespace HikariLegalSRL.Services.Implementations
             await _bitacoraAuditoriaService.Registrar(
                 usuarioId: usuarioActualId,
                 tipoAccion: "editar",
-                moduloAfectado: "Expedientes",
+                moduloAfectado: "Tareas",
                 registroAfectadoId: tareaId.ToString(),
                 valorAnterior: $"Tarea '{descripcionAnterior}'",
                 valorNuevo: $"Tarea '{tarea.Descripcion}'");
@@ -395,6 +401,9 @@ namespace HikariLegalSRL.Services.Implementations
         }
 
         public async Task EliminarTarea(int tareaId, string usuarioActualId)
+            => await _transaccionService.EjecutarAsync(() => EliminarTareaInterno(tareaId, usuarioActualId));
+
+        private async Task EliminarTareaInterno(int tareaId, string usuarioActualId)
         {
             var tarea = await _context.Tareas
                 .Include(t => t.Expediente)
@@ -418,23 +427,17 @@ namespace HikariLegalSRL.Services.Implementations
             var horasRegistradas = Math.Round(tarea.RegistrosHoras.Sum(r => r.Minutos) / 60m, 2);
             var totalEntregables = tarea.Entregables.Count;
 
-            // Sin cascada automática en la base (FK en NoAction): hay que borrar primero los
-            // archivos físicos y las filas dependientes antes de la tarea misma.
+            // Sin cascada automática en la base (FK en NoAction): hay que borrar primero las
+            // filas dependientes antes de la tarea misma. Los archivos físicos se borran solo
+            // cuando la transacción se confirma.
+            var rutasArchivos = new List<string>();
             foreach (var entregable in tarea.Entregables)
             {
                 foreach (var archivo in entregable.Archivos)
-                {
-                    var rutaArchivo = Path.Combine(ObtenerCarpetaEntregables(), archivo.ArchivoRuta.Replace('/', Path.DirectorySeparatorChar));
-                    if (File.Exists(rutaArchivo))
-                        File.Delete(rutaArchivo);
-                }
+                    rutasArchivos.Add(Path.Combine(ObtenerCarpetaEntregables(), archivo.ArchivoRuta.Replace('/', Path.DirectorySeparatorChar)));
 
                 foreach (var revision in entregable.Revisiones.Where(r => r.ArchivoAdjunto is not null))
-                {
-                    var rutaArchivo = Path.Combine(ObtenerCarpetaEntregables(), revision.ArchivoAdjunto!.Replace('/', Path.DirectorySeparatorChar));
-                    if (File.Exists(rutaArchivo))
-                        File.Delete(rutaArchivo);
-                }
+                    rutasArchivos.Add(Path.Combine(ObtenerCarpetaEntregables(), revision.ArchivoAdjunto!.Replace('/', Path.DirectorySeparatorChar)));
 
                 _context.RevisionesEntregable.RemoveRange(entregable.Revisiones);
                 _context.EntregableArchivos.RemoveRange(entregable.Archivos);
@@ -446,10 +449,16 @@ namespace HikariLegalSRL.Services.Implementations
 
             await _context.SaveChangesAsync();
 
+            _transaccionService.AlConfirmar(() =>
+            {
+                foreach (var ruta in rutasArchivos.Where(File.Exists))
+                    File.Delete(ruta);
+            });
+
             await _bitacoraAuditoriaService.Registrar(
                 usuarioId: usuarioActualId,
                 tipoAccion: "eliminar",
-                moduloAfectado: "Expedientes",
+                moduloAfectado: "Tareas",
                 registroAfectadoId: tareaId.ToString(),
                 valorAnterior: $"Tarea '{descripcion}' (estado: {estadoAnterior}, {horasRegistradas}h registradas, {totalEntregables} entregable(s))");
         }
@@ -497,6 +506,9 @@ namespace HikariLegalSRL.Services.Implementations
         }
 
         public async Task CerrarExpediente(int expedienteId, string usuarioActualId)
+            => await _transaccionService.EjecutarAsync(() => CerrarExpedienteInterno(expedienteId, usuarioActualId));
+
+        private async Task CerrarExpedienteInterno(int expedienteId, string usuarioActualId)
         {
             var expediente = await _context.Expedientes
                 .Include(e => e.Propuesta)
@@ -594,7 +606,7 @@ namespace HikariLegalSRL.Services.Implementations
             await _bitacoraAuditoriaService.Registrar(
                 usuarioId: usuarioActualId,
                 tipoAccion: "cambiar_estado",
-                moduloAfectado: "Expedientes",
+                moduloAfectado: "Tareas",
                 registroAfectadoId: tareaId.ToString(),
                 valorAnterior: estadoAnterior,
                 valorNuevo: "en_proceso");
@@ -659,7 +671,7 @@ namespace HikariLegalSRL.Services.Implementations
             await _bitacoraAuditoriaService.Registrar(
                 usuarioId: usuarioActualId,
                 tipoAccion: "cambiar_estado",
-                moduloAfectado: "Expedientes",
+                moduloAfectado: "Tareas",
                 registroAfectadoId: tareaId.ToString(),
                 valorAnterior: "en_proceso",
                 valorNuevo: $"lista_revision (horas reales ronda {rondaActual}: {horasReales}h)");
@@ -695,6 +707,9 @@ namespace HikariLegalSRL.Services.Implementations
         }
 
         public async Task AgregarArchivoEntregable(int tareaId, AgregarArchivoEntregableDTO dto, string usuarioActualId)
+            => await _transaccionService.EjecutarAsync(() => AgregarArchivoEntregableInterno(tareaId, dto, usuarioActualId));
+
+        private async Task AgregarArchivoEntregableInterno(int tareaId, AgregarArchivoEntregableDTO dto, string usuarioActualId)
         {
             var tarea = await _context.Tareas
                 .Include(t => t.Expediente)
@@ -736,6 +751,11 @@ namespace HikariLegalSRL.Services.Implementations
                 var nombreArchivo = Path.GetFileName(archivo.FileName);
                 var nombreFisico = $"{Guid.NewGuid()}_{nombreArchivo}";
                 var rutaFisica = Path.Combine(carpetaEntregable, nombreFisico);
+                _transaccionService.AlRevertir(() =>
+                {
+                    if (File.Exists(rutaFisica))
+                        File.Delete(rutaFisica);
+                });
                 using (var destino = File.Create(rutaFisica))
                 {
                     await archivo.CopyToAsync(destino);
@@ -758,12 +778,15 @@ namespace HikariLegalSRL.Services.Implementations
             await _bitacoraAuditoriaService.Registrar(
                 usuarioId: usuarioActualId,
                 tipoAccion: "crear",
-                moduloAfectado: "Expedientes",
+                moduloAfectado: "Tareas",
                 registroAfectadoId: tareaId.ToString(),
                 valorNuevo: $"Archivo(s) adjuntado(s) en la ronda {entregable.RondaRevision}: {string.Join(", ", nombresArchivos)}");
         }
 
         public async Task EliminarArchivoEntregable(int archivoId, string usuarioActualId)
+            => await _transaccionService.EjecutarAsync(() => EliminarArchivoEntregableInterno(archivoId, usuarioActualId));
+
+        private async Task EliminarArchivoEntregableInterno(int archivoId, string usuarioActualId)
         {
             var archivo = await _context.EntregableArchivos
                 .Include(a => a.Entregable).ThenInclude(en => en.Tarea).ThenInclude(t => t.Expediente)
@@ -787,13 +810,16 @@ namespace HikariLegalSRL.Services.Implementations
             _context.EntregableArchivos.Remove(archivo);
             await _context.SaveChangesAsync();
 
-            if (File.Exists(rutaFisica))
-                File.Delete(rutaFisica);
+            _transaccionService.AlConfirmar(() =>
+            {
+                if (File.Exists(rutaFisica))
+                    File.Delete(rutaFisica);
+            });
 
             await _bitacoraAuditoriaService.Registrar(
                 usuarioId: usuarioActualId,
                 tipoAccion: "eliminar",
-                moduloAfectado: "Expedientes",
+                moduloAfectado: "Tareas",
                 registroAfectadoId: tarea.TareaId.ToString(),
                 valorAnterior: nombreOriginal);
         }
@@ -848,7 +874,7 @@ namespace HikariLegalSRL.Services.Implementations
             await _bitacoraAuditoriaService.Registrar(
                 usuarioId: usuarioActualId,
                 tipoAccion: "crear",
-                moduloAfectado: "Expedientes",
+                moduloAfectado: "Tareas",
                 registroAfectadoId: tareaId.ToString(),
                 valorNuevo: $"Horas registradas como {rol.ToString().ToLower()}: {dto.Horas ?? 0}h {dto.Minutos ?? 0}min");
 
@@ -862,6 +888,20 @@ namespace HikariLegalSRL.Services.Implementations
             => await RevisarEntregable(entregableId, ResultadoRevision.Devuelta, dto, usuarioActualId);
 
         private async Task RevisarEntregable(int entregableId, ResultadoRevision resultado, RevisarEntregableDTO dto, string usuarioActualId)
+        {
+            var (tarea, mensaje) = await _transaccionService.EjecutarAsync(() => RevisarEntregableInterno(entregableId, resultado, dto, usuarioActualId));
+
+            try
+            {
+                await NotificarCambioEstadoTareaAsync(tarea, usuarioActualId, mensaje);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "No se pudo notificar la revisión del entregable {EntregableId}.", entregableId);
+            }
+        }
+
+        private async Task<(Tarea Tarea, string Mensaje)> RevisarEntregableInterno(int entregableId, ResultadoRevision resultado, RevisarEntregableDTO dto, string usuarioActualId)
         {
             var entregable = await _context.Entregables
                 .Include(en => en.Tarea).ThenInclude(t => t.Expediente)
@@ -931,6 +971,11 @@ namespace HikariLegalSRL.Services.Implementations
                 Directory.CreateDirectory(carpetaRevision);
 
                 var rutaFisica = Path.Combine(carpetaRevision, nombreArchivo);
+                _transaccionService.AlRevertir(() =>
+                {
+                    if (File.Exists(rutaFisica))
+                        File.Delete(rutaFisica);
+                });
                 using (var destino = File.Create(rutaFisica))
                 {
                     await archivo.CopyToAsync(destino);
@@ -949,7 +994,7 @@ namespace HikariLegalSRL.Services.Implementations
             await _bitacoraAuditoriaService.Registrar(
                 usuarioId: usuarioActualId,
                 tipoAccion: resultado == ResultadoRevision.Aprobada ? "aprobar" : "rechazar",
-                moduloAfectado: "Expedientes",
+                moduloAfectado: "Tareas",
                 registroAfectadoId: tarea.TareaId.ToString(),
                 valorAnterior: "lista_revision",
                 valorNuevo: resultado == ResultadoRevision.Aprobada
@@ -961,7 +1006,8 @@ namespace HikariLegalSRL.Services.Implementations
             var mensaje = resultado == ResultadoRevision.Aprobada
                 ? $"La tarea '{tarea.Descripcion}' fue aprobada."
                 : $"La tarea '{tarea.Descripcion}' fue devuelta: {dto.Observaciones}";
-            await NotificarCambioEstadoTareaAsync(tarea, usuarioActualId, mensaje);
+
+            return (tarea, mensaje);
         }
 
         public async Task<(string RutaAbsoluta, string NombreArchivo, string ContentType)?> ObtenerArchivoRevision(int revisionId)

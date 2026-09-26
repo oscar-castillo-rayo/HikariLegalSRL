@@ -1,6 +1,9 @@
 ﻿using HikariLegalSRL.Authorization;
 using HikariLegalSRL.Constants;
+using HikariLegalSRL.Exceptions;
+using HikariLegalSRL.Extensions;
 using HikariLegalSRL.Models;
+using HikariLegalSRL.Services.Interfaces;
 using HikariLegalSRL.ViewModels.Usuarios;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -13,11 +16,19 @@ namespace HikariLegalSRL.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<ApplicationRole> _roleManager;
+        private readonly ITransaccionService _transaccionService;
+        private readonly IBitacoraAuditoriaService _bitacoraAuditoriaService;
 
-        public UsuariosController(UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager)
+        public UsuariosController(
+            UserManager<ApplicationUser> userManager,
+            RoleManager<ApplicationRole> roleManager,
+            ITransaccionService transaccionService,
+            IBitacoraAuditoriaService bitacoraAuditoriaService)
         {
             _userManager = userManager;
             _roleManager = roleManager;
+            _transaccionService = transaccionService;
+            _bitacoraAuditoriaService = bitacoraAuditoriaService;
         }
 
         [HttpGet]
@@ -133,11 +144,19 @@ namespace HikariLegalSRL.Controllers
                 }
             }
 
+            var nombreAnterior = usuario.NombreCompleto;
+            var especialidadAnterior = usuario.Especialidad;
+            var correoAnterior = usuario.Email;
+            var activoAnterior = usuario.Activo;
+            var rolAnterior = rolesActuales.FirstOrDefault();
+            var correoCambio = usuario.Email != model.Correo;
+            var rolCambio = !rolesActuales.Contains(nuevoRol.Name);
+
             usuario.NombreCompleto = model.NombreCompleto;
             usuario.Especialidad = model.Especialidad;
             usuario.Activo = model.Activo;
 
-            if (usuario.Email != model.Correo)
+            if (correoCambio)
             {
                 var usuarioExistente = await _userManager.FindByEmailAsync(model.Correo);
                 if (usuarioExistente != null && usuarioExistente.Id != usuario.Id)
@@ -146,50 +165,59 @@ namespace HikariLegalSRL.Controllers
                     model.RolesDisponibles = await ObtenerRolesActivosAsync();
                     return View(model);
                 }
-                await _userManager.SetEmailAsync(usuario, model.Correo);
-                await _userManager.SetUserNameAsync(usuario, model.Correo);
             }
 
-            var ResultadoActualizacion = await _userManager.UpdateAsync(usuario);
-            if (!ResultadoActualizacion.Succeeded)
+            var resultadoEdicion = await _transaccionService.EjecutarIdentityAsync(async () =>
             {
-                foreach (var error in ResultadoActualizacion.Errors)
+                if (correoCambio)
+                {
+                    TransaccionFallidaException.Exigir(await _userManager.SetEmailAsync(usuario, model.Correo));
+                    TransaccionFallidaException.Exigir(await _userManager.SetUserNameAsync(usuario, model.Correo));
+                }
+
+                TransaccionFallidaException.Exigir(await _userManager.UpdateAsync(usuario));
+
+                if (rolCambio)
+                {
+                    TransaccionFallidaException.Exigir(await _userManager.RemoveFromRolesAsync(usuario, rolesActuales));
+                    TransaccionFallidaException.Exigir(await _userManager.AddToRoleAsync(usuario, nuevoRol.Name));
+                }
+
+                // Si el usuario quedó inactivo o cambió de rol, invalidar sus sesiones activas:
+                // SecurityStampValidator lo detecta en el siguiente chequeo (≤ 1 min).
+                if (rolCambio || !usuario.Activo)
+                    await _userManager.UpdateSecurityStampAsync(usuario);
+
+                var (valorAnterior, valorNuevo) = ResumenDeCambios.Diferencias(
+                    ("Nombre", nombreAnterior, model.NombreCompleto),
+                    ("Correo", correoAnterior, model.Correo),
+                    ("Especialidad", especialidadAnterior, model.Especialidad),
+                    ("Rol", rolAnterior, nuevoRol.Name));
+
+                if (valorNuevo is not null)
+                {
+                    await _bitacoraAuditoriaService.Registrar(
+                        usuarioId: idUsuarioActual!,
+                        tipoAccion: "editar",
+                        moduloAfectado: "Usuarios",
+                        registroAfectadoId: usuario.Id,
+                        valorAnterior: valorAnterior,
+                        valorNuevo: valorNuevo);
+                }
+
+                if (activoAnterior != model.Activo)
+                    await RegistrarCambioEstadoAsync(idUsuarioActual!, usuario.Id, activoAnterior, model.Activo);
+            });
+
+            if (!resultadoEdicion.Succeeded)
+            {
+                foreach (var error in resultadoEdicion.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
                 }
                 model.RolesDisponibles = await ObtenerRolesActivosAsync();
                 return View(model);
             }
-
-            var rolCambio = !rolesActuales.Contains(nuevoRol.Name);
-            if (rolCambio)
-            {
-                var resultadoEliminacionRoles = await _userManager.RemoveFromRolesAsync(usuario, rolesActuales);
-                if (!resultadoEliminacionRoles.Succeeded)
-                {
-                    foreach (var error in resultadoEliminacionRoles.Errors)
-                    {
-                        ModelState.AddModelError(string.Empty, error.Description);
-                    }
-                    model.RolesDisponibles = await ObtenerRolesActivosAsync();
-                    return View(model);
-                }
-                var resultadoAsignacionRol = await _userManager.AddToRoleAsync(usuario, nuevoRol.Name);
-                if (!resultadoAsignacionRol.Succeeded)
-                {
-                    foreach (var error in resultadoAsignacionRol.Errors)
-                    {
-                        ModelState.AddModelError(string.Empty, error.Description);
-                    }
-                    model.RolesDisponibles = await ObtenerRolesActivosAsync();
-                    return View(model);
-                }
-            }
-
-            // Si el usuario quedó inactivo o cambió de rol, invalidar sus sesiones activas:
-            // SecurityStampValidator lo detecta en el siguiente chequeo (≤ 1 min).
-            if (rolCambio || !usuario.Activo)
-                await _userManager.UpdateSecurityStampAsync(usuario);
 
             TempData["Exito"] = $"Usuario {usuario.NombreCompleto} actualizado correctamente";
             return RedirectToAction(nameof(Index));
@@ -245,7 +273,21 @@ namespace HikariLegalSRL.Controllers
                 EmailConfirmed = true
             };
 
-            var resultadoCreacion = await _userManager.CreateAsync(nuevoUsuario, model.Contrasena);
+            var resultadoCreacion = await _transaccionService.EjecutarIdentityAsync(async () =>
+            {
+                TransaccionFallidaException.Exigir(await _userManager.CreateAsync(nuevoUsuario, model.Contrasena));
+
+                var resultadoRol = await _userManager.AddToRoleAsync(nuevoUsuario, rolSeleccionado.Name);
+                if (!resultadoRol.Succeeded)
+                    throw new TransaccionFallidaException("No se pudo asignar el rol al usuario. Intente nuevamente.");
+
+                await _bitacoraAuditoriaService.Registrar(
+                    usuarioId: _userManager.GetUserId(User)!,
+                    tipoAccion: "crear",
+                    moduloAfectado: "Usuarios",
+                    registroAfectadoId: nuevoUsuario.Id,
+                    valorNuevo: $"{nuevoUsuario.NombreCompleto} ({nuevoUsuario.Email}), rol {rolSeleccionado.Name}");
+            });
 
             if (!resultadoCreacion.Succeeded)
             {
@@ -258,18 +300,19 @@ namespace HikariLegalSRL.Controllers
                 return View(model);
             }
 
-            var resultadoRol = await _userManager.AddToRoleAsync(nuevoUsuario, rolSeleccionado.Name);
-
-            if (!resultadoRol.Succeeded)
-            {
-                await _userManager.DeleteAsync(nuevoUsuario);
-
-                ModelState.AddModelError(string.Empty, "No se pudo asignar el rol al usuario. Intente nuevamente.");
-                model.RolesDisponibles = await ObtenerRolesActivosAsync();
-                return View(model);
-            }
             TempData["Exito"] = $"Usuario {nuevoUsuario.NombreCompleto} creado correctamente";
             return RedirectToAction(nameof(Index));
+        }
+
+        private async Task RegistrarCambioEstadoAsync(string usuarioActualId, string usuarioAfectadoId, bool activoAnterior, bool activoNuevo)
+        {
+            await _bitacoraAuditoriaService.Registrar(
+                usuarioId: usuarioActualId,
+                tipoAccion: "cambiar_estado",
+                moduloAfectado: "Usuarios",
+                registroAfectadoId: usuarioAfectadoId,
+                valorAnterior: activoAnterior ? "activo" : "inactivo",
+                valorNuevo: activoNuevo ? "activo" : "inactivo");
         }
 
         private async Task<IEnumerable<SelectListItem>> ObtenerRolesActivosAsync()
@@ -320,13 +363,19 @@ namespace HikariLegalSRL.Controllers
 
             // Ejecutar la desactivación
             usuario.Activo = false;
-            var resultado = await _userManager.UpdateAsync(usuario);
-
-            if (resultado.Succeeded)
+            var resultado = await _transaccionService.EjecutarIdentityAsync(async () =>
             {
+                TransaccionFallidaException.Exigir(await _userManager.UpdateAsync(usuario));
+
                 // Invalida las sesiones activas del usuario: SecurityStampValidator lo saca
                 // en el siguiente chequeo (≤ 1 min), sin esperar a que expire la cookie.
                 await _userManager.UpdateSecurityStampAsync(usuario);
+
+                await RegistrarCambioEstadoAsync(idUsuarioActual!, usuario.Id, true, false);
+            });
+
+            if (resultado.Succeeded)
+            {
                 TempData["Exito"] = $"El usuario {usuario.NombreCompleto} fue desactivado correctamente.";
             }
             else
@@ -349,7 +398,12 @@ namespace HikariLegalSRL.Controllers
 
             // Ejecutar la activación
             usuario.Activo = true;
-            var resultado = await _userManager.UpdateAsync(usuario);
+            var resultado = await _transaccionService.EjecutarIdentityAsync(async () =>
+            {
+                TransaccionFallidaException.Exigir(await _userManager.UpdateAsync(usuario));
+
+                await RegistrarCambioEstadoAsync(_userManager.GetUserId(User)!, usuario.Id, false, true);
+            });
 
             if (resultado.Succeeded)
             {

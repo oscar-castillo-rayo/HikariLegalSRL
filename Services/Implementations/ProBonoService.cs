@@ -14,15 +14,18 @@ namespace HikariLegalSRL.Services.Implementations
         private readonly ApplicationDbContext _context;
         private readonly IPermisoEvaluador _permisoEvaluador;
         private readonly IBitacoraAuditoriaService _bitacoraAuditoriaService;
+        private readonly ITransaccionService _transaccionService;
 
         public ProBonoService(
             ApplicationDbContext context,
             IPermisoEvaluador permisoEvaluador,
-            IBitacoraAuditoriaService bitacoraAuditoriaService)
+            IBitacoraAuditoriaService bitacoraAuditoriaService,
+            ITransaccionService transaccionService)
         {
             _context = context;
             _permisoEvaluador = permisoEvaluador;
             _bitacoraAuditoriaService = bitacoraAuditoriaService;
+            _transaccionService = transaccionService;
         }
 
         // RF-011: el historial completo solo lo consulta quien puede aprobar/rechazar
@@ -124,6 +127,9 @@ namespace HikariLegalSRL.Services.Implementations
         }
 
         public async Task<int> Crear(SolicitudProBonoCreacionDTO dto, string usuarioActualId)
+            => await _transaccionService.EjecutarAsync(() => CrearInterno(dto, usuarioActualId));
+
+        private async Task<int> CrearInterno(SolicitudProBonoCreacionDTO dto, string usuarioActualId)
         {
             var tieneCliente = dto.ClienteId.HasValue && dto.ClienteId.Value > 0;
             var tieneProspecto = dto.ProspectoId.HasValue && dto.ProspectoId.Value > 0;
@@ -187,6 +193,9 @@ namespace HikariLegalSRL.Services.Implementations
         }
 
         public async Task Resolver(int id, ResolverSolicitudProBonoDTO dto, string usuarioActualId)
+            => await _transaccionService.EjecutarAsync(() => ResolverInterno(id, dto, usuarioActualId));
+
+        private async Task ResolverInterno(int id, ResolverSolicitudProBonoDTO dto, string usuarioActualId)
         {
             var puedeResolver = await PuedeVerTodasAsync(usuarioActualId);
             if (!puedeResolver)
