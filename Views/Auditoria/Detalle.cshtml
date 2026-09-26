@@ -48,7 +48,18 @@
                     <dd class="col-7">@Model.ModuloAfectado</dd>
 
                     <dt class="col-5 text-muted small">Registro afectado</dt>
-                    <dd class="col-7">#@Model.RegistroAfectadoId</dd>
+                    <dd class="col-7">
+                        @if (!string.IsNullOrWhiteSpace(Model.EntidadNombre))
+                        {
+                            <span>@Model.EntidadNombre</span>
+                            <i class="bi bi-info-circle auditoria-entidad-info" tabindex="0" role="img" aria-label="@($"Id: {Model.RegistroAfectadoId}")"
+                               data-bs-toggle="tooltip" data-bs-title="@($"#{Model.RegistroAfectadoId}")"></i>
+                        }
+                        else
+                        {
+                            <span>#@Model.RegistroAfectadoId</span>
+                        }
+                    </dd>
 
                     <dt class="col-5 text-muted small">Acción</dt>
                     <dd class="col-7">@etiquetaAccion</dd>
@@ -86,3 +97,7 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/auditoria.js" asp-append-version="true"></script>
+}
