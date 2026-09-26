@@ -9,6 +9,7 @@ namespace HikariLegalSRL.Models.DTOs
         public string TipoAccion { get; set; } = null!;
         public string ModuloAfectado { get; set; } = null!;
         public string RegistroAfectadoId { get; set; } = null!;
+        public string? EntidadNombre { get; set; }
         public string? ValorAnterior { get; set; }
         public string? ValorNuevo { get; set; }
     }

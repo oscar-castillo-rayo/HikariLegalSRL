@@ -3,6 +3,18 @@
     color: #1F3864;
 }
 
+.auditoria-entidad-info {
+    color: #6c757d;
+    cursor: help;
+    font-size: .8rem;
+    margin-left: .25rem;
+}
+
+    .auditoria-entidad-info:hover,
+    .auditoria-entidad-info:focus {
+        color: #1F3864;
+    }
+
 .auditoria-tabla thead th {
     background: #1F3864;
     border-bottom: none;

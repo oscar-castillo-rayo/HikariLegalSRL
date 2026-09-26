@@ -14,15 +14,18 @@ namespace HikariLegalSRL.Services.Implementations
         private readonly ApplicationDbContext _context;
         private readonly IClienteService _clienteService;
         private readonly IBitacoraAuditoriaService _bitacoraAuditoriaService;
+        private readonly ITransaccionService _transaccionService;
 
         public PropuestaService(
             ApplicationDbContext context,
             IClienteService clienteService,
-            IBitacoraAuditoriaService bitacoraAuditoriaService)
+            IBitacoraAuditoriaService bitacoraAuditoriaService,
+            ITransaccionService transaccionService)
         {
             _context = context;
             _clienteService = clienteService;
             _bitacoraAuditoriaService = bitacoraAuditoriaService;
+            _transaccionService = transaccionService;
         }
 
         public async Task<List<OpcionComboDTO>> ObtenerProspectosActivos()
@@ -146,6 +149,9 @@ namespace HikariLegalSRL.Services.Implementations
         }
 
         public async Task<int> Crear(PropuestaCreacionDTO dto, string usuarioActualId)
+            => await _transaccionService.EjecutarAsync(() => CrearInterno(dto, usuarioActualId));
+
+        private async Task<int> CrearInterno(PropuestaCreacionDTO dto, string usuarioActualId)
         {
             var tieneProspecto = dto.ProspectoId.HasValue && dto.ProspectoId.Value > 0;
             var tieneCliente = dto.ClienteId.HasValue && dto.ClienteId.Value > 0;
@@ -342,6 +348,9 @@ namespace HikariLegalSRL.Services.Implementations
         }
 
         public async Task Editar(int id, PropuestaEdicionDTO dto, string usuarioActualId)
+            => await _transaccionService.EjecutarAsync(() => EditarInterno(id, dto, usuarioActualId));
+
+        private async Task EditarInterno(int id, PropuestaEdicionDTO dto, string usuarioActualId)
         {
             var propuesta = await _context.Propuestas
                 .Include(p => p.Servicios)
@@ -500,6 +509,9 @@ namespace HikariLegalSRL.Services.Implementations
         }
 
         public async Task<int> MarcarComoAceptada(int id, string usuarioActualId)
+            => await _transaccionService.EjecutarAsync(() => MarcarComoAceptadaInterno(id, usuarioActualId));
+
+        private async Task<int> MarcarComoAceptadaInterno(int id, string usuarioActualId)
         {
             var propuesta = await _context.Propuestas
                 .Include(p => p.Prospecto)

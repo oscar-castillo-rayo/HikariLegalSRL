@@ -22,6 +22,7 @@ namespace HikariLegalSRL.Services.Implementations
         private readonly ApplicationDbContext _context;
         private readonly IPermisoEvaluador _permisoEvaluador;
         private readonly IBitacoraAuditoriaService _bitacoraAuditoriaService;
+        private readonly ITransaccionService _transaccionService;
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IConfiguration _configuration;
 
@@ -29,12 +30,14 @@ namespace HikariLegalSRL.Services.Implementations
             ApplicationDbContext context,
             IPermisoEvaluador permisoEvaluador,
             IBitacoraAuditoriaService bitacoraAuditoriaService,
+            ITransaccionService transaccionService,
             IWebHostEnvironment webHostEnvironment,
             IConfiguration configuration)
         {
             _context = context;
             _permisoEvaluador = permisoEvaluador;
             _bitacoraAuditoriaService = bitacoraAuditoriaService;
+            _transaccionService = transaccionService;
             _webHostEnvironment = webHostEnvironment;
             _configuration = configuration;
         }
@@ -192,6 +195,9 @@ namespace HikariLegalSRL.Services.Implementations
         }
 
         public async Task RegistrarAbono(int facturaId, AbonoRegistroDTO dto, string usuarioActualId)
+            => await _transaccionService.EjecutarAsync(() => RegistrarAbonoInterno(facturaId, dto, usuarioActualId));
+
+        private async Task RegistrarAbonoInterno(int facturaId, AbonoRegistroDTO dto, string usuarioActualId)
         {
             var puedeRegistrar = await PuedeVerTodasAsync(usuarioActualId);
             if (!puedeRegistrar)
@@ -250,6 +256,11 @@ namespace HikariLegalSRL.Services.Implementations
                 var nombreArchivo = Path.GetFileName(comprobante.FileName);
                 var carpetaAbono = Path.Combine(ObtenerCarpetaAbonos(), abono.AbonoId.ToString());
                 Directory.CreateDirectory(carpetaAbono);
+                _transaccionService.AlRevertir(() =>
+                {
+                    if (Directory.Exists(carpetaAbono))
+                        Directory.Delete(carpetaAbono, true);
+                });
 
                 var rutaFisica = Path.Combine(carpetaAbono, nombreArchivo);
                 using (var destino = File.Create(rutaFisica))
@@ -375,6 +386,9 @@ namespace HikariLegalSRL.Services.Implementations
         }
 
         public async Task AnularFactura(int facturaId, string usuarioActualId)
+            => await _transaccionService.EjecutarAsync(() => AnularFacturaInterno(facturaId, usuarioActualId));
+
+        private async Task AnularFacturaInterno(int facturaId, string usuarioActualId)
         {
             var puedeAnular = await PuedeAnularAsync(usuarioActualId);
             if (!puedeAnular)
@@ -412,6 +426,9 @@ namespace HikariLegalSRL.Services.Implementations
         // impide volver a facturar ese expediente. El abono nunca se borra — solo se marca,
         // igual criterio que Bitácora de Auditoría y Evaluaciones de Calidad (inmutables).
         public async Task AnularAbono(int abonoId, string usuarioActualId)
+            => await _transaccionService.EjecutarAsync(() => AnularAbonoInterno(abonoId, usuarioActualId));
+
+        private async Task AnularAbonoInterno(int abonoId, string usuarioActualId)
         {
             var puedeAnular = await PuedeAnularAsync(usuarioActualId);
             if (!puedeAnular)
