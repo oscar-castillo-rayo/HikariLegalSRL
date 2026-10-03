@@ -1,0 +1,119 @@
+@model HikariLegalSRL.Models.DTOs.PropuestaDetalleDTO
+@using HikariLegalSRL.Models.Enums
+
+@{
+    ViewData["Title"] = "Detalle de propuesta";
+    var (bc, bt) = Model.Estado switch
+    {
+        EstadoPropuesta.Borrador => ("secondary", "Borrador"),
+        EstadoPropuesta.Enviada => ("primary", "Enviada"),
+        EstadoPropuesta.Aceptada => ("success", "Aceptada"),
+        EstadoPropuesta.Rechazada => ("danger", "Rechazada"),
+        _ => ("secondary", Model.Estado.ToString())
+    };
+    var simboloMoneda = Model.Moneda == Moneda.Dolares ? "$" : "₡";
+    var puedeEditar = await Authorization.TienePermiso(User, Permisos.Propuestas.Editar);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/propuestas.css" />
+}
+
+<div class="d-flex align-items-center gap-2 mb-4">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0 fw-bold propuestas-titulo">Propuesta — @Model.Destinatario</h4>
+    <span class="badge bg-@bc">@bt</span>
+    @if (Model.Estado == EstadoPropuesta.Borrador)
+    {
+        <a asp-action="Editar" asp-route-id="@Model.Id"
+           class="btn btn-sm btn-outline-secondary propuestas-btn-accion @(puedeEditar ? "" : "disabled")"
+           aria-disabled="@(!puedeEditar)"
+           tabindex="@(puedeEditar ? "0" : "-1")"
+           onclick="@(puedeEditar ? null : "return false;")">
+            <i class="bi bi-pencil me-1"></i>Editar
+        </a>
+    }
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header fw-bold propuestas-card-header">Resumen</div>
+            <div class="card-body">
+                <dl class="row mb-0 propuestas-datos">
+                    <dt class="col-5">Destinatario</dt>
+                    <dd class="col-7">
+                        @Model.Destinatario
+                        <span class="badge bg-light text-dark ms-1 propuestas-badge-tipo">@(Model.EsProspecto ? "Prospecto" : "Cliente")</span>
+                    </dd>
+                    <dt class="col-5">Monto total</dt>
+                    <dd class="col-7 fw-bold">@simboloMoneda@Model.MontoTotal.ToString("N2")</dd>
+                    <dt class="col-5">Modalidad de pago</dt>
+                    <dd class="col-7">@Model.ModalidadPago</dd>
+                    <dt class="col-5">Plazo de entrega</dt>
+                    <dd class="col-7">@Model.PlazoDias días</dd>
+                    <dt class="col-5">Elaborada por</dt>
+                    <dd class="col-7">@Model.ElaboradaPorNombre</dd>
+                    <dt class="col-5">Fecha de creación</dt>
+                    <dd class="col-7">@Model.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                    @if (Model.FechaEnvio is not null)
+                    {
+                        <dt class="col-5">Fecha de envío</dt>
+                        <dd class="col-7">@Model.FechaEnvio.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                    }
+                    @if (Model.FechaResolucion is not null)
+                    {
+                        <dt class="col-5">Fecha de resolución</dt>
+                        <dd class="col-7">@Model.FechaResolucion.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.DescripcionGeneral))
+                    {
+                        <dt class="col-5">Descripción</dt>
+                        <dd class="col-7">@Model.DescripcionGeneral</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header fw-bold propuestas-card-header">Servicios incluidos</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Servicio</th>
+                            <th>Descripción</th>
+                            <th class="text-center">Tipo</th>
+                            <th class="text-end">Precio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Servicios)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@item.ServicioNombre</td>
+                                <td><small class="text-muted">@(item.DescripcionServicio ?? item.DescripcionCatalogo ?? "—")</small></td>
+                                <td class="text-center">
+                                    <span class="badge @(item.TipoServicio == TipoServicio.Ofrecido ? "bg-primary" : "bg-secondary")">
+                                        @item.TipoServicio
+                                    </span>
+                                </td>
+                                <td class="text-end">@simboloMoneda@item.Precio.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-light fw-bold">
+                            <td colspan="3" class="text-end">Total:</td>
+                            <td class="text-end">@simboloMoneda@Model.MontoTotal.ToString("N2")</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

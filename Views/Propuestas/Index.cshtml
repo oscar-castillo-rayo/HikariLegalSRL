@@ -1,0 +1,114 @@
+@model HikariLegalSRL.ViewModels.Propuestas.PropuestaIndexViewModel
+@using HikariLegalSRL.Models.Enums
+
+@{
+    ViewData["Title"] = "Propuestas";
+    var puedeCrear = await Authorization.TienePermiso(User, Permisos.Propuestas.Crear);
+    var puedeEditar = await Authorization.TienePermiso(User, Permisos.Propuestas.Editar);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/propuestas.css" />
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <h4 class="mb-0 fw-bold propuestas-titulo"><i class="bi bi-file-earmark-text me-2"></i>Propuestas</h4>
+    <a asp-action="Crear"
+       class="btn fw-semibold propuestas-btn-guardar propuestas-btn-accion @(puedeCrear ? "" : "disabled")"
+       aria-disabled="@(!puedeCrear)"
+       tabindex="@(puedeCrear ? "0" : "-1")"
+       onclick="@(puedeCrear ? null : "return false;")">
+        <i class="bi bi-plus-lg me-1"></i>Nueva propuesta
+    </a>
+</div>
+
+<div class="mb-3 d-flex gap-2 flex-wrap">
+    <a asp-action="Index" class="btn btn-sm @(Model.EstadoFiltro == null ? "btn-dark" : "btn-outline-dark")">Todas</a>
+    @foreach (var estado in Enum.GetValues<EstadoPropuesta>())
+    {
+        var (bc, bt) = estado switch
+        {
+            EstadoPropuesta.Borrador => ("secondary", "Borrador"),
+            EstadoPropuesta.Enviada => ("primary", "Enviada"),
+            EstadoPropuesta.Aceptada => ("success", "Aceptada"),
+            EstadoPropuesta.Rechazada => ("danger", "Rechazada"),
+            _ => ("secondary", estado.ToString())
+        };
+        <a asp-action="Index" asp-route-estado="@estado"
+           class="btn btn-sm @(Model.EstadoFiltro == estado ? $"btn-{bc}" : $"btn-outline-{bc}")">
+            @bt
+        </a>
+    }
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 propuestas-tabla">
+            <thead>
+                <tr>
+                    <th>Destinatario</th>
+                    <th class="text-end">Monto</th>
+                    <th class="text-center">Estado</th>
+                    <th class="text-center">Modalidad</th>
+                    <th>Plazo</th>
+                    <th>Elaborada por</th>
+                    <th>Fecha</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Propuestas.Count == 0)
+                {
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            No hay propuestas que coincidan con los filtros.
+                        </td>
+                    </tr>
+                }
+                @foreach (var p in Model.Propuestas)
+                {
+                    var (bc, bt) = p.Estado switch
+                    {
+                        EstadoPropuesta.Borrador => ("secondary", "Borrador"),
+                        EstadoPropuesta.Enviada => ("primary", "Enviada"),
+                        EstadoPropuesta.Aceptada => ("success", "Aceptada"),
+                        EstadoPropuesta.Rechazada => ("danger", "Rechazada"),
+                        _ => ("secondary", p.Estado.ToString())
+                    };
+                    var simboloMoneda = p.Moneda == Moneda.Dolares ? "$" : "₡";
+                    <tr>
+                        <td class="fw-semibold">
+                            @p.Destinatario
+                            @if (p.EsProspecto)
+                            {
+                                <span class="badge bg-light text-dark ms-1 propuestas-badge-tipo">Prospecto</span>
+                            }
+                        </td>
+                        <td class="text-end">@simboloMoneda@p.MontoTotal.ToString("N2")</td>
+                        <td class="text-center"><span class="badge bg-@bc">@bt</span></td>
+                        <td class="text-center"><small>@p.ModalidadPago</small></td>
+                        <td><small>@p.PlazoDias días</small></td>
+                        <td><small>@p.ElaboradaPorNombre</small></td>
+                        <td><small>@p.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy")</small></td>
+                        <td class="text-end text-nowrap">
+                            <a asp-action="Detalle" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            @if (p.Estado == EstadoPropuesta.Borrador)
+                            {
+                                <a asp-action="Editar" asp-route-id="@p.Id"
+                                   class="btn btn-sm btn-outline-secondary propuestas-btn-accion @(puedeEditar ? "" : "disabled")"
+                                   aria-disabled="@(!puedeEditar)"
+                                   tabindex="@(puedeEditar ? "0" : "-1")"
+                                   onclick="@(puedeEditar ? null : "return false;")"
+                                   title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

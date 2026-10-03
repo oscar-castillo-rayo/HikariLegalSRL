@@ -154,7 +154,7 @@
 {
     <div class="modal fade" id="modalReasignar" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <form asp-action="ReasignarResponsable" asp-route-id="@Model.Id" method="post">
+            <form asp-action="ReasignarResponsable" asp-route-id="@Model.Id" method="post" novalidate>
                 @Html.AntiForgeryToken()
                 <div class="modal-content">
                     <div class="modal-header clientes-card-header">
