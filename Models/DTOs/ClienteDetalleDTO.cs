@@ -2,21 +2,20 @@ using HikariLegalSRL.Models.Enums;
 
 namespace HikariLegalSRL.Models.DTOs
 {
-    public class ProspectoDetalleDTO
+    public class ClienteDetalleDTO
     {
         public int Id { get; set; }
+        public int? ProspectoOrigenId { get; set; }
         public string NombreEmpresaPersona { get; set; } = null!;
-        public string NombreContacto { get; set; } = null!;
+        public string? NombreContacto { get; set; }
         public string? CedulaJuridica { get; set; }
-        public string Telefono { get; set; } = null!;
+        public string? Telefono { get; set; }
         public string Correo { get; set; } = null!;
-        public string? Sector { get; set; }
-        public byte? Calificacion { get; set; }
-        public string? Observaciones { get; set; }
-        public EstadoProspecto Estado { get; set; }
+        public string? SectorEconomico { get; set; }
+        public ModalidadPago ModalidadPago { get; set; }
+        public string ResponsableNombre { get; set; } = null!;
+        public EstadoCliente Estado { get; set; }
         public DateTime FechaCreacion { get; set; }
-        public string CreadoPor { get; set; } = null!;
-        public int? ClienteConvertidoId { get; set; }
 
         public string TipoUbicacion { get; set; } = null!;
         public string Pais { get; set; } = null!;

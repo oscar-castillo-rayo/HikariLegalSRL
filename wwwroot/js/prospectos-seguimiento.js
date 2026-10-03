@@ -25,6 +25,35 @@
         bootstrap.Modal.getOrCreateInstance(el).show();
     }
 
+    function limpiarValidacion() {
+        if (!form) return;
+
+        form.querySelectorAll('[data-valmsg-for]').forEach(function (span) {
+            span.textContent = '';
+            span.classList.remove('field-validation-error');
+            span.classList.add('field-validation-valid');
+        });
+        form.querySelectorAll('.input-validation-error').forEach(function (campo) {
+            campo.classList.remove('input-validation-error');
+            campo.classList.add('input-validation-valid');
+        });
+
+        if (window.jQuery) {
+            try {
+                window.jQuery(form).validate().resetForm();
+            } catch (err) {
+                console.warn('No se pudo reiniciar jQuery Validate:', err);
+            }
+        }
+    }
+
+    if (modalFormEl && form) {
+        modalFormEl.addEventListener('hidden.bs.modal', function () {
+            form.reset();
+            limpiarValidacion();
+        });
+    }
+
     contenedor.addEventListener('click', function (e) {
         const boton = e.target.closest('[data-accion]');
         if (!boton) return;
@@ -33,7 +62,6 @@
         const item = boton.closest('.prospectos-seg-item');
 
         if (accion === 'nueva-actividad' && form) {
-            form.reset();
             form.setAttribute('action', urlRegistrar);
             formTitulo.textContent = 'Agregar seguimiento';
             campoFecha.value = fechaLocalInput(new Date());
