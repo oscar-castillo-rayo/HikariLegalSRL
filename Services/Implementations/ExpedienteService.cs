@@ -494,7 +494,6 @@ namespace HikariLegalSRL.Services.Implementations
         public async Task CerrarExpediente(int expedienteId, string usuarioActualId)
         {
             var expediente = await _context.Expedientes
-                .Include(e => e.Cliente)
                 .Include(e => e.Propuesta)
                 .Include(e => e.Tareas)
                 .FirstOrDefaultAsync(e => e.ExpedienteId == expedienteId)
@@ -515,16 +514,25 @@ namespace HikariLegalSRL.Services.Implementations
             expediente.Estado = EstadoExpediente.Cerrado;
             expediente.FechaCierre = DateTime.UtcNow;
 
-            // RF-007/RF-010: la modalidad de pago que rige la factura es la del cliente (no la
-            // de la propuesta, que puede haber quedado desactualizada) — un expediente pro bono
-            // igual genera el registro de factura, pero con monto cero para trazabilidad.
-            var esProBono = expediente.Cliente.ModalidadPago == ModalidadPago.ProBono;
+            // RF-007/RF-011 (rediseñado 2026-09-18): si "pro bono" se define a nivel de Cliente,
+            // cualquier expediente futuro de ese mismo cliente —sin relación con el caso pro bono
+            // original— también facturaría en cero para siempre. Por eso el monto cero depende de
+            // la Propuesta que originó este expediente específico (ya validada contra una
+            // solicitud pro bono aprobada al crearla, ver PropuestaService), no del cliente.
+            //
+            // La modalidad de la factura también se toma de la Propuesta, no del Cliente: usar
+            // Cliente.ModalidadPago (la lectura literal de RF-007) generaba facturas con monto
+            // real pero etiquetadas "Pro bono" cuando el cliente había quedado con esa modalidad
+            // por un caso anterior sin relación — contradictorio y confirmado en pruebas. La
+            // modalidad que realmente aplicó a este expediente es la que se negoció y aceptó en
+            // su propia propuesta.
+            var esProBono = expediente.Propuesta.ModalidadPago == ModalidadPago.ProBono;
 
             var factura = new Factura
             {
                 ExpedienteId = expediente.ExpedienteId,
                 ClienteId = expediente.ClienteId,
-                ModalidadPago = expediente.Cliente.ModalidadPago,
+                ModalidadPago = expediente.Propuesta.ModalidadPago,
                 MontoTotal = esProBono ? 0 : expediente.Propuesta.MontoTotal,
                 Estado = EstadoFactura.Emitida,
                 FechaEmision = DateTime.UtcNow

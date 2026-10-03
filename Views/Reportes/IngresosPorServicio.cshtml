@@ -1,0 +1,100 @@
+@model HikariLegalSRL.Models.DTOs.ReporteIngresosServicioDTO
+@using HikariLegalSRL.Models.Enums
+
+@{
+    ViewData["Title"] = "Ingresos por Servicio";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/reportes.css" />
+}
+
+<div class="d-flex align-items-center gap-2 mb-4">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h2 class="fw-bold mb-0 reportes-titulo">
+        💰 Ingresos por Servicio
+    </h2>
+</div>
+
+<form method="get" class="card p-3 mb-4 shadow-sm">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Período</label>
+            <select name="periodo" id="periodo" class="form-select">
+                <option value="semanal" selected="@(Model.Periodo == "semanal")">Semanal</option>
+                <option value="mensual" selected="@(Model.Periodo == "mensual")">Mensual</option>
+                <option value="cuatrimestral" selected="@(Model.Periodo == "cuatrimestral")">Cuatrimestral</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Desde</label>
+            <input type="date" name="desde" id="desde" class="form-control" value="@Model.Desde.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Hasta</label>
+            <input type="date" name="hasta" id="hasta" class="form-control" value="@Model.Hasta.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-outline-secondary w-100">
+                <i class="bi bi-search me-1"></i>Filtrar
+            </button>
+        </div>
+    </div>
+</form>
+
+<p class="text-muted small mb-3">
+    Del @Model.Desde.ToString("dd/MM/yyyy") al @Model.Hasta.ToString("dd/MM/yyyy")
+</p>
+
+@if (Model.Monedas.Count == 0)
+{
+    <div class="card shadow-sm">
+        <div class="card-body text-center text-muted py-5">
+            No hay facturas emitidas en este período.
+        </div>
+    </div>
+}
+else
+{
+    @foreach (var grupo in Model.Monedas)
+    {
+        var simbolo = grupo.Moneda == Moneda.Dolares ? "$" : "₡";
+        var nombreMoneda = grupo.Moneda == Moneda.Dolares ? "Dólares" : "Colones";
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-bold d-flex justify-content-between align-items-center" style="background:#EAF0FB;">
+                <span>@nombreMoneda</span>
+                <span class="reportes-titulo">Total facturado: @simbolo@grupo.TotalFacturado.ToString("N2")</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table mb-0 align-middle table-hover">
+                    <thead style="background:#1F3864; color:white;">
+                        <tr>
+                            <th>Área de servicio</th>
+                            <th class="text-end">Monto facturado</th>
+                            <th class="text-end">% del total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var area in grupo.Desglose)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@area.AreaCategoria</td>
+                                <td class="text-end">@simbolo@area.MontoFacturado.ToString("N2")</td>
+                                <td class="text-end">
+                                    <span class="badge reportes-metrica-total">@area.Porcentaje%</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+}
+
+@section Scripts {
+    <script src="~/js/reportes-periodo.js" asp-append-version="true"></script>
+}

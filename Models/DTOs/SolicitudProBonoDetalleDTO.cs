@@ -16,5 +16,6 @@ namespace HikariLegalSRL.Models.DTOs
         public string? ResueltoPorNombre { get; set; }
         public DateTime FechaSolicitud { get; set; }
         public DateTime? FechaResolucion { get; set; }
+        public int? PropuestaConsumidaId { get; set; }
     }
 }
