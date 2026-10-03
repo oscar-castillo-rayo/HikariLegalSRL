@@ -1,4 +1,6 @@
-﻿namespace HikariLegalSRL.Services.Interfaces
+﻿using HikariLegalSRL.Models.DTOs;
+
+namespace HikariLegalSRL.Services.Interfaces
 {
     public interface IBitacoraAuditoriaService
     {
@@ -9,5 +11,11 @@
             string registroAfectadoId,
             string? valorAnterior = null,
             string? valorNuevo = null);
+
+        Task<BitacoraPaginaDTO> Consultar(BitacoraFiltroDTO filtro);
+
+        Task<BitacoraDetalleDTO?> ObtenerDetalle(long id);
+
+        Task<List<UsuarioOpcionDTO>> ObtenerUsuariosConRegistros();
     }
 }
