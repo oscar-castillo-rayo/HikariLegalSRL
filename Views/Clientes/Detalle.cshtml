@@ -18,6 +18,15 @@
         ModalidadPago.ProBono => ("bg-info text-dark", "Pro Bono"),
         _ => ("bg-secondary", Model.ModalidadPago.ToString())
     };
+
+    var puedeEditar = await Authorization.TienePermiso(User, Permisos.Clientes.Editar);
+    var puedeDesactivar = await Authorization.TienePermiso(User, Permisos.Clientes.Desactivar);
+    var puedeReactivar = await Authorization.TienePermiso(User, Permisos.Clientes.Reactivar);
+    var puedeAsignar = await Authorization.TienePermiso(User, Permisos.Clientes.Asignar);
+    var esActivo = Model.Estado == EstadoCliente.Activo;
+    var esInactivo = Model.Estado == EstadoCliente.Inactivo;
+    var responsables = ViewBag.Responsables as List<HikariLegalSRL.Models.DTOs.UsuarioOpcionDTO>
+        ?? new List<HikariLegalSRL.Models.DTOs.UsuarioOpcionDTO>();
 }
 
 @section Styles {
@@ -32,13 +41,54 @@
     <span class="badge @badge">@texto</span>
     <span class="badge @badgeModalidad">@textoModalidad</span>
 
-    @if (Model.ProspectoOrigenId is not null)
-    {
-        <a asp-controller="Prospectos" asp-action="Detalle" asp-route-id="@Model.ProspectoOrigenId"
-           class="ms-sm-auto btn btn-outline-primary btn-sm">
-            <i class="bi bi-person-plus me-1"></i>Ver prospecto de origen
-        </a>
-    }
+    <div class="ms-sm-auto d-flex flex-wrap gap-2">
+        @if (Model.ProspectoOrigenId is not null)
+        {
+            <a asp-controller="Prospectos" asp-action="Detalle" asp-route-id="@Model.ProspectoOrigenId"
+               class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-person-plus me-1"></i>Ver prospecto de origen
+            </a>
+        }
+        @if (esActivo)
+        {
+            <a asp-action="Editar" asp-route-id="@Model.Id"
+               class="btn btn-outline-secondary btn-sm clientes-btn-accion @(puedeEditar ? "" : "disabled")"
+               aria-disabled="@(!puedeEditar)"
+               tabindex="@(puedeEditar ? "0" : "-1")"
+               onclick="@(puedeEditar ? null : "return false;")">
+                <i class="bi bi-pencil me-1"></i>Editar
+            </a>
+            <button type="button" class="btn btn-outline-primary btn-sm clientes-btn-accion" data-bs-toggle="modal"
+                    data-bs-target="#modalReasignar" @(puedeAsignar ? null : "disabled")>
+                <i class="bi bi-person-gear me-1"></i>Cambiar responsable
+            </button>
+            <form asp-action="Desactivar" asp-route-id="@Model.Id" method="post"
+                  class="form-confirmar"
+                  data-titulo="¿Desactivar este cliente?"
+                  data-texto="@($"{Model.NombreEmpresaPersona} pasará a estado inactivo. Se conserva el historial.")"
+                  data-icono="warning"
+                  data-btn-confirmar="Sí, desactivar">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline-danger btn-sm clientes-btn-accion" @(puedeDesactivar ? null : "disabled")>
+                    <i class="bi bi-person-x me-1"></i>Desactivar
+                </button>
+            </form>
+        }
+        @if (esInactivo)
+        {
+            <form asp-action="Reactivar" asp-route-id="@Model.Id" method="post"
+                  class="form-confirmar"
+                  data-titulo="¿Reactivar este cliente?"
+                  data-texto="@($"{Model.NombreEmpresaPersona} volverá a estado activo.")"
+                  data-icono="info"
+                  data-btn-confirmar="Sí, reactivar">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline-success btn-sm clientes-btn-accion" @(puedeReactivar ? null : "disabled")>
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Reactivar
+                </button>
+            </form>
+        }
+    </div>
 </div>
 
 <div class="row g-4">
@@ -99,3 +149,56 @@
         </div>
     </div>
 </div>
+
+@if (esActivo && puedeAsignar)
+{
+    <div class="modal fade" id="modalReasignar" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form asp-action="ReasignarResponsable" asp-route-id="@Model.Id" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-content">
+                    <div class="modal-header clientes-card-header">
+                        <h5 class="modal-title">Cambiar responsable</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <dl class="row mb-3 clientes-datos">
+                            <dt class="col-5">Responsable actual</dt>
+                            <dd class="col-7">@Model.ResponsableNombre</dd>
+                        </dl>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold" id="labelNuevoResponsable">Nuevo responsable</label>
+                                <div class="dropdown clientes-dropdown-responsable">
+                                    <button type="button" class="form-select text-start clientes-dropdown-toggle"
+                                            id="botonNuevoResponsable" data-bs-toggle="dropdown" aria-expanded="false"
+                                            aria-labelledby="labelNuevoResponsable">
+                                        <span id="textoNuevoResponsable">-- Seleccione --</span>
+                                    </button>
+                                    <ul class="dropdown-menu clientes-dropdown-menu w-100" aria-labelledby="botonNuevoResponsable">
+                                        @foreach (var r in responsables)
+                                        {
+                                            <li><a class="dropdown-item" href="#" data-id="@r.Id" data-nombre="@r.Nombre">@r.Nombre</a></li>
+                                        }
+                                    </ul>
+                                    <input type="hidden" id="selectNuevoResponsable" name="ResponsableId"
+                                           data-val="true" data-val-required="Debe seleccionar un responsable" />
+                                </div>
+                                <span class="text-danger small" data-valmsg-for="ResponsableId" data-valmsg-replace="true"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn clientes-btn-guardar">Confirmar cambio</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/clientes-reasignar.js" asp-append-version="true"></script>
+}

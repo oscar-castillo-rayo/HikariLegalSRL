@@ -42,11 +42,13 @@ namespace HikariLegalSRL.Constants
 
         public static class Clientes
         {
-            public const string Ver        = "clientes.ver";
-            public const string Crear      = "clientes.crear";
-            public const string Editar     = "clientes.editar";
-            public const string Asignar    = "clientes.asignar";
-            public const string Desactivar = "clientes.desactivar";
+            public const string Ver             = "clientes.ver";
+            public const string Crear           = "clientes.crear";
+            public const string Editar          = "clientes.editar";
+            public const string Asignar         = "clientes.asignar";
+            public const string Desactivar      = "clientes.desactivar";
+            public const string Reactivar       = "clientes.reactivar";
+            public const string SerResponsable  = "clientes.ser_responsable";
         }
 
         public static class Propuestas
@@ -99,7 +101,7 @@ namespace HikariLegalSRL.Constants
             Roles.Ver, Roles.Crear, Roles.Editar, Roles.Activar, Roles.GestionarPermisos,
             Usuarios.Ver, Usuarios.Crear, Usuarios.Editar, Usuarios.Activar, Usuarios.GestionarRoles,
             Prospectos.Ver, Prospectos.Crear, Prospectos.Editar, Prospectos.Calificar, Prospectos.Convertir, Prospectos.Descartar, Prospectos.Reactivar,
-            Clientes.Ver, Clientes.Crear, Clientes.Editar, Clientes.Asignar, Clientes.Desactivar,
+            Clientes.Ver, Clientes.Crear, Clientes.Editar, Clientes.Asignar, Clientes.Desactivar, Clientes.Reactivar, Clientes.SerResponsable,
             Propuestas.Ver, Propuestas.Crear, Propuestas.Editar, Propuestas.Enviar, Propuestas.Aceptar,
             Expedientes.Ver, Expedientes.Crear, Expedientes.Asignar, Expedientes.Cerrar, Expedientes.Aprobar, Expedientes.Devolver, Expedientes.Cargar,
             Facturacion.Ver, Facturacion.Generar, Facturacion.Anular, Facturacion.Abono, Facturacion.Probono, Facturacion.AprobarProbono,
