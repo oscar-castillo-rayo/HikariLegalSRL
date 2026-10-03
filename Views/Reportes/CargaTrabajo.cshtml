@@ -1,0 +1,96 @@
+@model HikariLegalSRL.Models.DTOs.ReporteCargaTrabajoDTO
+@using HikariLegalSRL.Models.Enums
+
+@{
+    ViewData["Title"] = "Carga de Trabajo por Colaborador";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/reportes.css" />
+}
+
+<div class="d-flex align-items-center gap-2 mb-4">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h2 class="fw-bold mb-0 reportes-titulo">
+        👥 Carga de Trabajo por Colaborador
+    </h2>
+</div>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead style="background:#1F3864; color:white;">
+                <tr>
+                    <th>Colaborador</th>
+                    <th>Especialidad</th>
+                    <th class="text-center">Pendientes</th>
+                    <th class="text-center">En proceso</th>
+                    <th class="text-center">Vencidas</th>
+                    <th class="text-center">Total activas</th>
+                    <th class="text-center">Nivel de carga</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Colaboradores.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            No hay colaboradores registrados.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var colaborador in Model.Colaboradores)
+                    {
+                        var colorNivel = colaborador.Nivel switch
+                        {
+                            NivelCarga.Alta => "text-bg-danger",
+                            NivelCarga.Media => "text-bg-warning",
+                            _ => "text-bg-success"
+                        };
+
+                        <tr>
+                            <td class="fw-semibold">@colaborador.NombreCompleto</td>
+                            <td>
+                                <small class="text-muted">@(colaborador.Especialidad ?? "—")</small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge text-bg-secondary">@colaborador.Pendientes</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge text-bg-primary">@colaborador.EnProceso</span>
+                            </td>
+                            <td class="text-center">
+                                @if (colaborador.Vencidas > 0)
+                                {
+                                    <span class="badge text-bg-danger">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>@colaborador.Vencidas
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td class="text-center fw-bold">@colaborador.TotalActivas</td>
+                            <td class="text-center">
+                                <span class="badge @colorNivel">@colaborador.Nivel</span>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<p class="text-muted small mt-3 mb-0">
+    Nivel de carga según las tareas activas (pendientes y en proceso):
+    Baja menos de @Model.UmbralCargaMedia,
+    Media de @Model.UmbralCargaMedia a @(Model.UmbralCargaAlta - 1),
+    Alta @Model.UmbralCargaAlta o más.
+    Las tareas devueltas cuentan como en proceso y las que esperan revisión no cuentan como carga del colaborador.
+</p>
