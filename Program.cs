@@ -18,9 +18,7 @@ builder.Services.AddSweetAlert2();
 // Add services to the container.
 builder.Services.AddControllersWithViews(options =>
 {
-    // Los <input type="number"> de HTML5 siempre envían decimales con punto,
-    // sin importar la cultura del servidor (p. ej. es-CR usa coma). Sin esto,
-    // el binding de cualquier campo decimal con centavos falla en silencio.
+    // Agregar un ModelBinderProvider personalizado para manejar decimales con formato invariante (punto como separador decimal)
     options.ModelBinderProviders.Insert(0, new InvariantDecimalModelBinderProvider());
 });
 builder.Services.AddMemoryCache();
@@ -130,11 +128,10 @@ using (var scope = app.Services.CreateScope())
 }
 
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error/500");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    // El valor predeterminado de HSTS es 30 días. Se utiliza para indicar a los navegadores que solo deben comunicarse con el servidor a través de HTTPS.
     app.UseHsts();
 }
 
