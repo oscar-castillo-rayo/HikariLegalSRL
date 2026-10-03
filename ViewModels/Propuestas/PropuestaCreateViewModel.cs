@@ -9,5 +9,6 @@ namespace HikariLegalSRL.ViewModels.Propuestas
         public List<OpcionComboDTO> Prospectos { get; set; } = new();
         public List<OpcionComboDTO> Clientes { get; set; } = new();
         public List<ServicioOpcionDTO> Servicios { get; set; } = new();
+        public BeneficiariosProBonoDTO BeneficiariosProBono { get; set; } = new();
     }
 }

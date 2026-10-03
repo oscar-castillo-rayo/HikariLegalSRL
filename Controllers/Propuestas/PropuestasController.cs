@@ -61,7 +61,8 @@ namespace HikariLegalSRL.Controllers.Propuestas
             {
                 Prospectos = await _propuestaService.ObtenerProspectosActivos(),
                 Clientes = await _propuestaService.ObtenerClientesActivos(),
-                Servicios = await _propuestaService.ObtenerServiciosActivos()
+                Servicios = await _propuestaService.ObtenerServiciosActivos(),
+                BeneficiariosProBono = await _propuestaService.ObtenerBeneficiariosProBonoDisponibles()
             };
 
             return View(viewModel);
@@ -77,6 +78,7 @@ namespace HikariLegalSRL.Controllers.Propuestas
                 model.Prospectos = await _propuestaService.ObtenerProspectosActivos();
                 model.Clientes = await _propuestaService.ObtenerClientesActivos();
                 model.Servicios = await _propuestaService.ObtenerServiciosActivos();
+                model.BeneficiariosProBono = await _propuestaService.ObtenerBeneficiariosProBonoDisponibles();
                 return View(model);
             }
 
@@ -95,6 +97,7 @@ namespace HikariLegalSRL.Controllers.Propuestas
                 model.Prospectos = await _propuestaService.ObtenerProspectosActivos();
                 model.Clientes = await _propuestaService.ObtenerClientesActivos();
                 model.Servicios = await _propuestaService.ObtenerServiciosActivos();
+                model.BeneficiariosProBono = await _propuestaService.ObtenerBeneficiariosProBonoDisponibles();
                 return View(model);
             }
         }
@@ -128,6 +131,7 @@ namespace HikariLegalSRL.Controllers.Propuestas
                 model.Prospectos = await _propuestaService.ObtenerProspectosActivos();
                 model.Clientes = await _propuestaService.ObtenerClientesActivos();
                 model.Servicios = await _propuestaService.ObtenerServiciosActivos();
+                model.BeneficiariosProBono = await _propuestaService.ObtenerBeneficiariosProBonoDisponibles(model.Id);
                 return View(model);
             }
 
@@ -146,6 +150,7 @@ namespace HikariLegalSRL.Controllers.Propuestas
                 model.Prospectos = await _propuestaService.ObtenerProspectosActivos();
                 model.Clientes = await _propuestaService.ObtenerClientesActivos();
                 model.Servicios = await _propuestaService.ObtenerServiciosActivos();
+                model.BeneficiariosProBono = await _propuestaService.ObtenerBeneficiariosProBonoDisponibles(model.Id);
                 return View(model);
             }
         }
