@@ -35,9 +35,41 @@
         border-color: #dc3545;
     }
 
-.expedientes-horas-reales {
+.expedientes-horas-badge {
+    align-items: center;
+    background: #fff;
+    border-radius: 1rem;
+    display: inline-flex;
+    gap: 4px;
+    padding: 1px 8px;
+}
+
+.expedientes-horas-badge-colaborador {
+    color: #1F3864;
+}
+
+.expedientes-horas-badge-revisor {
+    color: #6f42c1;
+}
+
+.expedientes-horas-panel {
+    background: #f0faf4;
+    border: 1px solid #c3e6cb;
+    border-radius: .375rem;
+    font-size: .75rem;
+    margin-top: .5rem;
+    padding: .4rem .6rem;
+}
+
+.expedientes-horas-panel-desglose {
+    display: flex;
+    gap: .4rem;
+    margin-top: .3rem;
+}
+
+.expedientes-horas-panel-total {
     color: #1D6A3A;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .expedientes-kanban-card {
