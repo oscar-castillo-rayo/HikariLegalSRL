@@ -17,20 +17,26 @@ namespace HikariLegalSRL.Services.Implementations
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IPermisoEvaluador _permisoEvaluador;
         private readonly IBitacoraAuditoriaService _bitacoraAuditoriaService;
+        private readonly ITransaccionService _transaccionService;
 
         public ClienteService(
             ApplicationDbContext context,
             UserManager<ApplicationUser> userManager,
             IPermisoEvaluador permisoEvaluador,
-            IBitacoraAuditoriaService bitacoraAuditoriaService)
+            IBitacoraAuditoriaService bitacoraAuditoriaService,
+            ITransaccionService transaccionService)
         {
             _context = context;
             _userManager = userManager;
             _permisoEvaluador = permisoEvaluador;
             _bitacoraAuditoriaService = bitacoraAuditoriaService;
+            _transaccionService = transaccionService;
         }
 
         public async Task<int> ConvertirDesdeProspecto(int prospectoId, ClienteConversionDTO dto, string usuarioActualId)
+            => await _transaccionService.EjecutarAsync(() => ConvertirDesdeProspectoInterno(prospectoId, dto, usuarioActualId));
+
+        private async Task<int> ConvertirDesdeProspectoInterno(int prospectoId, ClienteConversionDTO dto, string usuarioActualId)
         {
             var prospecto = await _context.Prospectos
                 .Include(p => p.Direccion)
