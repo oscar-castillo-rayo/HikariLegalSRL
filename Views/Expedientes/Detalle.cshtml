@@ -1,5 +1,6 @@
 @model HikariLegalSRL.ViewModels.Expedientes.ExpedienteDetalleViewModel
 @using HikariLegalSRL.Models.Enums
+@using System.Security.Claims
 
 @{
     var e = Model.Expediente;
@@ -13,10 +14,19 @@
     var esAbierto = e.Estado == EstadoExpediente.Abierto;
     var puedeAgregarTarea = await Authorization.TienePermiso(User, Permisos.Expedientes.Crear) && esAbierto;
     var puedeReasignar = await Authorization.TienePermiso(User, Permisos.Expedientes.Reasignar);
+    var puedeCargar = await Authorization.TienePermiso(User, Permisos.Expedientes.Cargar);
+    var puedeGestionarAjenas = await Authorization.TienePermiso(User, Permisos.Expedientes.GestionarAjenas);
+    var usuarioActualId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
     var diasRestantes = (e.PlazoComprometido.Date - DateTime.Today).Days;
     var claseDias = diasRestantes < 0 ? "bg-danger" : diasRestantes <= 2 ? "bg-warning text-dark" : "bg-light text-dark border";
     var textoDias = diasRestantes < 0 ? $"{Math.Abs(diasRestantes)} día(s) vencido" : $"{diasRestantes} día(s) restantes";
+
+    string FormatoHoras(decimal horas)
+    {
+        var totalMinutos = (int)Math.Round(horas * 60);
+        return $"{totalMinutos / 60}h {totalMinutos % 60}min";
+    }
 
     var columnas = new[]
     {
@@ -100,6 +110,7 @@
                             _ => ("secondary", t.Prioridad.ToString())
                         };
                         var vencida = t.Estado != EstadoTarea.Aprobada && t.FechaLimite.Date < DateTime.Today;
+                        var esMiTarea = esAbierto && puedeCargar && (t.ColaboradorId == usuarioActualId || puedeGestionarAjenas);
                         <div class="card mb-2 expedientes-kanban-card @(vencida ? "border-danger" : "")">
                             <div class="card-body p-2">
                                 <div class="d-flex justify-content-between align-items-start gap-1 mb-1">
@@ -117,8 +128,40 @@
                                     }
                                 </small>
                                 <small class="text-muted d-block">
-                                    <i class="bi bi-clock me-1"></i>@t.HorasEstimadas.ToString("0.##") hrs estimadas
+                                    <i class="bi bi-clock me-1"></i>@FormatoHoras(t.HorasEstimadas) estimadas
                                 </small>
+                                @if (t.HorasReales.HasValue)
+                                {
+                                    <small class="d-block expedientes-horas-reales">
+                                        <i class="bi bi-lightning-charge-fill me-1"></i>@FormatoHoras(t.HorasReales.Value) reales
+                                    </small>
+                                }
+                                @if (t.TieneArchivoAdjunto)
+                                {
+                                    <small class="d-block">
+                                        <a asp-action="DescargarEntregable" asp-route-entregableId="@t.UltimoEntregableId" target="_blank">
+                                            <i class="bi bi-paperclip me-1"></i>Ver entregable
+                                        </a>
+                                    </small>
+                                }
+                                @if (esMiTarea && t.Estado == EstadoTarea.Pendiente)
+                                {
+                                    <form asp-action="IniciarTarea" method="post" class="mt-2">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="expedienteId" value="@e.Id" />
+                                        <input type="hidden" name="tareaId" value="@t.Id" />
+                                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-play-fill me-1"></i>Iniciar
+                                        </button>
+                                    </form>
+                                }
+                                @if (esMiTarea && t.Estado == EstadoTarea.EnProceso)
+                                {
+                                    <button type="button" class="btn btn-outline-warning btn-sm mt-2" data-bs-toggle="modal"
+                                            data-bs-target="#modalListaRevision-@t.Id">
+                                        <i class="bi bi-hand-index-thumb me-1"></i>Lista para revisión
+                                    </button>
+                                }
                             </div>
                         </div>
                     }
@@ -129,8 +172,55 @@
 </div>
 <p class="text-muted small mt-2">
     <i class="bi bi-info-circle me-1"></i>
-    Mover tareas entre columnas y aprobar/devolver entregables se habilita en la siguiente historia (tablero Kanban interactivo).
+    Aprobar o devolver entregables se habilita en la siguiente historia.
 </p>
+
+@if (esAbierto && puedeCargar)
+{
+    @foreach (var t in e.Tareas.Where(t => t.Estado == EstadoTarea.EnProceso && (t.ColaboradorId == usuarioActualId || puedeGestionarAjenas)))
+    {
+        <div class="modal fade" id="modalListaRevision-@t.Id" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form asp-action="MarcarListaParaRevision" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="expedienteId" value="@e.Id" />
+                    <input type="hidden" name="tareaId" value="@t.Id" />
+                    <div class="modal-content">
+                        <div class="modal-header expedientes-card-header">
+                            <h5 class="modal-title">Lista para revisión — @t.Descripcion</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Horas reales trabajadas</label>
+                                    <div class="input-group">
+                                        <input type="number" name="Horas" class="form-control"
+                                               min="0" max="99" step="1" placeholder="0" />
+                                        <span class="input-group-text">h</span>
+                                        <input type="number" name="Minutos" class="form-control"
+                                               min="0" max="59" step="1" placeholder="0" />
+                                        <span class="input-group-text">min</span>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Entregable (opcional)</label>
+                                    <input type="file" name="Archivo" class="form-control" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn text-white fw-semibold expedientes-btn-guardar">
+                                <i class="bi bi-hand-index-thumb me-1"></i>Enviar a revisión
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+}
 
 @if (puedeAgregarTarea)
 {
@@ -173,12 +263,15 @@
                                 <span asp-validation-for="NuevaTarea.FechaLimite" class="text-danger small"></span>
                             </div>
                             <div class="col-md-6">
-                                <label asp-for="NuevaTarea.HorasEstimadas" class="form-label fw-semibold">Horas estimadas</label>
+                                <label class="form-label fw-semibold">Horas estimadas</label>
                                 <div class="input-group">
-                                    <input asp-for="NuevaTarea.HorasEstimadas" class="form-control" type="number" min="0.5" step="0.5" />
-                                    <span class="input-group-text">hrs</span>
+                                    <input asp-for="NuevaTarea.HorasEstimadasHoras" class="form-control" type="number" min="0" max="99" step="1" placeholder="0" />
+                                    <span class="input-group-text">h</span>
+                                    <input asp-for="NuevaTarea.HorasEstimadasMinutos" class="form-control" type="number" min="0" max="59" step="1" placeholder="0" />
+                                    <span class="input-group-text">min</span>
                                 </div>
-                                <span asp-validation-for="NuevaTarea.HorasEstimadas" class="text-danger small"></span>
+                                <span asp-validation-for="NuevaTarea.HorasEstimadasHoras" class="text-danger small"></span>
+                                <span asp-validation-for="NuevaTarea.HorasEstimadasMinutos" class="text-danger small"></span>
                             </div>
                             <div class="col-12">
                                 <label asp-for="NuevaTarea.Prioridad" class="form-label fw-semibold">Prioridad</label>
