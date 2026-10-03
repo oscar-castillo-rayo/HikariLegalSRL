@@ -36,6 +36,7 @@ namespace HikariLegalSRL.Data
         public DbSet<Notificacion> Notificaciones { get; set; } = null!;
         public DbSet<BitacoraAuditoria> BitacoraAuditoria { get; set; } = null!;
         public DbSet<SolicitudProBono> SolicitudesProBono { get; set; } = null!;
+        public DbSet<EvaluacionCalidad> EvaluacionesCalidad { get; set; } = null!;
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -910,8 +911,38 @@ namespace HikariLegalSRL.Data
                 .HasForeignKey(b => b.UsuarioId)
                 .OnDelete(DeleteBehavior.NoAction);
 
+            // EvaluacionCalidad
+            modelBuilder.Entity<EvaluacionCalidad>()
+                .HasKey(e => e.EvaluacionId);
 
+            modelBuilder.Entity<EvaluacionCalidad>()
+                .Property(e => e.Comentario).HasMaxLength(1000);
 
+            modelBuilder.Entity<EvaluacionCalidad>()
+                .HasIndex(e => e.ExpedienteId)
+                .IsUnique();
+
+            modelBuilder.Entity<EvaluacionCalidad>()
+                .HasOne(e => e.Expediente)
+                .WithMany()
+                .HasForeignKey(e => e.ExpedienteId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<EvaluacionCalidad>()
+                .HasOne(e => e.EvaluadoPor)
+                .WithMany()
+                .HasForeignKey(e => e.EvaluadoPorId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<EvaluacionCalidad>()
+                .ToTable(t =>
+                {
+                    t.HasCheckConstraint(
+                        "CK_EvaluacionCalidad_Puntuacion",
+                        "[Puntuacion] BETWEEN 1 AND 5"
+                    );
+                    t.HasTrigger("TR_EvaluacionesCalidad_Inmutable");
+                });
         }
 
         private static string TipoNotificacionATexto(TipoNotificacion tipo) => tipo switch
