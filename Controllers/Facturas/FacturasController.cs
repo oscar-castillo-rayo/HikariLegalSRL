@@ -144,6 +144,49 @@ namespace HikariLegalSRL.Controllers.Facturas
             }
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Facturacion.Anular)]
+        public async Task<IActionResult> Anular(int id)
+        {
+            var usuarioActualId = _userManager.GetUserId(User)!;
+            try
+            {
+                await _facturaService.AnularFactura(id, usuarioActualId);
+                TempData["Exito"] = "Factura anulada.";
+            }
+            catch (ReglaNegocioException ex)
+            {
+                _logger.LogWarning(ex, "Error de regla de negocio al anular la factura {FacturaId}", id);
+                TempData["Error"] = ex.Message;
+            }
+
+            return RedirectToAction(nameof(Detalle), new { id });
+        }
+
+        // HU-024 (ampliación acordada): anula un abono puntual sin anular toda la factura,
+        // ya que la factura no puede volver a generarse para el mismo expediente (índice
+        // único). facturaId solo se usa para saber a dónde redirigir.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Facturacion.Anular)]
+        public async Task<IActionResult> AnularAbono(int abonoId, int facturaId)
+        {
+            var usuarioActualId = _userManager.GetUserId(User)!;
+            try
+            {
+                await _facturaService.AnularAbono(abonoId, usuarioActualId);
+                TempData["Exito"] = "Abono anulado.";
+            }
+            catch (ReglaNegocioException ex)
+            {
+                _logger.LogWarning(ex, "Error de regla de negocio al anular el abono {AbonoId}", abonoId);
+                TempData["Error"] = ex.Message;
+            }
+
+            return RedirectToAction(nameof(Detalle), new { id = facturaId });
+        }
+
         [HttpGet]
         [Permiso(Permisos.Facturacion.Ver)]
         public async Task<IActionResult> DescargarComprobante(int abonoId)

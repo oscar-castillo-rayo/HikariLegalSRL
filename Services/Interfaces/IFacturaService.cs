@@ -16,5 +16,9 @@ namespace HikariLegalSRL.Services.Interfaces
         Task<(string RutaAbsoluta, string NombreArchivo, string ContentType)?> ObtenerArchivoComprobante(int abonoId, string usuarioActualId);
 
         Task<EstadoCuentaDTO?> ObtenerEstadoCuenta(int clienteId, string usuarioActualId);
+
+        Task AnularFactura(int facturaId, string usuarioActualId);
+
+        Task AnularAbono(int abonoId, string usuarioActualId);
     }
 }
