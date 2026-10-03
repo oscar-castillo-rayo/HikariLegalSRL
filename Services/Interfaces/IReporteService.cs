@@ -9,5 +9,7 @@ namespace HikariLegalSRL.Services.Interfaces
         Task<ReporteConversionProspectosDTO> ObtenerConversionProspectos(string periodo, DateTime? desde, DateTime? hasta);
 
         Task<ReporteIngresosServicioDTO> ObtenerIngresosPorServicio(string periodo, DateTime? desde, DateTime? hasta);
+
+        Task<ReporteDistribucionGeograficaDTO> ObtenerDistribucionGeografica(string nivel);
     }
 }
