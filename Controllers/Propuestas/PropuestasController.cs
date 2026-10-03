@@ -180,16 +180,16 @@ namespace HikariLegalSRL.Controllers.Propuestas
 
             try
             {
-                await _propuestaService.MarcarComoAceptada(id, usuarioActualId);
+                var expedienteId = await _propuestaService.MarcarComoAceptada(id, usuarioActualId);
                 TempData["Exito"] = "Propuesta aceptada. Se abrió el expediente correspondiente.";
+                return RedirectToAction("Detalle", "Expedientes", new { id = expedienteId });
             }
             catch (ReglaNegocioException ex)
             {
                 _logger.LogWarning(ex, "Error de regla de negocio al aceptar propuesta {PropuestaId}", id);
                 TempData["Error"] = ex.Message;
+                return RedirectToAction(nameof(Detalle), new { id });
             }
-
-            return RedirectToAction(nameof(Detalle), new { id });
         }
 
         [HttpPost]
