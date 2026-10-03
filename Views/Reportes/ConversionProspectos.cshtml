@@ -1,0 +1,143 @@
+@model HikariLegalSRL.Models.DTOs.ReporteConversionProspectosDTO
+
+@{
+    ViewData["Title"] = "Tasa de Conversión de Prospectos";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/reportes.css" />
+}
+
+<div class="d-flex align-items-center gap-2 mb-4">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h2 class="fw-bold mb-0 reportes-titulo">
+        🔄 Tasa de Conversión de Prospectos
+    </h2>
+</div>
+
+<form method="get" class="card p-3 mb-4 shadow-sm">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Período</label>
+            <select name="periodo" id="periodo" class="form-select">
+                <option value="semanal" selected="@(Model.Periodo == "semanal")">Semanal</option>
+                <option value="mensual" selected="@(Model.Periodo == "mensual")">Mensual</option>
+                <option value="cuatrimestral" selected="@(Model.Periodo == "cuatrimestral")">Cuatrimestral</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Desde</label>
+            <input type="date" name="desde" id="desde" class="form-control" value="@Model.Desde.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Hasta</label>
+            <input type="date" name="hasta" id="hasta" class="form-control" value="@Model.Hasta.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-outline-secondary w-100">
+                <i class="bi bi-search me-1"></i>Filtrar
+            </button>
+        </div>
+    </div>
+</form>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3 px-2" style="border-left:4px solid #1F3864;">
+            <div class="small text-muted">Total prospectos</div>
+            <div class="fs-3 fw-bold reportes-titulo">@Model.Total</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3 px-2" style="border-left:4px solid #1D6A3A;">
+            <div class="small text-muted">Convertidos a cliente</div>
+            <div class="fs-3 fw-bold text-success">@Model.Convertidos</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3 px-2" style="border-left:4px solid #dc3545;">
+            <div class="small text-muted">Descartados</div>
+            <div class="fs-3 fw-bold text-danger">@Model.Descartados</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center py-3 px-2" style="border-left:4px solid #f5a623;">
+            <div class="small text-muted">Activos en seguimiento</div>
+            <div class="fs-3 fw-bold" style="color:#f5a623;">@Model.Activos</div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4 reportes-metrica-total">
+    <div class="card-body text-center py-4 text-white">
+        <div class="small opacity-75">Tasa de conversión de prospectos</div>
+        <div class="display-4 fw-bold">@Model.TasaConversion%</div>
+        <div class="progress mx-auto mt-3" style="max-width:400px; height:20px; background:rgba(255,255,255,0.2);">
+            <div class="progress-bar bg-success"
+                 style="width:@(Model.TasaConversion.ToString(System.Globalization.CultureInfo.InvariantCulture))%">
+            </div>
+        </div>
+        @if (Model.Total > 0)
+        {
+            <small class="opacity-75 mt-2 d-block">
+                @Model.Convertidos de @Model.Total prospectos convertidos a clientes
+            </small>
+        }
+        else
+        {
+            <small class="opacity-75 mt-2 d-block">No hay prospectos registrados en este período.</small>
+        }
+    </div>
+</div>
+
+@if (Model.DetalleMensual.Count > 0)
+{
+    <div class="card shadow-sm mb-4">
+        <div class="card-header fw-bold" style="background:#EAF0FB;">
+            Detalle mensual
+        </div>
+        <div class="table-responsive">
+            <table class="table mb-0 align-middle table-hover">
+                <thead style="background:#1F3864; color:white;">
+                    <tr>
+                        <th>Mes</th>
+                        <th class="text-center">Registrados</th>
+                        <th class="text-center">Convertidos</th>
+                        <th class="text-center">Descartados</th>
+                        <th class="text-center">Activos</th>
+                        <th class="text-center">Tasa conversión</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var mes in Model.DetalleMensual)
+                    {
+                        var colorTasa = mes.TasaConversion >= 60 ? "success" : mes.TasaConversion >= 40 ? "warning" : "danger";
+                        <tr>
+                            <td class="fw-semibold">@mes.NombreMes</td>
+                            <td class="text-center">@mes.Registrados</td>
+                            <td class="text-center text-success fw-semibold">@mes.Convertidos</td>
+                            <td class="text-center text-danger">@mes.Descartados</td>
+                            <td class="text-center text-warning">@mes.Activos</td>
+                            <td class="text-center">
+                                <span class="badge bg-@colorTasa">@mes.TasaConversion%</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+<div class="alert alert-light border mt-2 small text-muted">
+    <i class="bi bi-info-circle me-1"></i>
+    <strong>Fórmula:</strong>
+    Tasa de conversión = (Prospectos convertidos ÷ Total de prospectos registrados) × 100.
+    Un prospecto activo aún está en seguimiento y puede convertirse en el futuro.
+</div>
+
+@section Scripts {
+    <script src="~/js/reportes-periodo.js" asp-append-version="true"></script>
+}
