@@ -4,6 +4,7 @@ using HikariLegalSRL.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HikariLegalSRL.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260917173355_AddEntregableTipoFinalTrigger")]
+    partial class AddEntregableTipoFinalTrigger
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -457,6 +460,10 @@ namespace HikariLegalSRL.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EntregableId"));
 
+                    b.Property<string>("ArchivoRuta")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("CargadoPorId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -490,43 +497,6 @@ namespace HikariLegalSRL.Migrations
 
                             t.HasCheckConstraint("CK_Entregable_TipoEntregable", "[TipoEntregable] IN ('preliminar', 'final')");
                         });
-                });
-
-            modelBuilder.Entity("HikariLegalSRL.Models.EntregableArchivo", b =>
-                {
-                    b.Property<int>("EntregableArchivoId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EntregableArchivoId"));
-
-                    b.Property<string>("ArchivoRuta")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("CargadoPorId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("EntregableId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("FechaCarga")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("NombreOriginal")
-                        .IsRequired()
-                        .HasMaxLength(260)
-                        .HasColumnType("nvarchar(260)");
-
-                    b.HasKey("EntregableArchivoId");
-
-                    b.HasIndex("CargadoPorId");
-
-                    b.HasIndex("EntregableId");
-
-                    b.ToTable("EntregableArchivos");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Expediente", b =>
@@ -909,8 +879,6 @@ namespace HikariLegalSRL.Migrations
 
                             t.HasCheckConstraint("CK_Revision_ObservacionesSiDevuelta", "[Resultado] <> 'devuelta' OR ([Observaciones] IS NOT NULL AND LEN([Observaciones]) > 0)");
                         });
-
-                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Tarea", b =>
@@ -1197,25 +1165,6 @@ namespace HikariLegalSRL.Migrations
                     b.Navigation("Tarea");
                 });
 
-            modelBuilder.Entity("HikariLegalSRL.Models.EntregableArchivo", b =>
-                {
-                    b.HasOne("HikariLegalSRL.Models.ApplicationUser", "CargadoPor")
-                        .WithMany()
-                        .HasForeignKey("CargadoPorId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("HikariLegalSRL.Models.Entregable", "Entregable")
-                        .WithMany("Archivos")
-                        .HasForeignKey("EntregableId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("CargadoPor");
-
-                    b.Navigation("Entregable");
-                });
-
             modelBuilder.Entity("HikariLegalSRL.Models.Expediente", b =>
                 {
                     b.HasOne("HikariLegalSRL.Models.Cliente", "Cliente")
@@ -1432,8 +1381,6 @@ namespace HikariLegalSRL.Migrations
 
             modelBuilder.Entity("HikariLegalSRL.Models.Entregable", b =>
                 {
-                    b.Navigation("Archivos");
-
                     b.Navigation("Revisiones");
                 });
 

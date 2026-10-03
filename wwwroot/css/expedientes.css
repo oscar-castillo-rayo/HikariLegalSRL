@@ -1,3 +1,30 @@
+.expedientes-archivos-lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+    .expedientes-archivos-lista li {
+        align-items: center;
+        display: flex;
+        gap: 4px;
+        justify-content: space-between;
+    }
+
+    .expedientes-archivos-lista a {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+.expedientes-archivos-panel {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: .375rem;
+    font-size: .75rem;
+    padding: .4rem .6rem;
+}
+
 .expedientes-btn-accion:disabled,
 .expedientes-btn-accion.disabled {
     background-color: #e9ecef;
@@ -33,6 +60,17 @@
 
     .expedientes-dropdown-toggle.input-validation-error {
         border-color: #dc3545;
+    }
+
+.expedientes-historial-ronda {
+    border: 1px solid #dee2e6;
+    border-radius: .375rem;
+    margin-bottom: .5rem;
+    padding: .5rem;
+}
+
+    .expedientes-historial-ronda:last-child {
+        margin-bottom: 0;
     }
 
 .expedientes-horas-badge {
