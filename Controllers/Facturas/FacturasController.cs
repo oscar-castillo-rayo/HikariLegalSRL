@@ -102,6 +102,49 @@ namespace HikariLegalSRL.Controllers.Facturas
         }
 
         [HttpGet]
+        [Permiso(Permisos.Facturacion.Abono)]
+        public async Task<IActionResult> EstadoCuenta(int clienteId)
+        {
+            var usuarioActualId = _userManager.GetUserId(User)!;
+            var estadoCuenta = await _facturaService.ObtenerEstadoCuenta(clienteId, usuarioActualId);
+            if (estadoCuenta is null)
+                return NotFound();
+
+            if (Request.Headers.XRequestedWith == "XMLHttpRequest")
+                return PartialView("_EstadoCuentaContenido", estadoCuenta);
+
+            return View(estadoCuenta);
+        }
+
+        // Variante AJAX de RegistrarAbono para HU-023: se usa desde la pantalla de Estado de
+        // Cuenta para que los totales y el historial se actualicen sin recargar la página
+        // (el cliente vuelve a pedir el contenido parcial de EstadoCuenta tras un éxito).
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Permiso(Permisos.Facturacion.Abono)]
+        public async Task<IActionResult> RegistrarAbonoAjax(int id, [Bind(Prefix = "Abono")] AbonoRegistroDTO abono)
+        {
+            var usuarioActualId = _userManager.GetUserId(User)!;
+
+            if (!ModelState.IsValid)
+            {
+                var errores = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                return BadRequest(new { mensaje = string.Join(" ", errores) });
+            }
+
+            try
+            {
+                await _facturaService.RegistrarAbono(id, abono, usuarioActualId);
+                return Ok();
+            }
+            catch (ReglaNegocioException ex)
+            {
+                _logger.LogWarning(ex, "Error de regla de negocio al registrar abono (AJAX) para la factura {FacturaId}", id);
+                return BadRequest(new { mensaje = ex.Message });
+            }
+        }
+
+        [HttpGet]
         [Permiso(Permisos.Facturacion.Ver)]
         public async Task<IActionResult> DescargarComprobante(int abonoId)
         {
