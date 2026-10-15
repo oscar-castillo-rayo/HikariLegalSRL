@@ -31,12 +31,12 @@ namespace HikariLegalSRL.Constants
                     Permisos.Propuestas.Enviar, Permisos.Propuestas.Rechazar,
                     Permisos.Expedientes.Ver, Permisos.Expedientes.Crear, Permisos.Expedientes.Asignar,
                     Permisos.Expedientes.Aprobar, Permisos.Expedientes.Devolver, Permisos.Expedientes.Cargar,
-                    Permisos.Expedientes.SerResponsable, Permisos.Expedientes.EditarTarea, Permisos.Expedientes.EliminarTarea,
+                    Permisos.Expedientes.RecibirTareas, Permisos.Expedientes.SerResponsable, Permisos.Expedientes.EditarTarea, Permisos.Expedientes.EliminarTarea,
                     Permisos.Facturacion.Ver, Permisos.Facturacion.Probono,
                 },
                 [ColaboradorExterno] = new[]
                 {
-                    Permisos.Expedientes.Ver, Permisos.Expedientes.Cargar,
+                    Permisos.Expedientes.Ver, Permisos.Expedientes.Cargar, Permisos.Expedientes.RecibirTareas,
                     Permisos.Facturacion.Probono,
                 },
                 [Asistente] = new[]

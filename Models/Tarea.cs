@@ -18,6 +18,7 @@ namespace HikariLegalSRL.Models
         public decimal HorasEstimadas { get; set; }
         public PrioridadTarea Prioridad { get; set; }
         public EstadoTarea Estado { get; set; } = EstadoTarea.Pendiente;
+        public bool RequiereEntregable { get; set; }
 
         public DateTime FechaCreacion { get; set; }
 
