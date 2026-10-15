@@ -64,9 +64,57 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("UsuarioId");
 
-                    b.ToTable("BitacoraAuditoria", t =>
+                    b.ToTable("BitacoraAuditoria", null, t =>
                         {
                             t.HasCheckConstraint("CK_BitacoraAuditoria_TipoAccion", "[TipoAccion] IN ('crear', 'editar', 'eliminar', 'cambiar_estado', 'aprobar', 'rechazar')");
+                        });
+                });
+
+            modelBuilder.Entity("HikariLegalSRL.Models.Abono", b =>
+                {
+                    b.Property<int>("AbonoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AbonoId"));
+
+                    b.Property<string>("ComprobanteArchivo")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("FacturaId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MetodoPago")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal>("Monto")
+                        .HasColumnType("decimal(14,2)");
+
+                    b.Property<string>("NumeroComprobante")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("RegistradoPorId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("AbonoId");
+
+                    b.HasIndex("FacturaId");
+
+                    b.HasIndex("RegistradoPorId");
+
+                    b.ToTable("Abonos", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Abono_MetodoPago", "[MetodoPago] IN ('transferencia', 'sinpe', 'efectivo', 'otro')");
+
+                            t.HasCheckConstraint("CK_Abono_Monto", "[Monto] > 0");
                         });
                 });
 
@@ -114,7 +162,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("UsuarioRegistroId");
 
-                    b.ToTable("ActividadesSeguimiento", t =>
+                    b.ToTable("ActividadesSeguimiento", null, t =>
                         {
                             t.HasCheckConstraint("CK_ActividadSeguimiento_TipoActividad", "[TipoActividad] IN ('llamada', 'reunion', 'correo', 'nota', 'propuesta', 'otro')");
                         });
@@ -254,7 +302,7 @@ namespace HikariLegalSRL.Migrations
                     b.HasIndex("ProvinciaId", "Nombre")
                         .IsUnique();
 
-                    b.ToTable("Cantones");
+                    b.ToTable("Cantones", (string)null);
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.CatalogoServicio", b =>
@@ -294,7 +342,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasKey("ServicioId");
 
-                    b.ToTable("CatalogoServicios", t =>
+                    b.ToTable("CatalogoServicios", null, t =>
                         {
                             t.HasCheckConstraint("CK_CatalogoServicio_Estado", "[Estado] IN ('activo', 'inactivo')");
 
@@ -374,7 +422,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("ResponsableId");
 
-                    b.ToTable("Clientes", t =>
+                    b.ToTable("Clientes", null, t =>
                         {
                             t.HasCheckConstraint("CK_Cliente_Estado", "[Estado] IN ('activo', 'inactivo')");
 
@@ -414,7 +462,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("PaisId");
 
-                    b.ToTable("Direcciones", t =>
+                    b.ToTable("Direcciones", null, t =>
                         {
                             t.HasTrigger("TR_Direcciones_TipoUbicacion");
 
@@ -446,7 +494,7 @@ namespace HikariLegalSRL.Migrations
                     b.HasIndex("CantonId", "Nombre")
                         .IsUnique();
 
-                    b.ToTable("Distritos");
+                    b.ToTable("Distritos", (string)null);
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Entregable", b =>
@@ -484,7 +532,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("TareaId");
 
-                    b.ToTable("Entregables", t =>
+                    b.ToTable("Entregables", null, t =>
                         {
                             t.HasCheckConstraint("CK_Entregable_HorasReales", "[HorasReales] >= 0");
 
@@ -526,7 +574,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("EntregableId");
 
-                    b.ToTable("EntregableArchivos");
+                    b.ToTable("EntregableArchivos", (string)null);
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Expediente", b =>
@@ -570,7 +618,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("ResponsableId");
 
-                    b.ToTable("Expedientes", t =>
+                    b.ToTable("Expedientes", null, t =>
                         {
                             t.HasCheckConstraint("CK_Expediente_Estado", "[Estado] IN ('abierto', 'cerrado')");
                         });
@@ -618,7 +666,7 @@ namespace HikariLegalSRL.Migrations
                     b.HasIndex("ExpedienteId")
                         .IsUnique();
 
-                    b.ToTable("Facturas", t =>
+                    b.ToTable("Facturas", null, t =>
                         {
                             t.HasCheckConstraint("CK_Factura_Estado", "[Estado] IN ('emitida', 'pago_parcial', 'pagada', 'anulada')");
 
@@ -668,7 +716,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("UsuarioId", "Leida");
 
-                    b.ToTable("Notificaciones");
+                    b.ToTable("Notificaciones", (string)null);
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Pais", b =>
@@ -691,7 +739,7 @@ namespace HikariLegalSRL.Migrations
                     b.HasIndex("Nombre")
                         .IsUnique();
 
-                    b.ToTable("Paises");
+                    b.ToTable("Paises", (string)null);
 
                     b.HasData(
                         new
@@ -762,7 +810,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("ProspectoId");
 
-                    b.ToTable("Propuestas", t =>
+                    b.ToTable("Propuestas", null, t =>
                         {
                             t.HasCheckConstraint("CK_Propuesta_Destinatario", "([ProspectoId] IS NOT NULL AND [ClienteId] IS NULL) OR ([ProspectoId] IS NULL AND [ClienteId] IS NOT NULL)");
 
@@ -808,7 +856,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("ServicioId");
 
-                    b.ToTable("PropuestaServicios", t =>
+                    b.ToTable("PropuestaServicios", null, t =>
                         {
                             t.HasCheckConstraint("CK_PropuestaServicio_Precio", "[Precio] >= 0");
 
@@ -882,7 +930,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("UsuarioCreadorId");
 
-                    b.ToTable("Prospectos", t =>
+                    b.ToTable("Prospectos", null, t =>
                         {
                             t.HasCheckConstraint("CK_Prospecto_Calificacion", "[Calificacion] IS NULL OR ([Calificacion] BETWEEN 1 AND 5)");
 
@@ -910,7 +958,7 @@ namespace HikariLegalSRL.Migrations
                     b.HasIndex("PaisId", "Nombre")
                         .IsUnique();
 
-                    b.ToTable("Provincias");
+                    b.ToTable("Provincias", (string)null);
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.RegistroHoras", b =>
@@ -948,7 +996,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("UsuarioId");
 
-                    b.ToTable("RegistrosHoras", t =>
+                    b.ToTable("RegistrosHoras", null, t =>
                         {
                             t.HasCheckConstraint("CK_RegistroHoras_Minutos", "[Minutos] > 0");
 
@@ -996,7 +1044,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("RevisorId");
 
-                    b.ToTable("RevisionesEntregable", t =>
+                    b.ToTable("RevisionesEntregable", null, t =>
                         {
                             t.HasCheckConstraint("CK_RevisionEntregable_HorasRevision", "[HorasRevision] >= 0");
 
@@ -1053,7 +1101,7 @@ namespace HikariLegalSRL.Migrations
 
                     b.HasIndex("ExpedienteId");
 
-                    b.ToTable("Tareas", t =>
+                    b.ToTable("Tareas", null, t =>
                         {
                             t.HasCheckConstraint("CK_Tarea_Estado", "[Estado] IN ('pendiente', 'en_proceso', 'lista_revision', 'aprobada', 'devuelta')");
 
@@ -1178,6 +1226,25 @@ namespace HikariLegalSRL.Migrations
                         .IsRequired();
 
                     b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("HikariLegalSRL.Models.Abono", b =>
+                {
+                    b.HasOne("HikariLegalSRL.Models.Factura", "Factura")
+                        .WithMany()
+                        .HasForeignKey("FacturaId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("HikariLegalSRL.Models.ApplicationUser", "RegistradoPor")
+                        .WithMany()
+                        .HasForeignKey("RegistradoPorId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Factura");
+
+                    b.Navigation("RegistradoPor");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.ActividadSeguimiento", b =>

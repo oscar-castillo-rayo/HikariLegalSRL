@@ -15,5 +15,9 @@ namespace HikariLegalSRL.Models.DTOs
         public DateTime FechaEmision { get; set; }
         public DateTime? FechaAnulacion { get; set; }
         public List<FacturaServicioDTO> Servicios { get; set; } = new();
+
+        public decimal MontoPagado { get; set; }
+        public decimal SaldoPendiente { get; set; }
+        public List<AbonoDTO> Abonos { get; set; } = new();
     }
 }
