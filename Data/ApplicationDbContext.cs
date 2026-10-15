@@ -147,7 +147,8 @@ namespace HikariLegalSRL.Data
 
             modelBuilder.Entity<Prospecto>()
                 .HasIndex(p => p.Correo)
-                .IsUnique();
+                .IsUnique()
+                .HasFilter("[Correo] IS NOT NULL");
 
             modelBuilder.Entity<Prospecto>()
                 .ToTable(t => t.HasCheckConstraint(
@@ -208,7 +209,8 @@ namespace HikariLegalSRL.Data
 
             modelBuilder.Entity<Cliente>()
                 .HasIndex(c => c.Correo)
-                .IsUnique();
+                .IsUnique()
+                .HasFilter("[Correo] IS NOT NULL");
 
             modelBuilder.Entity<Cliente>()
                 .HasIndex(c => c.ProspectoOrigenId)

@@ -379,7 +379,6 @@ namespace HikariLegalSRL.Migrations
                         .HasColumnType("nvarchar(30)");
 
                     b.Property<string>("Correo")
-                        .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
@@ -426,7 +425,8 @@ namespace HikariLegalSRL.Migrations
                     b.HasKey("ClienteId");
 
                     b.HasIndex("Correo")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[Correo] IS NOT NULL");
 
                     b.HasIndex("DireccionId");
 
@@ -936,7 +936,6 @@ namespace HikariLegalSRL.Migrations
                         .HasColumnType("nvarchar(30)");
 
                     b.Property<string>("Correo")
-                        .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
@@ -969,7 +968,6 @@ namespace HikariLegalSRL.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Telefono")
-                        .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
@@ -980,7 +978,8 @@ namespace HikariLegalSRL.Migrations
                     b.HasKey("ProspectoId");
 
                     b.HasIndex("Correo")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[Correo] IS NOT NULL");
 
                     b.HasIndex("DireccionId");
 

@@ -30,9 +30,9 @@
     <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left"></i>
     </a>
-    <h2 class="fw-bold mb-0 reportes-titulo">
+    <h1 class="h2 fw-bold mb-0 reportes-titulo">
         📊 Rentabilidad por Expediente
-    </h2>
+    </h1>
 </div>
 
 <form method="get" class="card p-3 mb-4 shadow-sm">
@@ -45,11 +45,11 @@
                 <option value="cuatrimestral" selected="@(Model.Periodo == "cuatrimestral")">Cuatrimestral</option>
             </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
             <label class="form-label small fw-semibold">Desde</label>
             <input type="date" name="desde" id="desde" class="form-control" value="@Model.Desde.ToString("yyyy-MM-dd")" />
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
             <label class="form-label small fw-semibold">Hasta</label>
             <input type="date" name="hasta" id="hasta" class="form-control" value="@Model.Hasta.ToString("yyyy-MM-dd")" />
         </div>

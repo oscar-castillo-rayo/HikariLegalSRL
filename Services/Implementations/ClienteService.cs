@@ -7,6 +7,7 @@ using HikariLegalSRL.Models.Enums;
 using HikariLegalSRL.Services.Interfaces;
 using HikariLegalSRL.ViewModels.Clientes;
 using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 
 namespace HikariLegalSRL.Services.Implementations
@@ -51,11 +52,14 @@ namespace HikariLegalSRL.Services.Implementations
 
             await ValidarResponsable(dto.ResponsableId);
 
-            var correoDuplicado = await _context.Clientes
-                .AnyAsync(c => c.Correo == prospecto.Correo);
+            if (prospecto.Correo is not null)
+            {
+                var correoDuplicado = await _context.Clientes
+                    .AnyAsync(c => c.Correo == prospecto.Correo);
 
-            if (correoDuplicado)
-                throw new ReglaNegocioException("Ya existe un cliente registrado con ese correo electrónico.");
+                if (correoDuplicado)
+                    throw new ReglaNegocioException("Ya existe un cliente registrado con ese correo electrónico.");
+            }
 
             var direccion = new Direccion
             {
@@ -100,7 +104,7 @@ namespace HikariLegalSRL.Services.Implementations
                 tipoAccion: "crear",
                 moduloAfectado: "Clientes",
                 registroAfectadoId: cliente.ClienteId.ToString(),
-                valorNuevo: $"{cliente.NombreEmpresaPersona} ({cliente.Correo})");
+                valorNuevo: $"{cliente.NombreEmpresaPersona} ({cliente.Correo ?? "sin correo"})");
 
             await _bitacoraAuditoriaService.Registrar(
                 usuarioId: usuarioActualId,
@@ -243,11 +247,23 @@ namespace HikariLegalSRL.Services.Implementations
             if (dto.ModalidadPago is null)
                 throw new ReglaNegocioException("Debe seleccionar la modalidad de pago.");
 
-            var correoDuplicado = await _context.Clientes
-                .AnyAsync(c => c.Correo == dto.Correo && c.ClienteId != id);
+            dto.Telefono = string.IsNullOrWhiteSpace(dto.Telefono) ? null : dto.Telefono.Trim();
+            dto.Correo = string.IsNullOrWhiteSpace(dto.Correo) ? null : dto.Correo.Trim();
 
-            if (correoDuplicado)
-                throw new ReglaNegocioException("Ya existe un cliente registrado con ese correo electrónico.");
+            if (dto.Telefono is not null && (dto.Telefono.Length < 8 || dto.Telefono.Length > 20))
+                throw new ReglaNegocioException("El teléfono debe tener entre 8 y 20 caracteres.");
+
+            if (dto.Correo is not null && !new EmailAddressAttribute().IsValid(dto.Correo))
+                throw new ReglaNegocioException("Ingrese un correo electrónico válido.");
+
+            if (dto.Correo is not null)
+            {
+                var correoDuplicado = await _context.Clientes
+                    .AnyAsync(c => c.Correo == dto.Correo && c.ClienteId != id);
+
+                if (correoDuplicado)
+                    throw new ReglaNegocioException("Ya existe un cliente registrado con ese correo electrónico.");
+            }
 
             if (dto.Direccion.PaisId is null or < 1)
                 throw new ReglaNegocioException("Debe seleccionar un país.");
@@ -263,7 +279,7 @@ namespace HikariLegalSRL.Services.Implementations
             if (esNacional && dto.Direccion.DistritoId is null)
                 throw new ReglaNegocioException("Debe indicar provincia, cantón y distrito para una dirección nacional.");
 
-            var valorAnterior = $"{cliente.NombreEmpresaPersona} ({cliente.Correo})";
+            var valorAnterior = $"{cliente.NombreEmpresaPersona} ({cliente.Correo ?? "sin correo"})";
 
             cliente.NombreEmpresaPersona = dto.NombreEmpresaPersona;
             cliente.NombreContacto = dto.NombreContacto;
@@ -293,7 +309,7 @@ namespace HikariLegalSRL.Services.Implementations
                 moduloAfectado: "Clientes",
                 registroAfectadoId: cliente.ClienteId.ToString(),
                 valorAnterior: valorAnterior,
-                valorNuevo: $"{cliente.NombreEmpresaPersona} ({cliente.Correo})");
+                valorNuevo: $"{cliente.NombreEmpresaPersona} ({cliente.Correo ?? "sin correo"})");
 
             await _context.SaveChangesAsync();
         }

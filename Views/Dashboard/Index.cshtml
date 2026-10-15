@@ -9,30 +9,30 @@
     <link rel="stylesheet" href="~/css/dashboard.css" />
 }
 
-<h4 class="mb-4 fw-bold dashboard-titulo">Dashboard</h4>
+<h1 class="h4 mb-4 fw-bold dashboard-titulo">Dashboard</h1>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
+    <div class="col-4">
         <div class="card text-white h-100 dashboard-card-estimadas">
-            <div class="card-body text-center">
+            <div class="card-body text-center dashboard-kpi">
                 <div class="fs-1"><i class="bi bi-list-task"></i></div>
                 <div class="fs-2 fw-bold">@Model.TareasProximas.Count</div>
                 <div class="small opacity-75">Tareas activas por vencer</div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-4">
         <div class="card text-white h-100 dashboard-card-proximas">
-            <div class="card-body text-center">
+            <div class="card-body text-center dashboard-kpi">
                 <div class="fs-1"><i class="bi bi-clock-history"></i></div>
                 <div class="fs-2 fw-bold">@Model.TareasPorVencer</div>
                 <div class="small opacity-75">Por vencer (3 días o menos)</div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-4">
         <div class="card text-white h-100 @(Model.TareasVencidas > 0 ? "dashboard-card-vencidas" : "dashboard-card-ok")">
-            <div class="card-body text-center">
+            <div class="card-body text-center dashboard-kpi">
                 <div class="fs-1"><i class="bi bi-exclamation-triangle"></i></div>
                 <div class="fs-2 fw-bold">@Model.TareasVencidas</div>
                 <div class="small opacity-75">Tareas vencidas</div>
@@ -131,7 +131,7 @@
 
         function mostrarToastDashboard(mensaje, tipo) {
             const toastEl = document.createElement('div');
-            toastEl.className = `toast align-items-center text-white bg-${tipo} border-0 position-fixed bottom-0 end-0 m-3`;
+            toastEl.className = `toast align-items-center text-white bg-${tipo} border-0 position-fixed bottom-0 end-0 m-3 dashboard-toast`;
             toastEl.setAttribute('role', 'alert');
             toastEl.style.zIndex = '9999';
             toastEl.innerHTML = `

@@ -2,7 +2,7 @@
 @using HikariLegalSRL.Models.Enums
 
 @{
-    ViewData["Title"] = "Comparativo de Servicios";
+    ViewData["Title"] = "Core Business";
 }
 
 @section Styles {
@@ -13,9 +13,9 @@
     <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left"></i>
     </a>
-    <h2 class="fw-bold mb-0 reportes-titulo">
-        📋 Comparativo de Servicios Ofrecidos vs. Solicitados
-    </h2>
+    <h1 class="h2 fw-bold mb-0 reportes-titulo">
+        📋 Core Business
+    </h1>
 </div>
 
 <form method="get" class="card p-3 mb-4 shadow-sm">
@@ -28,11 +28,11 @@
                 <option value="cuatrimestral" selected="@(Model.Periodo == "cuatrimestral")">Cuatrimestral</option>
             </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
             <label class="form-label small fw-semibold">Desde</label>
             <input type="date" name="desde" id="desde" class="form-control" value="@Model.Desde.ToString("yyyy-MM-dd")" />
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
             <label class="form-label small fw-semibold">Hasta</label>
             <input type="date" name="hasta" id="hasta" class="form-control" value="@Model.Hasta.ToString("yyyy-MM-dd")" />
         </div>
@@ -44,7 +44,7 @@
     </div>
 </form>
 
-<div class="row g-3 mb-4 row-cols-2 row-cols-lg-5">
+<div class="row g-3 mb-4 row-cols-2 row-cols-lg-3 row-cols-xl-6">
     <div class="col">
         <div class="card shadow-sm text-center py-3 px-2 h-100" style="border-left:4px solid #1F3864;">
             <div class="small text-muted">Servicios en catálogo</div>
@@ -53,8 +53,8 @@
     </div>
     <div class="col">
         <div class="card shadow-sm text-center py-3 px-2 h-100" style="border-left:4px solid #2E5FA3;">
-            <div class="small text-muted">Servicios ofrecidos</div>
-            <div class="fs-3 fw-bold" style="color:#2E5FA3;">@Model.ServiciosOfrecidos</div>
+            <div class="small text-muted">Propuestas ofrecidas</div>
+            <div class="fs-3 fw-bold" style="color:#2E5FA3;">@Model.PropuestasOfrecidas</div>
         </div>
     </div>
     <div class="col">
@@ -75,6 +75,12 @@
             <div class="fs-3 fw-bold" style="color:#6f42c1;">@Model.PropuestasAceptadas</div>
         </div>
     </div>
+    <div class="col">
+        <div class="card shadow-sm text-center py-3 px-2 h-100" style="border-left:4px solid #dc3545;">
+            <div class="small text-muted">Propuestas rechazadas</div>
+            <div class="fs-3 fw-bold text-danger">@Model.PropuestasRechazadas</div>
+        </div>
+    </div>
 </div>
 
 <div class="card shadow-sm">
@@ -91,8 +97,9 @@
                     <th>Servicio</th>
                     <th>Área</th>
                     <th class="text-center">Tipo</th>
-                    <th class="text-center">Veces solicitado</th>
-                    <th class="text-center">% del total</th>
+                    <th class="text-center">Veces ofrecido</th>
+                    <th class="text-center">Veces aceptado</th>
+                    <th class="text-center">% de aceptación</th>
                     <th class="text-center">Estado demanda</th>
                 </tr>
             </thead>
@@ -100,7 +107,7 @@
                 @if (Model.Servicios.Count == 0)
                 {
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-4">
+                        <td colspan="7" class="text-center text-muted py-4">
                             No hay servicios en el catálogo.
                         </td>
                     </tr>
@@ -117,7 +124,7 @@
                             _ => ("text-bg-danger", "⚠️", "Sin demanda")
                         };
 
-                        <tr class="@(servicio.VecesSolicitado == 0 ? "table-light text-muted" : "")">
+                        <tr class="@(servicio.VecesOfrecido == 0 ? "table-light text-muted" : "")">
                             <td class="fw-semibold">@servicio.Nombre</td>
                             <td>
                                 <span class="badge reportes-area">@servicio.AreaCategoria</span>
@@ -137,28 +144,34 @@
                                 }
                             </td>
                             <td class="text-center fw-semibold">
-                                @(servicio.VecesSolicitado > 0 ? servicio.VecesSolicitado.ToString() : "—")
+                                @(servicio.VecesOfrecido > 0 ? servicio.VecesOfrecido.ToString() : "—")
+                            </td>
+                            <td class="text-center fw-semibold">
+                                @(servicio.VecesOfrecido > 0 ? servicio.VecesAceptado.ToString() : "—")
                             </td>
                             <td class="reportes-distribucion">
-                                @if (servicio.VecesSolicitado > 0)
+                                @if (servicio.VecesOfrecido > 0)
                                 {
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="progress flex-grow-1 reportes-progreso">
                                             <div class="progress-bar reportes-barra" role="progressbar"
-                                                 style="width:@servicio.Porcentaje.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%"
-                                                 aria-valuenow="@servicio.Porcentaje.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)"
+                                                 style="width:@servicio.PorcentajeAceptacion.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%"
+                                                 aria-valuenow="@servicio.PorcentajeAceptacion.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)"
                                                  aria-valuemin="0" aria-valuemax="100"></div>
                                         </div>
-                                        <small class="reportes-porcentaje">@servicio.Porcentaje%</small>
+                                        <small class="reportes-porcentaje">@servicio.PorcentajeAceptacion%</small>
                                     </div>
                                 }
                                 else
                                 {
-                                    <span class="text-muted small">Sin solicitudes</span>
+                                    <span class="text-muted small">Sin ofertas</span>
                                 }
                             </td>
                             <td class="text-center">
-                                <span class="badge @colorDemanda">@iconoDemanda @textoDemanda</span>
+                                <span class="badge @colorDemanda"
+                                      title="@(servicio.VecesOfrecido > 0 ? $"Representa el {servicio.Participacion}% de los servicios ofrecidos en el período" : "No se ofreció en el período")">
+                                    @iconoDemanda @textoDemanda
+                                </span>
                             </td>
                         </tr>
                     }
@@ -169,16 +182,45 @@
 </div>
 
 <div class="alert alert-light border mt-4 small text-muted">
-    <i class="bi bi-info-circle me-1"></i>
-    Un servicio cuenta como usado cuando una propuesta que lo incluye fue <strong>aceptada</strong> en el período
-    (por su fecha de aceptación); las propuestas en borrador, enviadas sin resolver o rechazadas no cuentan.
-    Si el servicio está registrado en el catálogo como <strong>solicitado</strong> por el cliente suma a los servicios
-    solicitados, y si está registrado como <strong>ofrecido</strong> por la firma suma a los ofrecidos.
-    El porcentaje es la parte de todos los usos del período que corresponde a ese servicio:
-    demanda <strong>alta</strong> desde @Model.UmbralDemandaAlta%,
-    <strong>media</strong> desde @Model.UmbralDemandaMedia%,
-    <strong>baja</strong> por debajo de eso y <strong>sin demanda</strong> si no se usó.
-    Los servicios sin demanda pueden ser candidatos para revisión estratégica del catálogo.
+    <div class="fw-semibold mb-1"><i class="bi bi-info-circle me-1"></i>Cómo se calcula</div>
+    <ul class="mb-0 ps-3">
+        <li>
+            <strong>Período:</strong> se toman las propuestas según su <strong>fecha de envío</strong>; las que siguen en borrador
+            no cuentan porque aún no se han ofrecido a nadie.
+        </li>
+        <li>
+            <strong>Propuestas ofrecidas:</strong> propuestas enviadas en el período, sin importar si ya fueron resueltas.
+            Se dividen en <strong>aceptadas</strong>, <strong>rechazadas</strong> y las que aún esperan respuesta.
+        </li>
+        <li>
+            <strong>Servicios solicitados:</strong> suma de los servicios distintos incluidos en cada una de esas propuestas
+            (una propuesta con tres servicios diferentes suma tres; si repite un mismo servicio, cuenta una vez).
+        </li>
+        <li>
+            <strong>Veces ofrecido:</strong> propuestas del período que incluyen el servicio, aceptadas o no.
+            <strong>Veces aceptado:</strong> de esas, cuántas fueron aceptadas.
+        </li>
+        <li>
+            <strong>% de aceptación:</strong> veces aceptado ÷ veces ofrecido
+            (por ejemplo, 8 aceptadas de 10 ofrecidas es 80%).
+        </li>
+        <li>
+            <strong>Estado demanda:</strong> según qué parte de todos los servicios ofrecidos en el período corresponde
+            a ese servicio: <strong>alta</strong> desde @Model.UmbralDemandaAlta%,
+            <strong>media</strong> desde @Model.UmbralDemandaMedia%,
+            <strong>baja</strong> por debajo de eso y <strong>sin demanda</strong> si no se ofreció.
+            No depende del % de aceptación.
+        </li>
+        <li>
+            <strong>Servicios en catálogo</strong> y <strong>servicios sin demanda</strong> cuentan solo los servicios
+            activos al momento de consultar; los inactivos se muestran en la tabla con su indicador.
+            Los servicios sin demanda pueden ser candidatos para revisión estratégica del catálogo.
+        </li>
+        <li>
+            La etiqueta <strong>Ofrecido</strong> / <strong>Solicitado</strong> es la clasificación del servicio en el
+            catálogo y no afecta los cálculos.
+        </li>
+    </ul>
 </div>
 
 @section Scripts {

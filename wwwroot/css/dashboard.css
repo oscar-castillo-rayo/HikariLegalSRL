@@ -38,3 +38,27 @@
 .dashboard-titulo {
     color: #1F3864;
 }
+
+.dashboard-toast {
+    max-width: calc(100% - 2rem);
+}
+
+@media (max-width: 575.98px) {
+
+    .dashboard-kpi {
+        padding: .6rem .25rem;
+    }
+
+    .dashboard-kpi .fs-1 {
+        font-size: 1.5rem !important;
+    }
+
+    .dashboard-kpi .fs-2 {
+        font-size: 1.4rem !important;
+    }
+
+    .dashboard-kpi .small {
+        font-size: .7rem;
+        line-height: 1.2;
+    }
+}

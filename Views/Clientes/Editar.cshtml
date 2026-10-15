@@ -13,7 +13,7 @@
     <a asp-action="Detalle" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left"></i>
     </a>
-    <h4 class="mb-0 fw-bold clientes-titulo">Editar cliente</h4>
+    <h1 class="h4 mb-0 fw-bold clientes-titulo">Editar cliente</h1>
 </div>
 
 <div class="card shadow-sm border-0 clientes-form-card">
@@ -48,13 +48,13 @@
                     <span asp-validation-for="Cliente.CedulaJuridica" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">
-                    <label asp-for="Cliente.Telefono" class="form-label fw-semibold"></label>
-                    <input asp-for="Cliente.Telefono" class="form-control" autocomplete="off" />
+                    <label asp-for="Cliente.Telefono" class="form-label fw-semibold"></label> <span class="text-muted fw-normal small">(opcional)</span>
+                    <input asp-for="Cliente.Telefono" type="tel" inputmode="tel" class="form-control" autocomplete="off" />
                     <span asp-validation-for="Cliente.Telefono" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">
-                    <label asp-for="Cliente.Correo" class="form-label fw-semibold"></label>
-                    <input asp-for="Cliente.Correo" type="email" class="form-control" autocomplete="off" />
+                    <label asp-for="Cliente.Correo" class="form-label fw-semibold"></label> <span class="text-muted fw-normal small">(opcional)</span>
+                    <input asp-for="Cliente.Correo" type="email" inputmode="email" spellcheck="false" class="form-control" autocomplete="off" />
                     <span asp-validation-for="Cliente.Correo" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">

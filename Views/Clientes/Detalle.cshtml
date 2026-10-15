@@ -38,7 +38,7 @@
     <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left"></i>
     </a>
-    <h4 class="mb-0 fw-bold clientes-titulo">@Model.NombreEmpresaPersona</h4>
+    <h1 class="h4 mb-0 fw-bold clientes-titulo">@Model.NombreEmpresaPersona</h1>
     <span class="badge @badge">@texto</span>
     <span class="badge @badgeModalidad">@textoModalidad</span>
 
@@ -115,7 +115,7 @@
                     <dd class="col-7">@(Model.Telefono ?? "—")</dd>
 
                     <dt class="col-5">Correo</dt>
-                    <dd class="col-7">@Model.Correo</dd>
+                    <dd class="col-7">@(string.IsNullOrWhiteSpace(Model.Correo) ? "—" : Model.Correo)</dd>
 
                     <dt class="col-5">Sector</dt>
                     <dd class="col-7">@(Model.SectorEconomico ?? "—")</dd>

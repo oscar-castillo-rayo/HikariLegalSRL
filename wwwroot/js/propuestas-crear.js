@@ -70,6 +70,15 @@
 
     let itemIndex = 0;
 
+    function escaparHtml(texto) {
+        return String(texto)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     function recalcularTotal() {
         const precios = Array.from(cuerpoItems.querySelectorAll('.inp-precio'))
             .map(i => parseFloat(i.value) || 0);
@@ -87,28 +96,28 @@
             })
             .join('');
 
-        const descripcion = datosIniciales?.descripcion ?? '';
-        const precio = datosIniciales?.precio ?? '';
+        const descripcion = escaparHtml(datosIniciales?.descripcion ?? '');
+        const precio = escaparHtml(datosIniciales?.precio ?? '');
 
         const fila = document.createElement('tr');
         fila.innerHTML = `
-            <td style="min-width:200px;">
-                <select name="Propuesta.Servicios[${idx}].ServicioId" class="form-select form-select-sm sel-servicio" required>
+            <td style="min-width:200px;" data-label="Servicio">
+                <select name="Propuesta.Servicios[${idx}].ServicioId" class="form-select form-select-sm sel-servicio" aria-label="Servicio" required>
                     <option value="">-- Seleccione --</option>
                     ${opciones}
                 </select>
             </td>
-            <td>
+            <td data-label="Descripción personalizada">
                 <input type="text" name="Propuesta.Servicios[${idx}].DescripcionServicio"
-                       class="form-control form-control-sm" placeholder="Opcional..." value="${descripcion}" />
+                       class="form-control form-control-sm" aria-label="Descripción personalizada" placeholder="Opcional..." value="${descripcion}" />
             </td>
-            <td style="min-width:140px;">
+            <td style="min-width:140px;" data-label="Precio">
                 <input type="number" name="Propuesta.Servicios[${idx}].Precio"
-                       class="form-control form-control-sm inp-precio"
+                       class="form-control form-control-sm inp-precio" aria-label="Precio" inputmode="decimal"
                        min="0" step="0.01" required placeholder="0" value="${precio}" />
             </td>
             <td class="text-center">
-                <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-servicio">
+                <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-servicio" title="Quitar servicio" aria-label="Quitar servicio">
                     <i class="bi bi-trash"></i>
                 </button>
             </td>`;

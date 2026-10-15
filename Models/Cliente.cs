@@ -13,7 +13,7 @@ namespace HikariLegalSRL.Models
         public string? NombreContacto { get; set; }
         public string? CedulaJuridica { get; set; }
         public string? Telefono { get; set; }
-        public string Correo { get; set; } = null!;
+        public string? Correo { get; set; }
 
         public int DireccionId { get; set; }
         public Direccion Direccion { get; set; } = null!;

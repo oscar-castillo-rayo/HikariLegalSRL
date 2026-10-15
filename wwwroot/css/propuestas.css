@@ -67,3 +67,61 @@
         font-size: 1.15rem;
     }
 }
+
+@media (max-width: 767.98px) {
+
+    .propuestas-servicios,
+    .propuestas-servicios tbody,
+    .propuestas-servicios tfoot,
+    .propuestas-servicios tr {
+        display: block;
+        width: 100%;
+    }
+
+    .propuestas-servicios thead {
+        display: none;
+    }
+
+    .propuestas-servicios tbody tr {
+        border-bottom: 1px solid #dee2e6;
+        padding: .6rem .75rem;
+    }
+
+    .propuestas-servicios tbody td {
+        border: 0;
+        display: block;
+        min-width: 0 !important;
+        padding: .25rem 0;
+    }
+
+    .propuestas-servicios tbody td[data-label]::before {
+        color: #6c757d;
+        content: attr(data-label);
+        display: block;
+        font-size: .75rem;
+        font-weight: 600;
+        margin-bottom: .2rem;
+        text-transform: uppercase;
+    }
+
+    .propuestas-servicios tbody td:last-child {
+        text-align: right !important;
+    }
+
+    .propuestas-servicios tfoot tr {
+        align-items: baseline;
+        display: flex;
+        gap: .5rem;
+        justify-content: flex-end;
+        padding: .6rem .75rem;
+    }
+
+    .propuestas-servicios tfoot td {
+        border: 0;
+        padding: 0;
+    }
+
+    .propuestas-servicios tfoot td:empty {
+        display: none;
+    }
+}

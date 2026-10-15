@@ -8,8 +8,8 @@ namespace HikariLegalSRL.Models.DTOs
         public string NombreEmpresaPersona { get; set; } = null!;
         public string NombreContacto { get; set; } = null!;
         public string? CedulaJuridica { get; set; }
-        public string Telefono { get; set; } = null!;
-        public string Correo { get; set; } = null!;
+        public string? Telefono { get; set; }
+        public string? Correo { get; set; }
         public string? Sector { get; set; }
         public byte? Calificacion { get; set; }
         public string? Observaciones { get; set; }

@@ -8,8 +8,10 @@ namespace HikariLegalSRL.Models.DTOs
         public string AreaCategoria { get; set; } = null!;
         public TipoServicio Tipo { get; set; }
         public bool Activo { get; set; }
-        public int VecesSolicitado { get; set; }
-        public decimal Porcentaje { get; set; }
+        public int VecesOfrecido { get; set; }
+        public int VecesAceptado { get; set; }
+        public decimal Participacion { get; set; }
+        public decimal PorcentajeAceptacion { get; set; }
         public EstadoDemanda Demanda { get; set; }
     }
 }

@@ -300,20 +300,42 @@ namespace HikariLegalSRL.Services.Implementations
 
             var usos = await _context.PropuestaServicios
                 .AsNoTracking()
-                .Where(ps => ps.Propuesta.Estado == EstadoPropuesta.Aceptada
-                    && ps.Propuesta.FechaResolucion != null
-                    && ps.Propuesta.FechaResolucion.Value.Date >= desdeFinal
-                    && ps.Propuesta.FechaResolucion.Value.Date <= hastaFinal)
-                .Select(ps => new { ps.ServicioId, ps.PropuestaId })
+                .Where(ps => ps.Propuesta.FechaEnvio != null
+                    && ps.Propuesta.FechaEnvio.Value.Date >= desdeFinal
+                    && ps.Propuesta.FechaEnvio.Value.Date <= hastaFinal)
+                .Select(ps => new { ps.ServicioId, ps.PropuestaId, ps.Propuesta.Estado })
                 .ToListAsync();
 
-            var propuestasAceptadas = usos.Select(u => u.PropuestaId).Distinct().Count();
+            var propuestasOfrecidas = await _context.Propuestas
+                .AsNoTracking()
+                .CountAsync(p => p.FechaEnvio != null
+                    && p.FechaEnvio.Value.Date >= desdeFinal
+                    && p.FechaEnvio.Value.Date <= hastaFinal);
 
-            var vecesPorServicio = usos
+            var propuestasAceptadas = await _context.Propuestas
+                .AsNoTracking()
+                .CountAsync(p => p.Estado == EstadoPropuesta.Aceptada
+                    && p.FechaEnvio != null
+                    && p.FechaEnvio.Value.Date >= desdeFinal
+                    && p.FechaEnvio.Value.Date <= hastaFinal);
+
+            var propuestasRechazadas = await _context.Propuestas
+                .AsNoTracking()
+                .CountAsync(p => p.Estado == EstadoPropuesta.Rechazada
+                    && p.FechaEnvio != null
+                    && p.FechaEnvio.Value.Date >= desdeFinal
+                    && p.FechaEnvio.Value.Date <= hastaFinal);
+
+            var ofrecidoPorServicio = usos
                 .GroupBy(u => u.ServicioId)
                 .ToDictionary(g => g.Key, g => g.Select(u => u.PropuestaId).Distinct().Count());
 
-            var totalUsos = vecesPorServicio.Values.Sum();
+            var aceptadoPorServicio = usos
+                .Where(u => u.Estado == EstadoPropuesta.Aceptada)
+                .GroupBy(u => u.ServicioId)
+                .ToDictionary(g => g.Key, g => g.Select(u => u.PropuestaId).Distinct().Count());
+
+            var totalOfrecido = ofrecidoPorServicio.Values.Sum();
 
             var catalogo = await _context.CatalogoServicios
                 .AsNoTracking()
@@ -323,8 +345,10 @@ namespace HikariLegalSRL.Services.Implementations
             var servicios = catalogo
                 .Select(s =>
                 {
-                    var veces = vecesPorServicio.GetValueOrDefault(s.ServicioId);
-                    var porcentaje = totalUsos == 0 ? 0 : Math.Round((decimal)veces / totalUsos * 100, 1);
+                    var ofrecido = ofrecidoPorServicio.GetValueOrDefault(s.ServicioId);
+                    var aceptado = aceptadoPorServicio.GetValueOrDefault(s.ServicioId);
+                    var participacion = totalOfrecido == 0 ? 0 : Math.Round((decimal)ofrecido / totalOfrecido * 100, 1);
+                    var aceptacion = ofrecido == 0 ? 0 : Math.Round((decimal)aceptado / ofrecido * 100, 1);
 
                     return new DemandaServicioDTO
                     {
@@ -332,15 +356,17 @@ namespace HikariLegalSRL.Services.Implementations
                         AreaCategoria = s.AreaCategoria,
                         Tipo = s.TipoServicio,
                         Activo = s.Estado == EstadoServicio.Activo,
-                        VecesSolicitado = veces,
-                        Porcentaje = porcentaje,
-                        Demanda = veces == 0 ? EstadoDemanda.SinDemanda
-                            : porcentaje >= UmbralDemandaAlta ? EstadoDemanda.Alta
-                            : porcentaje >= UmbralDemandaMedia ? EstadoDemanda.Media
+                        VecesOfrecido = ofrecido,
+                        VecesAceptado = aceptado,
+                        Participacion = participacion,
+                        PorcentajeAceptacion = aceptacion,
+                        Demanda = ofrecido == 0 ? EstadoDemanda.SinDemanda
+                            : participacion >= UmbralDemandaAlta ? EstadoDemanda.Alta
+                            : participacion >= UmbralDemandaMedia ? EstadoDemanda.Media
                             : EstadoDemanda.Baja
                     };
                 })
-                .OrderByDescending(s => s.VecesSolicitado)
+                .OrderByDescending(s => s.VecesOfrecido)
                 .ThenBy(s => s.Nombre)
                 .ToList();
 
@@ -349,11 +375,12 @@ namespace HikariLegalSRL.Services.Implementations
                 Periodo = periodo,
                 Desde = desdeFinal,
                 Hasta = hastaFinal,
-                ServiciosEnCatalogo = servicios.Count,
-                ServiciosOfrecidos = servicios.Where(s => s.Tipo == TipoServicio.Ofrecido).Sum(s => s.VecesSolicitado),
-                ServiciosSolicitados = servicios.Where(s => s.Tipo == TipoServicio.Solicitado).Sum(s => s.VecesSolicitado),
-                ServiciosSinDemanda = servicios.Count(s => s.VecesSolicitado == 0),
+                ServiciosEnCatalogo = servicios.Count(s => s.Activo),
+                PropuestasOfrecidas = propuestasOfrecidas,
+                ServiciosSolicitados = totalOfrecido,
+                ServiciosSinDemanda = servicios.Count(s => s.Activo && s.VecesOfrecido == 0),
                 PropuestasAceptadas = propuestasAceptadas,
+                PropuestasRechazadas = propuestasRechazadas,
                 UmbralDemandaAlta = UmbralDemandaAlta,
                 UmbralDemandaMedia = UmbralDemandaMedia,
                 Servicios = servicios

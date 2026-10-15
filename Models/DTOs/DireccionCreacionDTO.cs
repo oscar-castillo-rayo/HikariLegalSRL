@@ -10,6 +10,7 @@ namespace HikariLegalSRL.Models.DTOs
         
         public int? DistritoId { get; set; }
         
+        [Display(Name = "Señas exactas")]
         public string? SenasExactas { get; set; }
     }
 }

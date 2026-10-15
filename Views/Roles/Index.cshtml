@@ -13,7 +13,7 @@
         <a asp-controller="Usuarios" asp-action="Index" class="btn btn-outline-secondary btn-sm me-3">
             <i class="bi bi-arrow-left"></i>
         </a>
-        <h4 class="mb-0 fw-bold roles-titulo">Roles y Permisos</h4>
+        <h1 class="h4 mb-0 fw-bold roles-titulo">Roles y Permisos</h1>
     </div>
     <a asp-controller="Roles" asp-action="Crear" class="btn text-white roles-btn-nuevo">
         <i class="bi bi-plus-lg me-1"></i>Nuevo rol
@@ -126,9 +126,17 @@
                             </span>
                         </div>
 
+                        <div class="rp-filter-row" data-rp-filtros>
+                            <button type="button" class="rp-filter-btn active" data-filtro="todos">Todos</button>
+                            @foreach (var modulo in rol.Modulos)
+                            {
+                                <button type="button" class="rp-filter-btn" data-filtro="@modulo.Nombre">@modulo.Nombre</button>
+                            }
+                        </div>
+
                         @foreach (var modulo in rol.Modulos)
                         {
-                            <div class="rp-modulo-block">
+                            <div class="rp-modulo-block" data-modulo="@modulo.Nombre">
                                 <div class="rp-modulo-header">
                                     <span class="rp-modulo-name">@modulo.Nombre</span>
                                     <span class="rp-modulo-count">
@@ -181,3 +189,21 @@
         }
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll("[data-rp-filtros]").forEach(function (fila) {
+            fila.addEventListener("click", function (e) {
+                var boton = e.target.closest("[data-filtro]");
+                if (!boton) return;
+                var filtro = boton.dataset.filtro;
+                fila.querySelectorAll("[data-filtro]").forEach(function (b) {
+                    b.classList.toggle("active", b === boton);
+                });
+                fila.closest(".rp-card").querySelectorAll("[data-modulo]").forEach(function (bloque) {
+                    bloque.hidden = filtro !== "todos" && bloque.dataset.modulo !== filtro;
+                });
+            });
+        });
+    </script>
+}

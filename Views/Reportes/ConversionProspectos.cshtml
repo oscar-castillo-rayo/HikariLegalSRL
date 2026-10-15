@@ -12,9 +12,9 @@
     <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left"></i>
     </a>
-    <h2 class="fw-bold mb-0 reportes-titulo">
+    <h1 class="h2 fw-bold mb-0 reportes-titulo">
         🔄 Tasa de Conversión de Prospectos
-    </h2>
+    </h1>
 </div>
 
 <form method="get" class="card p-3 mb-4 shadow-sm">
@@ -27,11 +27,11 @@
                 <option value="cuatrimestral" selected="@(Model.Periodo == "cuatrimestral")">Cuatrimestral</option>
             </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
             <label class="form-label small fw-semibold">Desde</label>
             <input type="date" name="desde" id="desde" class="form-control" value="@Model.Desde.ToString("yyyy-MM-dd")" />
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
             <label class="form-label small fw-semibold">Hasta</label>
             <input type="date" name="hasta" id="hasta" class="form-control" value="@Model.Hasta.ToString("yyyy-MM-dd")" />
         </div>
@@ -44,25 +44,25 @@
 </form>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-3">
+    <div class="col-6 col-md-3">
         <div class="card shadow-sm text-center py-3 px-2" style="border-left:4px solid #1F3864;">
             <div class="small text-muted">Total prospectos</div>
             <div class="fs-3 fw-bold reportes-titulo">@Model.Total</div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-md-3">
         <div class="card shadow-sm text-center py-3 px-2" style="border-left:4px solid #1D6A3A;">
             <div class="small text-muted">Convertidos a cliente</div>
             <div class="fs-3 fw-bold text-success">@Model.Convertidos</div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-md-3">
         <div class="card shadow-sm text-center py-3 px-2" style="border-left:4px solid #dc3545;">
             <div class="small text-muted">Descartados</div>
             <div class="fs-3 fw-bold text-danger">@Model.Descartados</div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-md-3">
         <div class="card shadow-sm text-center py-3 px-2" style="border-left:4px solid #f5a623;">
             <div class="small text-muted">Activos en seguimiento</div>
             <div class="fs-3 fw-bold" style="color:#f5a623;">@Model.Activos</div>

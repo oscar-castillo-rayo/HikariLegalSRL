@@ -12,9 +12,9 @@
     <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left"></i>
     </a>
-    <h2 class="fw-bold mb-0 reportes-titulo">
+    <h1 class="h2 fw-bold mb-0 reportes-titulo">
         📈 Tasa de Conversión de Propuestas
-    </h2>
+    </h1>
 </div>
 
 <form method="get" class="card p-3 mb-4 shadow-sm">
@@ -27,11 +27,11 @@
                 <option value="cuatrimestral" selected="@(Model.Periodo == "cuatrimestral")">Cuatrimestral</option>
             </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
             <label class="form-label small fw-semibold">Desde</label>
             <input type="date" name="desde" id="desde" class="form-control" value="@Model.Desde.ToString("yyyy-MM-dd")" />
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
             <label class="form-label small fw-semibold">Hasta</label>
             <input type="date" name="hasta" id="hasta" class="form-control" value="@Model.Hasta.ToString("yyyy-MM-dd")" />
         </div>
@@ -44,7 +44,7 @@
 </form>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-3">
+    <div class="col-6 col-md-3">
         <div class="card text-white h-100 reportes-metrica-total">
             <div class="card-body text-center">
                 <div class="small opacity-75">Total propuestas</div>
@@ -52,7 +52,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-md-3">
         <div class="card text-white h-100 bg-primary">
             <div class="card-body text-center">
                 <div class="small opacity-75">Enviadas</div>
@@ -60,7 +60,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-md-3">
         <div class="card text-white h-100 bg-success">
             <div class="card-body text-center">
                 <div class="small opacity-75">Aceptadas</div>
@@ -68,7 +68,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-md-3">
         <div class="card text-white h-100 bg-danger">
             <div class="card-body text-center">
                 <div class="small opacity-75">Rechazadas</div>

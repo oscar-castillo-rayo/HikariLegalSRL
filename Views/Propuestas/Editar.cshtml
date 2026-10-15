@@ -20,7 +20,7 @@
     <a asp-action="Detalle" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left"></i>
     </a>
-    <h4 class="mb-0 fw-bold propuestas-titulo">Editar propuesta</h4>
+    <h1 class="h4 mb-0 fw-bold propuestas-titulo">Editar propuesta</h1>
 </div>
 
 <form asp-action="Editar" method="post" novalidate id="formPropuesta">
@@ -102,7 +102,7 @@
                 </div>
                 <div class="card-body p-2">
                     <div class="table-responsive">
-                        <table class="table table-sm mb-0" id="tablaServicios">
+                        <table class="table table-sm mb-0 propuestas-servicios" id="tablaServicios">
                             <thead class="table-light">
                                 <tr>
                                     <th>Servicio</th>

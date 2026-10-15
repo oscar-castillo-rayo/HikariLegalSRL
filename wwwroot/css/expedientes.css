@@ -36,6 +36,7 @@
 
 .expedientes-btn-guardar {
     background: #1F3864;
+    color: #fff;
 }
 
     .expedientes-btn-guardar:hover {
@@ -129,6 +130,13 @@
 
 .expedientes-titulo {
     color: #1F3864;
+}
+
+@media (max-width: 991.98px) {
+
+    .expedientes-kanban-col {
+        min-height: 0;
+    }
 }
 
 @media (max-width: 575.98px) {
