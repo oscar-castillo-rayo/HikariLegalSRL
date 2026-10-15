@@ -738,6 +738,61 @@ namespace HikariLegalSRL.Migrations
                     b.ToTable("Provincias");
                 });
 
+            modelBuilder.Entity("HikariLegalSRL.Models.Tarea", b =>
+                {
+                    b.Property<int>("TareaId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TareaId"));
+
+                    b.Property<string>("ColaboradorResponsableId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("ExpedienteId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaLimite")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("HorasEstimadas")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<string>("Prioridad")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.HasKey("TareaId");
+
+                    b.HasIndex("ColaboradorResponsableId");
+
+                    b.HasIndex("ExpedienteId");
+
+                    b.ToTable("Tareas", t =>
+                        {
+                            t.HasCheckConstraint("CK_Tarea_Estado", "[Estado] IN ('pendiente', 'en_proceso', 'lista_revision', 'aprobada', 'devuelta')");
+
+                            t.HasCheckConstraint("CK_Tarea_HorasEstimadas", "[HorasEstimadas] >= 0");
+
+                            t.HasCheckConstraint("CK_Tarea_Prioridad", "[Prioridad] IN ('baja', 'media', 'alta')");
+                        });
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.Property<int>("Id")
@@ -1049,6 +1104,25 @@ namespace HikariLegalSRL.Migrations
                     b.Navigation("Pais");
                 });
 
+            modelBuilder.Entity("HikariLegalSRL.Models.Tarea", b =>
+                {
+                    b.HasOne("HikariLegalSRL.Models.ApplicationUser", "ColaboradorResponsable")
+                        .WithMany()
+                        .HasForeignKey("ColaboradorResponsableId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("HikariLegalSRL.Models.Expediente", "Expediente")
+                        .WithMany("Tareas")
+                        .HasForeignKey("ExpedienteId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("ColaboradorResponsable");
+
+                    b.Navigation("Expediente");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("HikariLegalSRL.Models.ApplicationRole", null)
@@ -1103,6 +1177,11 @@ namespace HikariLegalSRL.Migrations
             modelBuilder.Entity("HikariLegalSRL.Models.Canton", b =>
                 {
                     b.Navigation("Distritos");
+                });
+
+            modelBuilder.Entity("HikariLegalSRL.Models.Expediente", b =>
+                {
+                    b.Navigation("Tareas");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Pais", b =>

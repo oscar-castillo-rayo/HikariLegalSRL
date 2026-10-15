@@ -1,0 +1,45 @@
+.expedientes-btn-guardar {
+    background: #1F3864;
+}
+
+    .expedientes-btn-guardar:hover {
+        background: #16294a;
+        color: #fff;
+    }
+
+.expedientes-card-header {
+    background: #EAF0FB;
+    color: #1F3864;
+}
+
+.expedientes-kanban-card {
+    font-size: .8125rem;
+}
+
+.expedientes-kanban-col {
+    min-height: 220px;
+}
+
+.expedientes-tabla thead th {
+    background: #1F3864;
+    border-bottom: none;
+    color: #fff;
+    font-size: .8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.expedientes-titulo {
+    color: #1F3864;
+}
+
+@media (max-width: 575.98px) {
+
+    .expedientes-tabla {
+        font-size: .875rem;
+    }
+
+    .expedientes-titulo {
+        font-size: 1.15rem;
+    }
+}
