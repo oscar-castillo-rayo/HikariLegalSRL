@@ -20,6 +20,11 @@ namespace HikariLegalSRL.Controllers.Account
         private readonly IBitacoraAuditoriaService _bitacoraAuditoriaService;
         private readonly ILogger<AccountController> _logger;
 
+        private const string MotivoContrasena = "Contraseña incorrecta";
+        private const string MotivoBloqueo = "Cuenta bloqueada temporalmente por intentos fallidos";
+        private const string MensajeCredenciales = "Correo o contraseña incorrectos.";
+        private const string MensajeBloqueo = "La cuenta está bloqueada temporalmente. Intenta nuevamente más tarde.";
+
         public AccountController(
             SignInManager<ApplicationUser> signInManager,
             UserManager<ApplicationUser> userManager,
@@ -84,22 +89,35 @@ namespace HikariLegalSRL.Controllers.Account
 
             if (result.IsNotAllowed)
             {
-                await RegistrarAccesoDenegadoAsync(model.Correo, "Intento de inicio de sesión con la cuenta inactiva");
-                ModelState.AddModelError(string.Empty, "Esta cuenta está inactiva. Contacte al administrador.");
+                var usuario = await _userManager.FindByEmailAsync(model.Correo);
 
-                return View(model);
+                if (usuario is not null && !await _userManager.IsLockedOutAsync(usuario)
+                    && !await _userManager.CheckPasswordAsync(usuario, model.Contrasena))
+                {
+                    await _userManager.AccessFailedAsync(usuario);
+
+                    return await _userManager.IsLockedOutAsync(usuario)
+                        ? await RechazarLoginAsync(model, MotivoBloqueo, MensajeBloqueo)
+                        : await RechazarLoginAsync(model, MotivoContrasena, MensajeCredenciales);
+                }
+
+                return usuario is not null && await _userManager.IsLockedOutAsync(usuario)
+                    ? await RechazarLoginAsync(model, MotivoBloqueo, MensajeBloqueo)
+                    : await RechazarLoginAsync(model, "Intento de inicio de sesión con la cuenta inactiva", "Esta cuenta está inactiva. Contacte al administrador.");
             }
 
             if (result.IsLockedOut)
             {
-                await RegistrarAccesoDenegadoAsync(model.Correo, "Cuenta bloqueada temporalmente por intentos fallidos");
-                ModelState.AddModelError(string.Empty, "La cuenta está bloqueada temporalmente. Intenta nuevamente más tarde.");
-
-                return View(model);
+                return await RechazarLoginAsync(model, MotivoBloqueo, MensajeBloqueo);
             }
 
-            await RegistrarAccesoDenegadoAsync(model.Correo, "Contraseña incorrecta");
-            ModelState.AddModelError(string.Empty, "Correo o contraseña incorrectos.");
+            return await RechazarLoginAsync(model, MotivoContrasena, MensajeCredenciales);
+        }
+
+        private async Task<IActionResult> RechazarLoginAsync(LoginViewModel model, string motivoAuditoria, string mensaje)
+        {
+            await RegistrarAccesoDenegadoAsync(model.Correo, motivoAuditoria);
+            ModelState.AddModelError(string.Empty, mensaje);
 
             return View(model);
         }
