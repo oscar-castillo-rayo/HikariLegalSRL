@@ -28,7 +28,9 @@ namespace HikariLegalSRL.Data
         public DbSet<Expediente> Expedientes { get; set; } = null!;
         public DbSet<Tarea> Tareas { get; set; } = null!;
         public DbSet<Entregable> Entregables { get; set; } = null!;
+        public DbSet<EntregableArchivo> EntregableArchivos { get; set; } = null!;
         public DbSet<RegistroHoras> RegistrosHoras { get; set; } = null!;
+        public DbSet<RevisionEntregable> RevisionesEntregable { get; set; } = null!;
         public DbSet<BitacoraAuditoria> BitacoraAuditoria { get; set; } = null!;
 
 
@@ -524,9 +526,6 @@ namespace HikariLegalSRL.Data
                 .HasKey(en => en.EntregableId);
 
             modelBuilder.Entity<Entregable>()
-                .Property(en => en.ArchivoRuta).HasMaxLength(500);
-
-            modelBuilder.Entity<Entregable>()
                 .Property(en => en.HorasReales).HasColumnType("decimal(6,2)");
 
             modelBuilder.Entity<Entregable>()
@@ -558,6 +557,28 @@ namespace HikariLegalSRL.Data
                     "CK_Entregable_TipoEntregable",
                     "[TipoEntregable] IN ('preliminar', 'final')"
                     ));
+
+            // EntregableArchivo
+            modelBuilder.Entity<EntregableArchivo>()
+                .HasKey(a => a.EntregableArchivoId);
+
+            modelBuilder.Entity<EntregableArchivo>()
+                .Property(a => a.ArchivoRuta).HasMaxLength(500);
+
+            modelBuilder.Entity<EntregableArchivo>()
+                .Property(a => a.NombreOriginal).HasMaxLength(260);
+
+            modelBuilder.Entity<EntregableArchivo>()
+                .HasOne(a => a.Entregable)
+                .WithMany(en => en.Archivos)
+                .HasForeignKey(a => a.EntregableId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<EntregableArchivo>()
+                .HasOne(a => a.CargadoPor)
+                .WithMany()
+                .HasForeignKey(a => a.CargadoPorId)
+                .OnDelete(DeleteBehavior.NoAction);
 
             // RegistroHoras
             modelBuilder.Entity<RegistroHoras>()
@@ -591,6 +612,60 @@ namespace HikariLegalSRL.Data
                 .ToTable(t => t.HasCheckConstraint(
                     "CK_RegistroHoras_Rol",
                     "[Rol] IN ('colaborador', 'revisor')"
+                    ));
+
+            // RevisionEntregable
+            modelBuilder.Entity<RevisionEntregable>()
+                .HasKey(r => r.RevisionId);
+
+            // El trigger TR_Entregables_TipoFinal (AFTER INSERT) impide que SQL Server use el
+            // OUTPUT clause que EF Core genera por defecto para leer el identity insertado.
+            modelBuilder.Entity<RevisionEntregable>()
+                .ToTable(tb => tb.UseSqlOutputClause(false));
+
+            modelBuilder.Entity<RevisionEntregable>()
+                .Property(r => r.HorasRevision).HasColumnType("decimal(6,2)");
+
+            modelBuilder.Entity<RevisionEntregable>()
+                .Property(r => r.Observaciones).HasMaxLength(1000);
+
+            modelBuilder.Entity<RevisionEntregable>()
+                .Property(r => r.ArchivoAdjunto).HasMaxLength(500);
+
+            modelBuilder.Entity<RevisionEntregable>()
+                .Property(r => r.Resultado)
+                .HasConversion(e => e.ToString().ToLower(),
+                s => (ResultadoRevision)Enum.Parse(typeof(ResultadoRevision), s, ignoreCase: true))
+                .HasMaxLength(10);
+
+            modelBuilder.Entity<RevisionEntregable>()
+                .HasOne(r => r.Entregable)
+                .WithMany(en => en.Revisiones)
+                .HasForeignKey(r => r.EntregableId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<RevisionEntregable>()
+                .HasOne(r => r.Revisor)
+                .WithMany()
+                .HasForeignKey(r => r.RevisorId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<RevisionEntregable>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_RevisionEntregable_HorasRevision",
+                    "[HorasRevision] >= 0"
+                    ));
+
+            modelBuilder.Entity<RevisionEntregable>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_RevisionEntregable_Resultado",
+                    "[Resultado] IN ('aprobada', 'devuelta')"
+                    ));
+
+            modelBuilder.Entity<RevisionEntregable>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_Revision_ObservacionesSiDevuelta",
+                    "[Resultado] <> 'devuelta' OR ([Observaciones] IS NOT NULL AND LEN([Observaciones]) > 0)"
                     ));
 
             // Bitacora Auditoría

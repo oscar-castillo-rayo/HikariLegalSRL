@@ -457,10 +457,6 @@ namespace HikariLegalSRL.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EntregableId"));
 
-                    b.Property<string>("ArchivoRuta")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
                     b.Property<string>("CargadoPorId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -494,6 +490,43 @@ namespace HikariLegalSRL.Migrations
 
                             t.HasCheckConstraint("CK_Entregable_TipoEntregable", "[TipoEntregable] IN ('preliminar', 'final')");
                         });
+                });
+
+            modelBuilder.Entity("HikariLegalSRL.Models.EntregableArchivo", b =>
+                {
+                    b.Property<int>("EntregableArchivoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EntregableArchivoId"));
+
+                    b.Property<string>("ArchivoRuta")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("CargadoPorId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("EntregableId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FechaCarga")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("NombreOriginal")
+                        .IsRequired()
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)");
+
+                    b.HasKey("EntregableArchivoId");
+
+                    b.HasIndex("CargadoPorId");
+
+                    b.HasIndex("EntregableId");
+
+                    b.ToTable("EntregableArchivos");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Expediente", b =>
@@ -828,6 +861,58 @@ namespace HikariLegalSRL.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HikariLegalSRL.Models.RevisionEntregable", b =>
+                {
+                    b.Property<int>("RevisionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RevisionId"));
+
+                    b.Property<string>("ArchivoAdjunto")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("EntregableId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FechaRevision")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("HorasRevision")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<string>("Observaciones")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Resultado")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("RevisorId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("RevisionId");
+
+                    b.HasIndex("EntregableId");
+
+                    b.HasIndex("RevisorId");
+
+                    b.ToTable("RevisionesEntregable", t =>
+                        {
+                            t.HasCheckConstraint("CK_RevisionEntregable_HorasRevision", "[HorasRevision] >= 0");
+
+                            t.HasCheckConstraint("CK_RevisionEntregable_Resultado", "[Resultado] IN ('aprobada', 'devuelta')");
+
+                            t.HasCheckConstraint("CK_Revision_ObservacionesSiDevuelta", "[Resultado] <> 'devuelta' OR ([Observaciones] IS NOT NULL AND LEN([Observaciones]) > 0)");
+                        });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
+                });
+
             modelBuilder.Entity("HikariLegalSRL.Models.Tarea", b =>
                 {
                     b.Property<int>("TareaId")
@@ -1112,6 +1197,25 @@ namespace HikariLegalSRL.Migrations
                     b.Navigation("Tarea");
                 });
 
+            modelBuilder.Entity("HikariLegalSRL.Models.EntregableArchivo", b =>
+                {
+                    b.HasOne("HikariLegalSRL.Models.ApplicationUser", "CargadoPor")
+                        .WithMany()
+                        .HasForeignKey("CargadoPorId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("HikariLegalSRL.Models.Entregable", "Entregable")
+                        .WithMany("Archivos")
+                        .HasForeignKey("EntregableId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("CargadoPor");
+
+                    b.Navigation("Entregable");
+                });
+
             modelBuilder.Entity("HikariLegalSRL.Models.Expediente", b =>
                 {
                     b.HasOne("HikariLegalSRL.Models.Cliente", "Cliente")
@@ -1232,6 +1336,25 @@ namespace HikariLegalSRL.Migrations
                     b.Navigation("Usuario");
                 });
 
+            modelBuilder.Entity("HikariLegalSRL.Models.RevisionEntregable", b =>
+                {
+                    b.HasOne("HikariLegalSRL.Models.Entregable", "Entregable")
+                        .WithMany("Revisiones")
+                        .HasForeignKey("EntregableId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("HikariLegalSRL.Models.ApplicationUser", "Revisor")
+                        .WithMany()
+                        .HasForeignKey("RevisorId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Entregable");
+
+                    b.Navigation("Revisor");
+                });
+
             modelBuilder.Entity("HikariLegalSRL.Models.Tarea", b =>
                 {
                     b.HasOne("HikariLegalSRL.Models.ApplicationUser", "ColaboradorResponsable")
@@ -1305,6 +1428,13 @@ namespace HikariLegalSRL.Migrations
             modelBuilder.Entity("HikariLegalSRL.Models.Canton", b =>
                 {
                     b.Navigation("Distritos");
+                });
+
+            modelBuilder.Entity("HikariLegalSRL.Models.Entregable", b =>
+                {
+                    b.Navigation("Archivos");
+
+                    b.Navigation("Revisiones");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Expediente", b =>
