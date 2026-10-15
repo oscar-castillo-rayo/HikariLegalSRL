@@ -74,11 +74,17 @@
                             <a asp-action="Detalle" asp-route-id="@f.Id" class="btn btn-sm btn-outline-primary" title="Ver factura">
                                 <i class="bi bi-eye"></i>
                             </a>
-                            @if (puedeRegistrarAbono && f.Estado != EstadoFactura.Pagada && f.Estado != EstadoFactura.Anulada)
+                            @if (puedeRegistrarAbono)
                             {
-                                <a asp-action="RegistrarAbono" asp-route-id="@f.Id" class="btn btn-sm btn-outline-success" title="Registrar abono">
-                                    <i class="bi bi-cash-coin"></i>
+                                <a asp-action="EstadoCuenta" asp-route-clienteId="@f.ClienteId" class="btn btn-sm btn-outline-secondary" title="Estado de cuenta">
+                                    <i class="bi bi-person-lines-fill"></i>
                                 </a>
+                                if (f.Estado != EstadoFactura.Pagada && f.Estado != EstadoFactura.Anulada)
+                                {
+                                    <a asp-action="RegistrarAbono" asp-route-id="@f.Id" class="btn btn-sm btn-outline-success" title="Registrar abono">
+                                        <i class="bi bi-cash-coin"></i>
+                                    </a>
+                                }
                             }
                         </td>
                     </tr>

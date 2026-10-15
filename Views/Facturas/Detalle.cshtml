@@ -19,7 +19,8 @@
         ModalidadPago.ProBono => "Pro bono",
         _ => Model.ModalidadPago.ToString()
     };
-    var puedeRegistrarAbono = await Authorization.TienePermiso(User, Permisos.Facturacion.Abono)
+    var puedeVerEstadoCuenta = await Authorization.TienePermiso(User, Permisos.Facturacion.Abono);
+    var puedeRegistrarAbono = puedeVerEstadoCuenta
         && Model.Estado != EstadoFactura.Pagada && Model.Estado != EstadoFactura.Anulada;
     var porcentajePagado = Model.MontoTotal > 0 ? (int)Math.Round(Model.MontoPagado / Model.MontoTotal * 100) : 0;
     var colorBarra = porcentajePagado >= 100 ? "success" : porcentajePagado > 0 ? "warning" : "danger";
@@ -35,12 +36,20 @@
     </a>
     <h4 class="mb-0 fw-bold facturas-titulo">Factura #@Model.Id</h4>
     <span class="badge bg-@bc fs-6">@bt</span>
-    @if (puedeRegistrarAbono)
-    {
-        <a asp-action="RegistrarAbono" asp-route-id="@Model.Id" class="btn btn-success btn-sm ms-auto">
-            <i class="bi bi-cash-coin me-1"></i>Registrar abono
-        </a>
-    }
+    <div class="ms-auto d-flex gap-2">
+        @if (puedeVerEstadoCuenta)
+        {
+            <a asp-action="EstadoCuenta" asp-route-clienteId="@Model.ClienteId" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-person-lines-fill me-1"></i>Estado de cuenta
+            </a>
+        }
+        @if (puedeRegistrarAbono)
+        {
+            <a asp-action="RegistrarAbono" asp-route-id="@Model.Id" class="btn btn-success btn-sm">
+                <i class="bi bi-cash-coin me-1"></i>Registrar abono
+            </a>
+        }
+    </div>
 </div>
 
 <div class="row g-3">
