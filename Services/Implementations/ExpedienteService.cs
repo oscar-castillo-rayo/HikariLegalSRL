@@ -113,6 +113,13 @@ namespace HikariLegalSRL.Services.Implementations
                 && await _permisoEvaluador.TienePermisoAsync(usuarioActual, Permisos.Expedientes.GestionarTareasPropias);
         }
 
+        private async Task<bool> PuedeExigirEntregableAsync(string usuarioActualId)
+        {
+            var usuarioActual = await _context.Users.FindAsync(usuarioActualId);
+            return usuarioActual is not null
+                && await _permisoEvaluador.TienePermisoAsync(usuarioActual, Permisos.Expedientes.ExigirEntregable);
+        }
+
         public async Task<List<ExpedienteListaDTO>> Listar(string usuarioActualId)
         {
             var puedeVerTodos = await PuedeGestionarTareaAjenaAsync(usuarioActualId);
@@ -210,6 +217,7 @@ namespace HikariLegalSRL.Services.Implementations
                             HorasEstimadas = t.HorasEstimadas,
                             Prioridad = t.Prioridad,
                             Estado = t.Estado,
+                            RequiereEntregable = t.RequiereEntregable,
                             FechaCreacion = t.FechaCreacion,
                             ArchivosRondaActual = t.Entregables
                                 .Where(en => en.RondaRevision == RondaActual(t))
@@ -279,7 +287,7 @@ namespace HikariLegalSRL.Services.Implementations
 
         public async Task<List<UsuarioOpcionDTO>> ObtenerColaboradoresActivos()
         {
-            var colaboradores = await _permisoEvaluador.UsuariosActivosConPermisoAsync(Permisos.Expedientes.Cargar);
+            var colaboradores = await _permisoEvaluador.UsuariosActivosConPermisoAsync(Permisos.Expedientes.RecibirTareas);
             return colaboradores
                 .OrderBy(u => u.NombreCompleto)
                 .Select(u => new UsuarioOpcionDTO { Id = u.Id, Nombre = u.NombreCompleto })
@@ -295,13 +303,17 @@ namespace HikariLegalSRL.Services.Implementations
             if (expediente.Estado != EstadoExpediente.Abierto)
                 throw new ReglaNegocioException("Solo se pueden agregar tareas a expedientes abiertos.");
 
-            var colaborador = await _permisoEvaluador.UsuariosActivosConPermisoAsync(Permisos.Expedientes.Cargar);
+            var colaborador = await _permisoEvaluador.UsuariosActivosConPermisoAsync(Permisos.Expedientes.RecibirTareas);
             if (!colaborador.Any(u => u.Id == dto.ColaboradorResponsableId))
                 throw new ReglaNegocioException("El colaborador seleccionado no existe o no está disponible para recibir tareas.");
 
             var horasEstimadas = CombinarHorasMinutos(dto.HorasEstimadasHoras, dto.HorasEstimadasMinutos);
             if (horasEstimadas <= 0)
                 throw new ReglaNegocioException("Las horas estimadas deben ser mayores a 0.");
+
+            var requiereEntregable = dto.RequiereEntregable ?? false;
+            if (requiereEntregable && !await PuedeExigirEntregableAsync(usuarioActualId))
+                throw new ReglaNegocioException("No tiene permiso para exigir un entregable en la tarea.");
 
             var tarea = new Tarea
             {
@@ -312,6 +324,7 @@ namespace HikariLegalSRL.Services.Implementations
                 HorasEstimadas = horasEstimadas,
                 Prioridad = dto.Prioridad!.Value,
                 Estado = EstadoTarea.Pendiente,
+                RequiereEntregable = requiereEntregable,
                 FechaCreacion = DateTime.UtcNow
             };
 
@@ -331,7 +344,8 @@ namespace HikariLegalSRL.Services.Implementations
                 tipoAccion: "crear",
                 moduloAfectado: "Tareas",
                 registroAfectadoId: tarea.TareaId.ToString(),
-                valorNuevo: $"Tarea '{tarea.Descripcion}' asignada, expediente #{expedienteId}");
+                valorNuevo: $"Tarea '{tarea.Descripcion}' asignada, expediente #{expedienteId}"
+                    + (tarea.RequiereEntregable ? " (entregable obligatorio)" : string.Empty));
 
             await _context.SaveChangesAsync();
         }
@@ -351,7 +365,7 @@ namespace HikariLegalSRL.Services.Implementations
             if (tarea.Estado == EstadoTarea.Aprobada)
                 throw new ReglaNegocioException("No se puede editar una tarea ya aprobada.");
 
-            var colaborador = await _permisoEvaluador.UsuariosActivosConPermisoAsync(Permisos.Expedientes.Cargar);
+            var colaborador = await _permisoEvaluador.UsuariosActivosConPermisoAsync(Permisos.Expedientes.RecibirTareas);
             if (!colaborador.Any(u => u.Id == dto.ColaboradorResponsableId))
                 throw new ReglaNegocioException("El colaborador seleccionado no existe o no está disponible para recibir tareas.");
 
@@ -359,9 +373,15 @@ namespace HikariLegalSRL.Services.Implementations
             if (horasEstimadas <= 0)
                 throw new ReglaNegocioException("Las horas estimadas deben ser mayores a 0.");
 
+            var requiereEntregableAnterior = tarea.RequiereEntregable;
+            var requiereEntregableNuevo = dto.RequiereEntregable ?? requiereEntregableAnterior;
+            if (requiereEntregableNuevo != requiereEntregableAnterior && !await PuedeExigirEntregableAsync(usuarioActualId))
+                throw new ReglaNegocioException("No tiene permiso para cambiar si la tarea exige un entregable.");
+
             var descripcionAnterior = tarea.Descripcion;
             var colaboradorAnteriorId = tarea.ColaboradorResponsableId;
 
+            tarea.RequiereEntregable = requiereEntregableNuevo;
             tarea.Descripcion = dto.Descripcion;
             tarea.ColaboradorResponsableId = dto.ColaboradorResponsableId!;
             tarea.FechaLimite = dto.FechaLimite!.Value;
@@ -382,8 +402,10 @@ namespace HikariLegalSRL.Services.Implementations
                 tipoAccion: "editar",
                 moduloAfectado: "Tareas",
                 registroAfectadoId: tareaId.ToString(),
-                valorAnterior: $"Tarea '{descripcionAnterior}'",
-                valorNuevo: $"Tarea '{tarea.Descripcion}'");
+                valorAnterior: $"Tarea '{descripcionAnterior}'"
+                    + (requiereEntregableAnterior ? " (entregable obligatorio)" : string.Empty),
+                valorNuevo: $"Tarea '{tarea.Descripcion}'"
+                    + (requiereEntregableNuevo ? " (entregable obligatorio)" : string.Empty));
 
             await _context.SaveChangesAsync();
 
@@ -641,6 +663,14 @@ namespace HikariLegalSRL.Services.Implementations
 
             if (minutosRonda <= 0)
                 throw new ReglaNegocioException("Debe registrar tiempo trabajado en esta ronda (con el botón + de horas) antes de enviar a revisión.");
+
+            if (tarea.RequiereEntregable)
+            {
+                var tieneArchivos = await _context.EntregableArchivos
+                    .AnyAsync(a => a.Entregable.TareaId == tareaId && a.Entregable.RondaRevision == rondaActual);
+                if (!tieneArchivos)
+                    throw new ReglaNegocioException("Esta tarea exige un entregable: adjunte al menos un archivo antes de enviar a revisión.");
+            }
 
             var horasReales = Math.Round(minutosRonda / 60m, 2);
 

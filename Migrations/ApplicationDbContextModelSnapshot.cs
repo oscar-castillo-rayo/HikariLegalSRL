@@ -1216,6 +1216,9 @@ namespace HikariLegalSRL.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
+                    b.Property<bool>("RequiereEntregable")
+                        .HasColumnType("bit");
+
                     b.HasKey("TareaId");
 
                     b.HasIndex("ColaboradorResponsableId");

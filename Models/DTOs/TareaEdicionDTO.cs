@@ -24,5 +24,7 @@ namespace HikariLegalSRL.Models.DTOs
 
         [Required(ErrorMessage = "Debe seleccionar una prioridad")]
         public PrioridadTarea? Prioridad { get; set; }
+
+        public bool? RequiereEntregable { get; set; }
     }
 }

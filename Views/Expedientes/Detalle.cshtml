@@ -23,6 +23,7 @@
     var puedeDevolver = await Authorization.TienePermiso(User, Permisos.Expedientes.Devolver);
     var puedeGestionarAjenas = await Authorization.TienePermiso(User, Permisos.Expedientes.GestionarAjenas);
     var puedeGestionarTareasPropias = await Authorization.TienePermiso(User, Permisos.Expedientes.GestionarTareasPropias);
+    var puedeExigirEntregable = await Authorization.TienePermiso(User, Permisos.Expedientes.ExigirEntregable);
     var puedeVerFactura = await Authorization.TienePermiso(User, Permisos.Facturacion.Ver);
     var puedeRegistrarCalidad = await Authorization.TienePermiso(User, Permisos.Calidad.Registrar);
     var puedeVerCalidad = await Authorization.TienePermiso(User, Permisos.Calidad.Ver);
@@ -205,6 +206,12 @@
                                 <small class="text-muted d-block">
                                     <i class="bi bi-clock me-1"></i>@FormatoHoras(t.HorasEstimadas) estimadas
                                 </small>
+                                @if (t.RequiereEntregable)
+                                {
+                                    <small class="text-muted d-block">
+                                        <i class="bi bi-paperclip me-1"></i>Entregable obligatorio
+                                    </small>
+                                }
                                 @if (t.HorasRealesTotal > 0)
                                 {
                                     <div class="expedientes-horas-panel">
@@ -333,6 +340,7 @@
 {
     @foreach (var t in e.Tareas.Where(t => t.Estado == EstadoTarea.EnProceso && (t.ColaboradorId == usuarioActualId || puedeGestionarAjenas)))
     {
+        var faltaEntregable = t.RequiereEntregable && t.ArchivosRondaActual.Count == 0;
         <div class="modal fade" id="modalListaRevision-@t.Id" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <form asp-action="MarcarListaParaRevision" method="post">
@@ -366,6 +374,13 @@
                                     <i class="bi bi-paperclip me-1"></i>@t.ArchivosRondaActual.Count archivo(s) adjunto(s) en esta ronda.
                                 </p>
                             }
+                            else if (faltaEntregable)
+                            {
+                                <div class="alert alert-warning py-2 small mb-0">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                    Esta tarea exige un entregable. Cierra este cuadro y usa el botón <i class="bi bi-paperclip"></i> de la tarjeta para adjuntar al menos un archivo antes de enviar.
+                                </div>
+                            }
                             else
                             {
                                 <p class="small text-muted mb-0">
@@ -375,7 +390,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn text-white fw-semibold expedientes-btn-guardar" @(t.HorasRondaActual > 0 ? null : "disabled")>
+                            <button type="submit" class="btn text-white fw-semibold expedientes-btn-guardar" @(t.HorasRondaActual > 0 && !faltaEntregable ? null : "disabled")>
                                 <i class="bi bi-hand-index-thumb me-1"></i>Enviar a revisión
                             </button>
                         </div>
@@ -585,6 +600,15 @@
                                 </select>
                                 <span asp-validation-for="NuevaTarea.Prioridad" class="text-danger small"></span>
                             </div>
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="nuevaTareaExigirEntregable"
+                                           name="NuevaTarea.RequiereEntregable" value="true" @(puedeExigirEntregable ? null : "disabled") />
+                                    <input type="hidden" name="NuevaTarea.RequiereEntregable" value="false" @(puedeExigirEntregable ? null : "disabled") />
+                                    <label class="form-check-label fw-semibold" for="nuevaTareaExigirEntregable">Exigir entregable</label>
+                                </div>
+                                <small class="text-muted">La tarea no podrá enviarse a revisión sin al menos un archivo adjunto.</small>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -655,6 +679,15 @@
                                         <option value="@PrioridadTarea.Media" selected="@(t.Prioridad == PrioridadTarea.Media)">Media</option>
                                         <option value="@PrioridadTarea.Alta" selected="@(t.Prioridad == PrioridadTarea.Alta)">Alta</option>
                                     </select>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="editarTareaExigirEntregable-@t.Id"
+                                               name="RequiereEntregable" value="true" checked="@t.RequiereEntregable" @(puedeExigirEntregable ? null : "disabled") />
+                                        <input type="hidden" name="RequiereEntregable" value="false" @(puedeExigirEntregable ? null : "disabled") />
+                                        <label class="form-check-label fw-semibold" for="editarTareaExigirEntregable-@t.Id">Exigir entregable</label>
+                                    </div>
+                                    <small class="text-muted">La tarea no podrá enviarse a revisión sin al menos un archivo adjunto.</small>
                                 </div>
                             </div>
                         </div>
