@@ -901,10 +901,14 @@ namespace HikariLegalSRL.Data
             modelBuilder.Entity<BitacoraAuditoria>()
                 .HasIndex(b => b.FechaHora);
             modelBuilder.Entity<BitacoraAuditoria>()
-                .ToTable(t => t.HasCheckConstraint(
-                    "CK_BitacoraAuditoria_TipoAccion",
-                    "[TipoAccion] IN ('crear', 'editar', 'eliminar', 'cambiar_estado', 'aprobar', 'rechazar')"
-                    ));
+                .ToTable(t =>
+                {
+                    t.HasCheckConstraint(
+                        "CK_BitacoraAuditoria_TipoAccion",
+                        "[TipoAccion] IN ('crear', 'editar', 'eliminar', 'cambiar_estado', 'aprobar', 'rechazar')"
+                    );
+                    t.HasTrigger("TR_BitacoraAuditoria_Inmutable");
+                });
             modelBuilder.Entity<BitacoraAuditoria>()
                 .HasOne(b => b.Usuario)
                 .WithMany()

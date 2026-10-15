@@ -66,8 +66,12 @@ namespace HikariLegalSRL.Migrations
 
                     b.ToTable("BitacoraAuditoria", t =>
                         {
+                            t.HasTrigger("TR_BitacoraAuditoria_Inmutable");
+
                             t.HasCheckConstraint("CK_BitacoraAuditoria_TipoAccion", "[TipoAccion] IN ('crear', 'editar', 'eliminar', 'cambiar_estado', 'aprobar', 'rechazar')");
                         });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Abono", b =>
