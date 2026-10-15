@@ -16,23 +16,36 @@ namespace HikariLegalSRL.Controllers.Roles
     {
 
         private readonly RoleManager<ApplicationRole> _roleManager;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly IPermisoEvaluador _permisoEvaluador;
         private readonly ITransaccionService _transaccionService;
         private readonly IBitacoraAuditoriaService _bitacoraAuditoriaService;
 
         public RolesController(
             RoleManager<ApplicationRole> roleManager,
+            UserManager<ApplicationUser> userManager,
             IPermisoEvaluador permisoEvaluador,
             ITransaccionService transaccionService,
             IBitacoraAuditoriaService bitacoraAuditoriaService)
         {
             _roleManager = roleManager;
+            _userManager = userManager;
             _permisoEvaluador = permisoEvaluador;
             _transaccionService = transaccionService;
             _bitacoraAuditoriaService = bitacoraAuditoriaService;
         }
 
         private string UsuarioActualId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+        private async Task<string?> MensajeSiTieneUsuariosActivosAsync(ApplicationRole rol)
+        {
+            var usuarios = await _userManager.GetUsersInRoleAsync(rol.Name!);
+            var activos = usuarios.Count(u => u.Activo);
+
+            return activos == 0
+                ? null
+                : $"No es posible desactivar el rol {rol.Name}: tiene {activos} usuario(s) activo(s) asignado(s).";
+        }
 
         private async Task RegistrarAuditoriaAsync(string tipoAccion, string rolId, string? valorAnterior, string? valorNuevo)
         {
@@ -266,6 +279,16 @@ namespace HikariLegalSRL.Controllers.Roles
                 return View(model);
             }
 
+            if (rol.Activo && !model.Activo)
+            {
+                var mensajeUsuarios = await MensajeSiTieneUsuariosActivosAsync(rol);
+                if (mensajeUsuarios is not null)
+                {
+                    ModelState.AddModelError(string.Empty, mensajeUsuarios);
+                    return View(model);
+                }
+            }
+
             var nombreAnterior = rol.Name;
             var descripcionAnterior = rol.Descripcion;
             var activoAnterior = rol.Activo;
@@ -316,6 +339,13 @@ namespace HikariLegalSRL.Controllers.Roles
             if (rol.EsFijo)
             {
                 TempData["Error"] = "Los roles principales del sistema no pueden ser desactivados.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var mensajeUsuarios = await MensajeSiTieneUsuariosActivosAsync(rol);
+            if (mensajeUsuarios is not null)
+            {
+                TempData["Error"] = mensajeUsuarios;
                 return RedirectToAction(nameof(Index));
             }
 

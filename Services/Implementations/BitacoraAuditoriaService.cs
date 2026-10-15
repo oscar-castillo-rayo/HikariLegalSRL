@@ -23,7 +23,7 @@ namespace HikariLegalSRL.Services.Implementations
 
         public static readonly IReadOnlyList<string> TiposAccion = new[]
         {
-            "crear", "editar", "eliminar", "cambiar_estado", "aprobar", "rechazar"
+            "crear", "editar", "eliminar", "cambiar_estado", "aprobar", "rechazar", "acceso_denegado"
         };
 
         private readonly ApplicationDbContext _context;
