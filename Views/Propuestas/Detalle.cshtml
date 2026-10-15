@@ -13,6 +13,9 @@
     };
     var simboloMoneda = Model.Moneda == Moneda.Dolares ? "$" : "₡";
     var puedeEditar = await Authorization.TienePermiso(User, Permisos.Propuestas.Editar);
+    var puedeEnviar = await Authorization.TienePermiso(User, Permisos.Propuestas.Enviar);
+    var puedeAceptar = await Authorization.TienePermiso(User, Permisos.Propuestas.Aceptar);
+    var puedeRechazar = await Authorization.TienePermiso(User, Permisos.Propuestas.Rechazar);
 }
 
 @section Styles {
@@ -25,16 +28,55 @@
     </a>
     <h4 class="mb-0 fw-bold propuestas-titulo">Propuesta — @Model.Destinatario</h4>
     <span class="badge bg-@bc">@bt</span>
-    @if (Model.Estado == EstadoPropuesta.Borrador)
-    {
-        <a asp-action="Editar" asp-route-id="@Model.Id"
-           class="btn btn-sm btn-outline-secondary propuestas-btn-accion @(puedeEditar ? "" : "disabled")"
-           aria-disabled="@(!puedeEditar)"
-           tabindex="@(puedeEditar ? "0" : "-1")"
-           onclick="@(puedeEditar ? null : "return false;")">
-            <i class="bi bi-pencil me-1"></i>Editar
-        </a>
-    }
+
+    <div class="ms-sm-auto d-flex flex-wrap gap-2">
+        @if (Model.Estado == EstadoPropuesta.Borrador)
+        {
+            <a asp-action="Editar" asp-route-id="@Model.Id"
+               class="btn btn-sm btn-outline-secondary propuestas-btn-accion @(puedeEditar ? "" : "disabled")"
+               aria-disabled="@(!puedeEditar)"
+               tabindex="@(puedeEditar ? "0" : "-1")"
+               onclick="@(puedeEditar ? null : "return false;")">
+                <i class="bi bi-pencil me-1"></i>Editar
+            </a>
+            <form asp-action="MarcarComoEnviada" asp-route-id="@Model.Id" method="post"
+                  class="form-confirmar"
+                  data-titulo="¿Enviar esta propuesta?"
+                  data-texto="La propuesta pasará a estado enviada y ya no podrá editarse."
+                  data-icono="question"
+                  data-btn-confirmar="Sí, enviar">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-sm btn-primary propuestas-btn-accion" @(puedeEnviar ? null : "disabled")>
+                    <i class="bi bi-send me-1"></i>Enviar
+                </button>
+            </form>
+        }
+        @if (Model.Estado == EstadoPropuesta.Enviada)
+        {
+            <form asp-action="MarcarComoAceptada" asp-route-id="@Model.Id" method="post"
+                  class="form-confirmar"
+                  data-titulo="¿Aceptar esta propuesta?"
+                  data-texto="@(Model.EsProspecto ? "Se creará el cliente a partir del prospecto y se abrirá el expediente correspondiente." : "Se abrirá el expediente correspondiente.")"
+                  data-icono="info"
+                  data-btn-confirmar="Sí, aceptar">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-sm btn-success propuestas-btn-accion" @(puedeAceptar ? null : "disabled")>
+                    <i class="bi bi-check-lg me-1"></i>Aceptar
+                </button>
+            </form>
+            <form asp-action="MarcarComoRechazada" asp-route-id="@Model.Id" method="post"
+                  class="form-confirmar"
+                  data-titulo="¿Rechazar esta propuesta?"
+                  data-texto="La propuesta quedará como registro histórico y no podrá modificarse."
+                  data-icono="warning"
+                  data-btn-confirmar="Sí, rechazar">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-sm btn-outline-danger propuestas-btn-accion" @(puedeRechazar ? null : "disabled")>
+                    <i class="bi bi-x-lg me-1"></i>Rechazar
+                </button>
+            </form>
+        }
+    </div>
 </div>
 
 <div class="row g-4">

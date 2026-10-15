@@ -25,6 +25,7 @@ namespace HikariLegalSRL.Data
         public DbSet<CatalogoServicio> CatalogoServicios { get; set; } = null!;
         public DbSet<Propuesta> Propuestas { get; set; } = null!;
         public DbSet<PropuestaServicio> PropuestaServicios { get; set; } = null!;
+        public DbSet<Expediente> Expedientes { get; set; } = null!;
         public DbSet<BitacoraAuditoria> BitacoraAuditoria { get; set; } = null!;
 
 
@@ -408,6 +409,47 @@ namespace HikariLegalSRL.Data
                 .ToTable(t => t.HasCheckConstraint(
                     "CK_PropuestaServicio_TipoServicio",
                     "[TipoServicio] IN ('ofrecido', 'solicitado')"
+                    ));
+
+            // Expediente
+            modelBuilder.Entity<Expediente>()
+                .HasKey(e => e.ExpedienteId);
+
+            modelBuilder.Entity<Expediente>()
+                .Property(e => e.PlazoComprometido).HasColumnType("date");
+
+            modelBuilder.Entity<Expediente>()
+                .Property(e => e.Estado)
+                .HasConversion(e => e.ToString().ToLower(),
+                s => (EstadoExpediente)Enum.Parse(typeof(EstadoExpediente), s, ignoreCase: true))
+                .HasMaxLength(10);
+
+            modelBuilder.Entity<Expediente>()
+                .HasOne(e => e.Cliente)
+                .WithMany()
+                .HasForeignKey(e => e.ClienteId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Expediente>()
+                .HasOne(e => e.Propuesta)
+                .WithMany()
+                .HasForeignKey(e => e.PropuestaId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Expediente>()
+                .HasIndex(e => e.PropuestaId)
+                .IsUnique();
+
+            modelBuilder.Entity<Expediente>()
+                .HasOne(e => e.Responsable)
+                .WithMany()
+                .HasForeignKey(e => e.ResponsableId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Expediente>()
+                .ToTable(t => t.HasCheckConstraint(
+                    "CK_Expediente_Estado",
+                    "[Estado] IN ('abierto', 'cerrado')"
                     ));
 
             // Bitacora Auditoría
