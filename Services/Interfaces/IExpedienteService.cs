@@ -16,5 +16,11 @@ namespace HikariLegalSRL.Services.Interfaces
         Task AgregarTarea(int expedienteId, TareaCreacionDTO dto, string usuarioActualId);
 
         Task ReasignarResponsable(int expedienteId, string? nuevoResponsableId, string usuarioActualId);
+
+        Task IniciarTarea(int tareaId, string usuarioActualId);
+
+        Task MarcarListaParaRevision(int tareaId, CargarEntregableDTO dto, string usuarioActualId);
+
+        Task<(string RutaAbsoluta, string NombreArchivo, string ContentType)?> ObtenerArchivoEntregable(int entregableId);
     }
 }
