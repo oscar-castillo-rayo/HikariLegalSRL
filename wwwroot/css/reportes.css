@@ -17,6 +17,18 @@
         color: #fff;
     }
 
+.reportes-desglose {
+    color: #6c757d;
+    cursor: help;
+    font-size: .8rem;
+    margin-left: .25rem;
+}
+
+    .reportes-desglose:hover,
+    .reportes-desglose:focus {
+        color: #1F3864;
+    }
+
 .reportes-distribucion {
     min-width: 200px;
 }

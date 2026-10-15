@@ -15,5 +15,7 @@ namespace HikariLegalSRL.Services.Interfaces
         Task<ReporteCargaTrabajoDTO> ObtenerCargaTrabajo();
 
         Task<ReporteComparativoServiciosDTO> ObtenerComparativoServicios(string periodo, DateTime? desde, DateTime? hasta);
+
+        Task<ReporteRentabilidadDTO> ObtenerRentabilidad(string periodo, DateTime? desde, DateTime? hasta);
     }
 }

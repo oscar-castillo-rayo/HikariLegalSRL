@@ -1,0 +1,278 @@
+@model HikariLegalSRL.Models.DTOs.ReporteRentabilidadDTO
+@using HikariLegalSRL.Models.Enums
+
+@{
+    ViewData["Title"] = "Rentabilidad por Expediente";
+
+    string Simbolo(Moneda moneda) => moneda == Moneda.Dolares ? "$" : "₡";
+
+    string FormatoHoras(decimal horas)
+    {
+        var totalMinutos = (int)Math.Round(horas * 60);
+        return $"{totalMinutos / 60}h {totalMinutos % 60}min";
+    }
+
+    string FormatoMonto(decimal? monto, Moneda moneda) =>
+        monto.HasValue ? $"{Simbolo(moneda)}{monto.Value:N2}" : "—";
+
+    string DesgloseHoras(decimal colaborador, decimal revisor) =>
+        $"Colaborador: {FormatoHoras(colaborador)}<br>Revisión: {FormatoHoras(revisor)}";
+
+    string ColorEficiencia(decimal? eficiencia) =>
+        !eficiencia.HasValue ? "text-bg-secondary" : eficiencia >= 100 ? "text-bg-success" : "text-bg-danger";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/reportes.css" />
+}
+
+<div class="d-flex align-items-center gap-2 mb-4">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h2 class="fw-bold mb-0 reportes-titulo">
+        📊 Rentabilidad por Expediente
+    </h2>
+</div>
+
+<form method="get" class="card p-3 mb-4 shadow-sm">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Período</label>
+            <select name="periodo" id="periodo" class="form-select">
+                <option value="semanal" selected="@(Model.Periodo == "semanal")">Semanal</option>
+                <option value="mensual" selected="@(Model.Periodo == "mensual")">Mensual</option>
+                <option value="cuatrimestral" selected="@(Model.Periodo == "cuatrimestral")">Cuatrimestral</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Desde</label>
+            <input type="date" name="desde" id="desde" class="form-control" value="@Model.Desde.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Hasta</label>
+            <input type="date" name="hasta" id="hasta" class="form-control" value="@Model.Hasta.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-outline-secondary w-100">
+                <i class="bi bi-search me-1"></i>Filtrar
+            </button>
+        </div>
+    </div>
+</form>
+
+<div class="row g-3 mb-4 row-cols-2 row-cols-lg-5">
+    <div class="col">
+        <div class="card shadow-sm text-center py-3 px-2 h-100" style="border-left:4px solid #1F3864;">
+            <div class="small text-muted">Expedientes cerrados</div>
+            <div class="fs-3 fw-bold reportes-titulo">@Model.TotalExpedientes</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card shadow-sm text-center py-3 px-2 h-100" style="border-left:4px solid #1D6A3A;">
+            <div class="small text-muted">Rentables</div>
+            <div class="fs-3 fw-bold text-success">@Model.Rentables</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card shadow-sm text-center py-3 px-2 h-100" style="border-left:4px solid #dc3545;">
+            <div class="small text-muted">No rentables</div>
+            <div class="fs-3 fw-bold text-danger">@Model.NoRentables</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card shadow-sm text-center py-3 px-2 h-100" style="border-left:4px solid #0dcaf0;">
+            <div class="small text-muted">Pro bono</div>
+            <div class="fs-3 fw-bold text-info">@Model.ProBono</div>
+            <div class="small text-muted">@FormatoHoras(Model.HorasProBono) invertidas</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card shadow-sm text-center py-3 px-2 h-100" style="border-left:4px solid #f5a623;">
+            <div class="small text-muted">Eficiencia global</div>
+            <div class="fs-3 fw-bold" style="color:#f5a623;">@(Model.EficienciaGlobal.HasValue ? $"{Model.EficienciaGlobal}%" : "—")</div>
+        </div>
+    </div>
+</div>
+
+@if (Model.SinHoras > 0)
+{
+    <p class="text-muted small mb-3">
+        <i class="bi bi-info-circle me-1"></i>
+        @Model.SinHoras expediente(s) sin horas reales registradas no se cuentan como rentables ni como no rentables.
+    </p>
+}
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-bold" style="background:#EAF0FB;">
+        Resumen por tipo de servicio
+        <small class="text-muted fw-normal ms-2">
+            — Del @Model.Desde.ToString("dd/MM/yyyy") al @Model.Hasta.ToString("dd/MM/yyyy")
+        </small>
+    </div>
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle table-hover">
+            <thead style="background:#1F3864; color:white;">
+                <tr>
+                    <th>Tipo de servicio</th>
+                    <th class="text-center">Expedientes</th>
+                    <th class="text-end">Facturado</th>
+                    <th class="text-center">Hrs. estimadas</th>
+                    <th class="text-center">Hrs. reales</th>
+                    <th class="text-end">Valor/h estimado</th>
+                    <th class="text-end">Valor/h real</th>
+                    <th class="text-center">Eficiencia</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.PorTipoServicio.Count == 0)
+                {
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            No hay expedientes cerrados con factura en este período.
+                        </td>
+                    </tr>
+                }
+                @foreach (var grupo in Model.PorTipoServicio)
+                {
+                    <tr>
+                        <td class="fw-semibold">
+                            <span class="badge reportes-area">@grupo.AreaCategoria</span>
+                            <div class="text-muted small fw-normal">@(grupo.Moneda == Moneda.Dolares ? "Dólares" : "Colones")</div>
+                        </td>
+                        <td class="text-center">@grupo.Expedientes</td>
+                        <td class="text-end fw-semibold">@FormatoMonto(grupo.MontoFacturado, grupo.Moneda)</td>
+                        <td class="text-center">@FormatoHoras(grupo.HorasEstimadas)</td>
+                        <td class="text-center text-nowrap">
+                            @FormatoHoras(grupo.HorasReales)
+                            <span class="reportes-desglose" tabindex="0" role="img" aria-label="@($"Colaborador: {FormatoHoras(grupo.HorasColaborador)}, revisión: {FormatoHoras(grupo.HorasRevisor)}")"
+                                  data-bs-toggle="tooltip" data-bs-html="true" data-bs-title="@DesgloseHoras(grupo.HorasColaborador, grupo.HorasRevisor)">
+                                <i class="bi bi-info-circle"></i>
+                            </span>
+                        </td>
+                        <td class="text-end"><small>@FormatoMonto(grupo.ValorHoraEstimado, grupo.Moneda)</small></td>
+                        <td class="text-end"><small>@FormatoMonto(grupo.ValorHoraReal, grupo.Moneda)</small></td>
+                        <td class="text-center">
+                            <span class="badge @ColorEficiencia(grupo.Eficiencia)">@(grupo.Eficiencia.HasValue ? $"{grupo.Eficiencia}%" : "—")</span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header fw-bold" style="background:#EAF0FB;">
+        Detalle por expediente
+        <small class="text-muted fw-normal ms-2">— Cerrados con factura vigente, agrupados por tipo de servicio</small>
+    </div>
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle table-hover">
+            <thead style="background:#1F3864; color:white;">
+                <tr>
+                    <th>Expediente</th>
+                    <th>Cliente</th>
+                    <th>Tipo de servicio</th>
+                    <th class="text-end">Facturado</th>
+                    <th class="text-center">Hrs. estimadas</th>
+                    <th class="text-center">Hrs. reales</th>
+                    <th class="text-end">Valor/h estimado</th>
+                    <th class="text-end">Valor/h real</th>
+                    <th class="text-end">Diferencia</th>
+                    <th class="text-center">Eficiencia</th>
+                    <th class="text-center">Resultado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Expedientes.Count == 0)
+                {
+                    <tr>
+                        <td colspan="11" class="text-center text-muted py-4">
+                            No hay expedientes cerrados con factura en este período.
+                        </td>
+                    </tr>
+                }
+                @foreach (var e in Model.Expedientes)
+                {
+                    <tr>
+                        <td class="fw-semibold">
+                            <a asp-controller="Expedientes" asp-action="Detalle" asp-route-id="@e.ExpedienteId" class="text-decoration-none">#@e.ExpedienteId</a>
+                        </td>
+                        <td>@e.ClienteNombre</td>
+                        <td><span class="badge reportes-area">@e.AreaCategoria</span></td>
+                        <td class="text-end fw-semibold">@(e.EsProBono ? "—" : FormatoMonto(e.MontoFacturado, e.Moneda))</td>
+                        <td class="text-center">@FormatoHoras(e.HorasEstimadas)</td>
+                        <td class="text-center text-nowrap">
+                            @if (e.HorasReales > 0)
+                            {
+                                @FormatoHoras(e.HorasReales)
+                                <span class="reportes-desglose" tabindex="0" role="img" aria-label="@($"Colaborador: {FormatoHoras(e.HorasColaborador)}, revisión: {FormatoHoras(e.HorasRevisor)}")"
+                                      data-bs-toggle="tooltip" data-bs-html="true" data-bs-title="@DesgloseHoras(e.HorasColaborador, e.HorasRevisor)">
+                                    <i class="bi bi-info-circle"></i>
+                                </span>
+                            }
+                            else
+                            {
+                                <span>—</span>
+                            }
+                        </td>
+                        <td class="text-end"><small>@FormatoMonto(e.ValorHoraEstimado, e.Moneda)</small></td>
+                        <td class="text-end"><small>@FormatoMonto(e.ValorHoraReal, e.Moneda)</small></td>
+                        <td class="text-end">
+                            @if (e.Diferencia.HasValue)
+                            {
+                                <small class="@(e.Diferencia >= 0 ? "reportes-tasa-alta" : "text-danger") fw-semibold">
+                                    @(e.Diferencia >= 0 ? "+" : "−")@Simbolo(e.Moneda)@Math.Abs(e.Diferencia.Value).ToString("N2")
+                                </small>
+                            }
+                            else
+                            {
+                                <span class="text-muted">—</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <span class="badge @(e.EsProBono ? "text-bg-secondary" : ColorEficiencia(e.Eficiencia))">@(e.Eficiencia.HasValue ? $"{e.Eficiencia}%" : "—")</span>
+                        </td>
+                        <td class="text-center">
+                            @if (e.EsProBono)
+                            {
+                                <span class="badge text-bg-info"><i class="bi bi-heart me-1"></i>Pro bono</span>
+                            }
+                            else if (e.Rentable == true)
+                            {
+                                <span class="badge text-bg-success"><i class="bi bi-arrow-up me-1"></i>Rentable</span>
+                            }
+                            else if (e.Rentable == false)
+                            {
+                                <span class="badge text-bg-danger"><i class="bi bi-arrow-down me-1"></i>No rentable</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-secondary">Sin horas</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="alert alert-light border mt-4 small text-muted">
+    <i class="bi bi-info-circle me-1"></i>
+    Se incluyen los expedientes <strong>cerrados</strong> en el período (por fecha de cierre) cuya factura no fue anulada.
+    <strong>Valor/h estimado</strong> = monto facturado ÷ horas estimadas de sus tareas.
+    <strong>Valor/h real</strong> = monto facturado ÷ horas reales registradas (horas del colaborador más las de revisión del responsable); pasa el cursor sobre el ícono <i class="bi bi-info-circle"></i> junto a las horas reales para ver el desglose.
+    <strong>Diferencia</strong> = valor/h real − valor/h estimado: positiva si se invirtió menos tiempo del estimado, negativa si se invirtió más.
+    <strong>Eficiencia</strong> = valor/h real ÷ valor/h estimado (equivale a horas estimadas ÷ horas reales): 100 % o más es <strong>rentable</strong>.
+    Los expedientes <strong>pro bono</strong> son servicio gratuito: no se califican como rentables ni no rentables y quedan fuera del resumen y de la eficiencia global;
+    se muestran con sus horas para ver cuánto tiempo se invirtió en ellos.
+    El tipo de servicio de un expediente es el del servicio de mayor precio de su propuesta.
+    Los montos no se mezclan entre colones y dólares.
+</div>
+
+@section Scripts {
+    <script src="~/js/reportes-periodo.js" asp-append-version="true"></script>
+    <script src="~/js/reportes-desglose.js" asp-append-version="true"></script>
+}
