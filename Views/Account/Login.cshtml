@@ -32,7 +32,7 @@
                     Tu cuenta fue desactivada. Contacta al Administrador.
                 </div>
             }
-            <form asp-action="Login" asp-controller="Account" method="post">
+            <form asp-action="Login" asp-controller="Account" method="post" novalidate>
 
                 <div asp-validation-summary="All" class="alert alert-danger py-2 small"
                      style="display:@(ViewData.ModelState.IsValid ? "none" : "block")">
