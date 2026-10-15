@@ -25,5 +25,10 @@ namespace HikariLegalSRL.Models
 
         public DateTime FechaSolicitud { get; set; }
         public DateTime? FechaResolucion { get; set; }
+
+        // Una solicitud aprobada solo puede respaldar una propuesta Pro Bono: se marca "consumida"
+        // apenas esa propuesta se crea, para que no pueda reutilizarse en otra propuesta distinta.
+        public int? PropuestaConsumidaId { get; set; }
+        public Propuesta? PropuestaConsumida { get; set; }
     }
 }

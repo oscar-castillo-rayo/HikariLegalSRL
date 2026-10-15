@@ -106,6 +106,80 @@ namespace HikariLegalSRL.Services.Implementations
             };
         }
 
+        // RF-012: "ingresos facturados" = monto de facturas emitidas (no anuladas) en el período,
+        // filtradas por FechaEmision. Una Factura no guarda sus servicios propios — se navega
+        // Factura → Expediente → Propuesta → PropuestaServicio (ver comentario en FacturaService).
+        // Como una factura puede cubrir varios servicios, el monto se reparte entre sus áreas
+        // (CatalogoServicio.AreaCategoria) en proporción al precio de cada servicio dentro de la
+        // propuesta — así una factura pro bono (MontoTotal = 0, ver HU-021/025) reparte cero sin
+        // inflar ningún área, en vez de contar el precio nominal de la propuesta como si se hubiera
+        // facturado. Los montos se agrupan también por Moneda (igual que EstadoCuentaDTO en
+        // FacturaService) porque sumar colones y dólares directamente no tiene sentido.
+        public async Task<ReporteIngresosServicioDTO> ObtenerIngresosPorServicio(string periodo, DateTime? desde, DateTime? hasta)
+        {
+            var (desdeFinal, hastaFinal) = ResolverRango(periodo, desde, hasta);
+
+            var facturas = await _context.Facturas
+                .AsNoTracking()
+                .Where(f => f.Estado != EstadoFactura.Anulada
+                    && f.FechaEmision.Date >= desdeFinal
+                    && f.FechaEmision.Date <= hastaFinal)
+                .Include(f => f.Expediente)
+                    .ThenInclude(e => e.Propuesta)
+                        .ThenInclude(p => p.Servicios)
+                            .ThenInclude(s => s.Servicio)
+                .ToListAsync();
+
+            var monedas = facturas
+                .GroupBy(f => f.Expediente.Propuesta.Moneda)
+                .Select(grupoMoneda =>
+                {
+                    var totalFacturado = grupoMoneda.Sum(f => f.MontoTotal);
+                    var montosPorArea = new Dictionary<string, decimal>();
+
+                    foreach (var factura in grupoMoneda)
+                    {
+                        var servicios = factura.Expediente.Propuesta.Servicios;
+                        var totalServicios = servicios.Sum(s => s.Precio);
+
+                        if (servicios.Count == 0 || totalServicios <= 0)
+                            continue;
+
+                        foreach (var servicio in servicios)
+                        {
+                            var area = servicio.Servicio.AreaCategoria;
+                            var monto = factura.MontoTotal * (servicio.Precio / totalServicios);
+                            montosPorArea[area] = montosPorArea.GetValueOrDefault(area) + monto;
+                        }
+                    }
+
+                    return new IngresosPorMonedaDTO
+                    {
+                        Moneda = grupoMoneda.Key,
+                        TotalFacturado = totalFacturado,
+                        Desglose = montosPorArea
+                            .Select(kv => new IngresoPorAreaDTO
+                            {
+                                AreaCategoria = kv.Key,
+                                MontoFacturado = Math.Round(kv.Value, 2),
+                                Porcentaje = totalFacturado == 0 ? 0 : Math.Round(kv.Value / totalFacturado * 100, 1)
+                            })
+                            .OrderByDescending(d => d.MontoFacturado)
+                            .ToList()
+                    };
+                })
+                .OrderBy(m => m.Moneda)
+                .ToList();
+
+            return new ReporteIngresosServicioDTO
+            {
+                Periodo = periodo,
+                Desde = desdeFinal,
+                Hasta = hastaFinal,
+                Monedas = monedas
+            };
+        }
+
         private static string CapitalizarPrimeraLetra(string texto, CultureInfo cultura)
         {
             return texto.Length == 0 ? texto : char.ToUpper(texto[0], cultura) + texto[1..];

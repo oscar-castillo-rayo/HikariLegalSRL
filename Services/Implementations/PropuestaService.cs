@@ -156,6 +156,11 @@ namespace HikariLegalSRL.Services.Implementations
             if (dto.Servicios.Count == 0)
                 throw new ReglaNegocioException("Debe agregar al menos un servicio a la propuesta.");
 
+            var solicitudProBono = await ValidarYReservarSolicitudProBono(
+                dto.ModalidadPago!.Value,
+                tieneCliente ? dto.ClienteId : null,
+                tieneProspecto ? dto.ProspectoId : null);
+
             if (tieneProspecto)
             {
                 var prospecto = await _context.Prospectos.FindAsync(dto.ProspectoId!.Value)
@@ -221,6 +226,11 @@ namespace HikariLegalSRL.Services.Implementations
             {
                 throw new ReglaNegocioException(ex.Message);
             }
+
+            // El id autogenerado de la propuesta solo existe después del primer SaveChanges, así
+            // que la solicitud pro bono reservada arriba recién se puede vincular acá.
+            if (solicitudProBono is not null)
+                solicitudProBono.PropuestaConsumidaId = propuesta.PropuestaId;
 
             await _bitacoraAuditoriaService.Registrar(
                 usuarioId: usuarioActualId,
@@ -373,6 +383,32 @@ namespace HikariLegalSRL.Services.Implementations
                 });
             }
 
+            // Si el destinatario cambia, la solicitud pro bono que respaldaba la propuesta (si
+            // había una) quedó reservada para el destinatario viejo, no para el nuevo.
+            var destinatarioCambio = propuesta.ClienteId != (tieneCliente ? dto.ClienteId : null)
+                || propuesta.ProspectoId != (tieneProspecto ? dto.ProspectoId : null);
+
+            var yaNoNecesitaSolicitud = propuesta.ModalidadPago == ModalidadPago.ProBono
+                && (dto.ModalidadPago != ModalidadPago.ProBono || destinatarioCambio);
+
+            var necesitaSolicitudNueva = dto.ModalidadPago == ModalidadPago.ProBono
+                && (propuesta.ModalidadPago != ModalidadPago.ProBono || destinatarioCambio);
+
+            var solicitudProBono = necesitaSolicitudNueva
+                ? await ValidarYReservarSolicitudProBono(
+                    dto.ModalidadPago!.Value,
+                    tieneCliente ? dto.ClienteId : null,
+                    tieneProspecto ? dto.ProspectoId : null)
+                : null;
+
+            if (yaNoNecesitaSolicitud)
+            {
+                var solicitudPrevia = await _context.SolicitudesProBono
+                    .FirstOrDefaultAsync(s => s.PropuestaConsumidaId == propuesta.PropuestaId);
+                if (solicitudPrevia is not null)
+                    solicitudPrevia.PropuestaConsumidaId = null;
+            }
+
             _context.PropuestaServicios.RemoveRange(propuesta.Servicios);
 
             propuesta.ProspectoId = tieneProspecto ? dto.ProspectoId : null;
@@ -383,6 +419,9 @@ namespace HikariLegalSRL.Services.Implementations
             propuesta.DescripcionGeneral = dto.DescripcionGeneral;
             propuesta.MontoTotal = nuevosItems.Sum(i => i.Precio);
             propuesta.Servicios = nuevosItems;
+
+            if (solicitudProBono is not null)
+                solicitudProBono.PropuestaConsumidaId = propuesta.PropuestaId;
 
             try
             {
@@ -560,6 +599,24 @@ namespace HikariLegalSRL.Services.Implementations
 
             if (propuesta.ClienteId is not null && propuesta.Cliente!.Estado != EstadoCliente.Activo)
                 throw new ReglaNegocioException("No se puede continuar: el cliente está inactivo.");
+        }
+
+        // RF-011: una propuesta solo puede marcarse Pro Bono si existe una SolicitudProBono
+        // aprobada y todavía sin usar para ese mismo cliente/prospecto — sin esto, cualquier
+        // usuario con permiso de crear/editar propuestas podría poner "Pro Bono" y facturar en
+        // cero sin que el Administrador haya aprobado nada, saltándose por completo el flujo de
+        // aprobación que exige RF-011. No consume la solicitud todavía (el llamador la vincula
+        // una vez que ya existe el PropuestaId real, ver Crear/Editar).
+        private async Task<SolicitudProBono?> ValidarYReservarSolicitudProBono(ModalidadPago modalidadPago, int? clienteId, int? prospectoId)
+        {
+            if (modalidadPago != ModalidadPago.ProBono)
+                return null;
+
+            return await _context.SolicitudesProBono
+                .Where(s => s.Decision == DecisionProBono.Aprobada && s.PropuestaConsumidaId == null)
+                .Where(s => (clienteId != null && s.ClienteId == clienteId) || (prospectoId != null && s.ProspectoId == prospectoId))
+                .FirstOrDefaultAsync()
+                ?? throw new ReglaNegocioException("No hay una solicitud pro bono aprobada y disponible para este beneficiario. Debe aprobarse una solicitud pro bono (módulo Pro Bono) antes de marcar esta propuesta como Pro Bono.");
         }
     }
 }
