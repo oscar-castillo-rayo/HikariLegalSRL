@@ -10,7 +10,7 @@ namespace HikariLegalSRL.Models.DTOs
         public string? NombreContacto { get; set; }
         public string? CedulaJuridica { get; set; }
         public string? Telefono { get; set; }
-        public string Correo { get; set; } = null!;
+        public string? Correo { get; set; }
         public string? SectorEconomico { get; set; }
         public ModalidadPago ModalidadPago { get; set; }
         public string ResponsableNombre { get; set; } = null!;

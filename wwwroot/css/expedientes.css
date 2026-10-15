@@ -1,0 +1,151 @@
+.expedientes-archivos-lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+    .expedientes-archivos-lista li {
+        align-items: center;
+        display: flex;
+        gap: 4px;
+        justify-content: space-between;
+    }
+
+    .expedientes-archivos-lista a {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+.expedientes-archivos-panel {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: .375rem;
+    font-size: .75rem;
+    padding: .4rem .6rem;
+}
+
+.expedientes-btn-accion:disabled,
+.expedientes-btn-accion.disabled {
+    background-color: #e9ecef;
+    border-color: #e9ecef;
+    color: #adb5bd;
+    opacity: 1;
+    pointer-events: none;
+}
+
+.expedientes-btn-guardar {
+    background: #1F3864;
+    color: #fff;
+}
+
+    .expedientes-btn-guardar:hover {
+        background: #16294a;
+        color: #fff;
+    }
+
+.expedientes-card-header {
+    background: #EAF0FB;
+    color: #1F3864;
+}
+
+.expedientes-dropdown-menu {
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.expedientes-dropdown-toggle {
+    display: flex;
+    align-items: center;
+}
+
+    .expedientes-dropdown-toggle.input-validation-error {
+        border-color: #dc3545;
+    }
+
+.expedientes-historial-ronda {
+    border: 1px solid #dee2e6;
+    border-radius: .375rem;
+    margin-bottom: .5rem;
+    padding: .5rem;
+}
+
+    .expedientes-historial-ronda:last-child {
+        margin-bottom: 0;
+    }
+
+.expedientes-horas-badge {
+    align-items: center;
+    background: #fff;
+    border-radius: 1rem;
+    display: inline-flex;
+    gap: 4px;
+    padding: 1px 8px;
+}
+
+.expedientes-horas-badge-colaborador {
+    color: #1F3864;
+}
+
+.expedientes-horas-badge-revisor {
+    color: #6f42c1;
+}
+
+.expedientes-horas-panel {
+    background: #f0faf4;
+    border: 1px solid #c3e6cb;
+    border-radius: .375rem;
+    font-size: .75rem;
+    margin-top: .5rem;
+    padding: .4rem .6rem;
+}
+
+.expedientes-horas-panel-desglose {
+    display: flex;
+    gap: .4rem;
+    margin-top: .3rem;
+}
+
+.expedientes-horas-panel-total {
+    color: #1D6A3A;
+    font-weight: 700;
+}
+
+.expedientes-kanban-card {
+    font-size: .8125rem;
+}
+
+.expedientes-kanban-col {
+    min-height: 220px;
+}
+
+.expedientes-tabla thead th {
+    background: #1F3864;
+    border-bottom: none;
+    color: #fff;
+    font-size: .8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.expedientes-titulo {
+    color: #1F3864;
+}
+
+@media (max-width: 991.98px) {
+
+    .expedientes-kanban-col {
+        min-height: 0;
+    }
+}
+
+@media (max-width: 575.98px) {
+
+    .expedientes-tabla {
+        font-size: .875rem;
+    }
+
+    .expedientes-titulo {
+        font-size: 1.15rem;
+    }
+}

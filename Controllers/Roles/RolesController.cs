@@ -1,5 +1,7 @@
 ﻿using HikariLegalSRL.Authorization;
 using HikariLegalSRL.Constants;
+using HikariLegalSRL.Exceptions;
+using HikariLegalSRL.Extensions;
 using HikariLegalSRL.Models;
 using HikariLegalSRL.Services.Interfaces;
 using HikariLegalSRL.ViewModels.Roles;
@@ -15,11 +17,38 @@ namespace HikariLegalSRL.Controllers.Roles
 
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly IPermisoEvaluador _permisoEvaluador;
+        private readonly ITransaccionService _transaccionService;
+        private readonly IBitacoraAuditoriaService _bitacoraAuditoriaService;
 
-        public RolesController(RoleManager<ApplicationRole> roleManager, IPermisoEvaluador permisoEvaluador)
+        public RolesController(
+            RoleManager<ApplicationRole> roleManager,
+            IPermisoEvaluador permisoEvaluador,
+            ITransaccionService transaccionService,
+            IBitacoraAuditoriaService bitacoraAuditoriaService)
         {
             _roleManager = roleManager;
             _permisoEvaluador = permisoEvaluador;
+            _transaccionService = transaccionService;
+            _bitacoraAuditoriaService = bitacoraAuditoriaService;
+        }
+
+        private string UsuarioActualId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+        private async Task RegistrarAuditoriaAsync(string tipoAccion, string rolId, string? valorAnterior, string? valorNuevo)
+        {
+            await _bitacoraAuditoriaService.Registrar(
+                usuarioId: UsuarioActualId,
+                tipoAccion: tipoAccion,
+                moduloAfectado: "Roles",
+                registroAfectadoId: rolId,
+                valorAnterior: valorAnterior,
+                valorNuevo: valorNuevo);
+        }
+
+        private static string FormatearPermisos(IEnumerable<string> codigos)
+        {
+            var ordenados = codigos.OrderBy(c => c).ToList();
+            return ordenados.Count == 0 ? "(sin permisos)" : string.Join(", ", ordenados);
         }
 
         [HttpGet]
@@ -113,17 +142,29 @@ namespace HikariLegalSRL.Controllers.Roles
                 .ToList();
             var codigosActuales = claimsActuales.Select(c => c.Value).ToHashSet();
 
-            var aAgregar = seleccionados.Except(codigosActuales);
-            var aQuitar = claimsActuales.Where(c => !seleccionados.Contains(c.Value));
+            var aAgregar = seleccionados.Except(codigosActuales).ToList();
+            var aQuitar = claimsActuales.Where(c => !seleccionados.Contains(c.Value)).ToList();
 
-            foreach (var codigo in aAgregar)
-                await _roleManager.AddClaimAsync(rol, new Claim(Permisos.ClaimType, codigo));
+            var resultado = await _transaccionService.EjecutarIdentityAsync(async () =>
+            {
+                foreach (var codigo in aAgregar)
+                    TransaccionFallidaException.Exigir(await _roleManager.AddClaimAsync(rol, new Claim(Permisos.ClaimType, codigo)));
 
-            foreach (var claim in aQuitar)
-                await _roleManager.RemoveClaimAsync(rol, claim);
+                foreach (var claim in aQuitar)
+                    TransaccionFallidaException.Exigir(await _roleManager.RemoveClaimAsync(rol, claim));
+
+                if (aAgregar.Count > 0 || aQuitar.Count > 0)
+                    await RegistrarAuditoriaAsync("editar", rol.Id, FormatearPermisos(codigosActuales), FormatearPermisos(seleccionados));
+            });
 
             // Los permisos del rol cambiaron: descartar la caché para que aplique de inmediato.
             _permisoEvaluador.InvalidarRol(rol.Id);
+
+            if (!resultado.Succeeded)
+            {
+                TempData["Error"] = "No se pudieron guardar los permisos del rol. No se aplicó ningún cambio.";
+                return RedirectToAction(nameof(Index), new { rolId = rol.Id });
+            }
 
             TempData["Exito"] = $"Permisos de {rol.Name} actualizados correctamente.";
             return RedirectToAction(nameof(Index), new { rolId = rol.Id });
@@ -157,7 +198,13 @@ namespace HikariLegalSRL.Controllers.Roles
                 EsFijo = false
             };
 
-            var resultado = await _roleManager.CreateAsync(nuevoRol);
+            var resultado = await _transaccionService.EjecutarIdentityAsync(async () =>
+            {
+                TransaccionFallidaException.Exigir(await _roleManager.CreateAsync(nuevoRol));
+
+                await RegistrarAuditoriaAsync("crear", nuevoRol.Id, null, $"{nuevoRol.Name}: {nuevoRol.Descripcion}");
+            });
+
             if (!resultado.Succeeded)
             {
                 foreach (var error in resultado.Errors)
@@ -219,11 +266,29 @@ namespace HikariLegalSRL.Controllers.Roles
                 return View(model);
             }
 
+            var nombreAnterior = rol.Name;
+            var descripcionAnterior = rol.Descripcion;
+            var activoAnterior = rol.Activo;
+
             await _roleManager.SetRoleNameAsync(rol, model.Nombre);
             rol.Descripcion = model.Descripcion;
             rol.Activo = model.Activo;
 
-            var resultado = await _roleManager.UpdateAsync(rol);
+            var resultado = await _transaccionService.EjecutarIdentityAsync(async () =>
+            {
+                TransaccionFallidaException.Exigir(await _roleManager.UpdateAsync(rol));
+
+                var (valorAnterior, valorNuevo) = ResumenDeCambios.Diferencias(
+                    ("Nombre", nombreAnterior, model.Nombre),
+                    ("Descripción", descripcionAnterior, model.Descripcion));
+
+                if (valorNuevo is not null)
+                    await RegistrarAuditoriaAsync("editar", rol.Id, valorAnterior, valorNuevo);
+
+                if (activoAnterior != model.Activo)
+                    await RegistrarAuditoriaAsync("cambiar_estado", rol.Id, activoAnterior ? "activo" : "inactivo", model.Activo ? "activo" : "inactivo");
+            });
+
             if (!resultado.Succeeded)
             {
                 foreach (var error in resultado.Errors)
@@ -254,8 +319,15 @@ namespace HikariLegalSRL.Controllers.Roles
                 return RedirectToAction(nameof(Index));
             }
 
+            var activoAnterior = rol.Activo;
             rol.Activo = false;
-            var resultado = await _roleManager.UpdateAsync(rol);
+            var resultado = await _transaccionService.EjecutarIdentityAsync(async () =>
+            {
+                TransaccionFallidaException.Exigir(await _roleManager.UpdateAsync(rol));
+
+                if (activoAnterior)
+                    await RegistrarAuditoriaAsync("cambiar_estado", rol.Id, "activo", "inactivo");
+            });
 
             if (resultado.Succeeded)
             {
@@ -286,8 +358,15 @@ namespace HikariLegalSRL.Controllers.Roles
                 return RedirectToAction(nameof(Index));
             }
 
+            var activoAnterior = rol.Activo;
             rol.Activo = true;
-            var resultado = await _roleManager.UpdateAsync(rol);
+            var resultado = await _transaccionService.EjecutarIdentityAsync(async () =>
+            {
+                TransaccionFallidaException.Exigir(await _roleManager.UpdateAsync(rol));
+
+                if (!activoAnterior)
+                    await RegistrarAuditoriaAsync("cambiar_estado", rol.Id, "inactivo", "activo");
+            });
 
             if (resultado.Succeeded)
             {

@@ -47,7 +47,7 @@
     <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left"></i>
     </a>
-    <h4 class="mb-0 fw-bold prospectos-titulo">@p.NombreEmpresaPersona</h4>
+    <h1 class="h4 mb-0 fw-bold prospectos-titulo">@p.NombreEmpresaPersona</h1>
     <span class="badge @badge">@texto</span>
 
     <div class="ms-sm-auto d-flex flex-wrap gap-2">
@@ -118,10 +118,10 @@
                     <dd class="col-7">@(p.CedulaJuridica ?? "—")</dd>
 
                     <dt class="col-5">Teléfono</dt>
-                    <dd class="col-7">@p.Telefono</dd>
+                    <dd class="col-7">@(string.IsNullOrWhiteSpace(p.Telefono) ? "—" : p.Telefono)</dd>
 
                     <dt class="col-5">Correo</dt>
-                    <dd class="col-7">@p.Correo</dd>
+                    <dd class="col-7">@(string.IsNullOrWhiteSpace(p.Correo) ? "—" : p.Correo)</dd>
 
                     <dt class="col-5">Sector</dt>
                     <dd class="col-7">@(p.Sector ?? "—")</dd>
@@ -297,7 +297,7 @@
 {
     <div class="modal fade" id="modalFormActividad" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered prospectos-seg-modal">
-            <form method="post" id="formActividad">
+            <form method="post" id="formActividad" novalidate>
                 @Html.AntiForgeryToken()
                 <div class="modal-content">
                     <div class="modal-header prospectos-card-header">

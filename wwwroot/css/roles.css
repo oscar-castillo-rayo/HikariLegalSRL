@@ -146,6 +146,35 @@
     box-sizing: border-box;
 }
 
+.rp-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.rp-filter-btn {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 20px;
+    color: #6c757d;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 4px 12px;
+    text-transform: lowercase;
+    transition: background-color .15s, border-color .15s, color .15s;
+}
+
+    .rp-filter-btn.active {
+        background: #1F3864;
+        border-color: #1F3864;
+        color: #fff;
+    }
+
+.rp-modulo-block[hidden] {
+    display: none;
+}
+
 .rp-modulo-block {
     margin-bottom: 8px;
     border: 1px solid #dee2e6;

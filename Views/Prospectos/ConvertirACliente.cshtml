@@ -14,7 +14,7 @@
     <a asp-action="Detalle" asp-route-id="@p.Id" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left"></i>
     </a>
-    <h4 class="mb-0 fw-bold prospectos-titulo">Convertir a cliente</h4>
+    <h1 class="h4 mb-0 fw-bold prospectos-titulo">Convertir a cliente</h1>
 </div>
 
 <div class="row g-4">
@@ -33,10 +33,10 @@
                     <dd class="col-7">@(p.CedulaJuridica ?? "—")</dd>
 
                     <dt class="col-5">Teléfono</dt>
-                    <dd class="col-7">@p.Telefono</dd>
+                    <dd class="col-7">@(string.IsNullOrWhiteSpace(p.Telefono) ? "—" : p.Telefono)</dd>
 
                     <dt class="col-5">Correo</dt>
-                    <dd class="col-7">@p.Correo</dd>
+                    <dd class="col-7">@(string.IsNullOrWhiteSpace(p.Correo) ? "—" : p.Correo)</dd>
 
                     <dt class="col-5">Sector</dt>
                     <dd class="col-7">@(p.Sector ?? "—")</dd>
@@ -74,7 +74,7 @@
                             <span asp-validation-for="Cliente.ModalidadPago" class="text-danger small"></span>
                         </div>
                         <div class="col-md-6">
-                            <label asp-for="Cliente.ResponsableId" class="form-label fw-semibold">Abogado/Asesor responsable</label>
+                            <label asp-for="Cliente.ResponsableId" class="form-label fw-semibold">Responsable</label>
                             <select asp-for="Cliente.ResponsableId" class="form-select">
                                 <option value="">-- Seleccione --</option>
                                 @foreach (var r in Model.Responsables)

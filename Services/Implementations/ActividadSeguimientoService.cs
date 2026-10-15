@@ -94,7 +94,7 @@ namespace HikariLegalSRL.Services.Implementations
             await _bitacoraAuditoriaService.Registrar(
                 usuarioId: usuarioActualId,
                 tipoAccion: "crear",
-                moduloAfectado: "Prospectos",
+                moduloAfectado: "Actividades",
                 registroAfectadoId: actividad.ActividadSeguimientoId.ToString(),
                 valorNuevo: Resumen(actividad.TipoActividad, actividad.Titulo));
 
@@ -135,7 +135,7 @@ namespace HikariLegalSRL.Services.Implementations
             await _bitacoraAuditoriaService.Registrar(
                 usuarioId: usuarioActualId,
                 tipoAccion: "editar",
-                moduloAfectado: "Prospectos",
+                moduloAfectado: "Actividades",
                 registroAfectadoId: actividad.ActividadSeguimientoId.ToString(),
                 valorAnterior: valorAnterior,
                 valorNuevo: Resumen(actividad.TipoActividad, actividad.Titulo));
@@ -169,7 +169,7 @@ namespace HikariLegalSRL.Services.Implementations
             await _bitacoraAuditoriaService.Registrar(
                 usuarioId: usuarioActualId,
                 tipoAccion: "eliminar",
-                moduloAfectado: "Prospectos",
+                moduloAfectado: "Actividades",
                 registroAfectadoId: actividadId.ToString(),
                 valorAnterior: valorAnterior);
 

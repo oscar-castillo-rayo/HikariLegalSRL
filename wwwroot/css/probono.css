@@ -1,0 +1,24 @@
+.probono-card-header {
+    background: #EAF0FB;
+    color: #1F3864;
+}
+
+.probono-tabla thead th {
+    background: #1F3864;
+    border-bottom: none;
+    color: #fff;
+}
+
+.probono-titulo {
+    color: #1F3864;
+}
+
+@media (max-width: 576px) {
+    .probono-tabla {
+        font-size: .875rem;
+    }
+
+    .probono-titulo {
+        font-size: 1.15rem;
+    }
+}

@@ -1,0 +1,65 @@
+.reportes-area {
+    background: #EAF0FB;
+    color: #1F3864;
+}
+
+.reportes-barra {
+    background: #2E5FA3;
+}
+
+.reportes-btn {
+    background: #1F3864;
+    color: #fff;
+}
+
+    .reportes-btn:hover {
+        background: #16294a;
+        color: #fff;
+    }
+
+.reportes-desglose {
+    color: #6c757d;
+    cursor: help;
+    font-size: .8rem;
+    margin-left: .25rem;
+}
+
+    .reportes-desglose:hover,
+    .reportes-desglose:focus {
+        color: #1F3864;
+    }
+
+.reportes-distribucion {
+    min-width: 200px;
+}
+
+.reportes-metrica-total {
+    background: #1F3864;
+}
+
+.reportes-porcentaje {
+    min-width: 3rem;
+    text-align: right;
+}
+
+.reportes-progreso {
+    height: 10px;
+}
+
+.reportes-tasa-alta {
+    color: #1D6A3A;
+}
+
+.reportes-tasa-baja {
+    color: #B85C00;
+}
+
+.reportes-titulo {
+    color: #1F3864;
+}
+
+@media (max-width: 576px) {
+    .reportes-titulo {
+        font-size: 1.15rem;
+    }
+}

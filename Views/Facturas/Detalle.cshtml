@@ -1,0 +1,255 @@
+@model HikariLegalSRL.Models.DTOs.FacturaDetalleDTO
+@using HikariLegalSRL.Models.Enums
+
+@{
+    ViewData["Title"] = $"Factura #{Model.Id}";
+    var (bc, bt) = Model.Estado switch
+    {
+        EstadoFactura.Emitida => ("primary", "Emitida"),
+        EstadoFactura.PagoParcial => ("warning text-dark", "Pago parcial"),
+        EstadoFactura.Pagada => ("success", "Pagada"),
+        EstadoFactura.Anulada => ("secondary", "Anulada"),
+        _ => ("secondary", Model.Estado.ToString())
+    };
+    var simboloMoneda = Model.Moneda == Moneda.Dolares ? "$" : "₡";
+    var textoModalidad = Model.ModalidadPago switch
+    {
+        ModalidadPago.Contado => "Contado",
+        ModalidadPago.Abono => "Abono",
+        ModalidadPago.ProBono => "Pro bono",
+        _ => Model.ModalidadPago.ToString()
+    };
+    var puedeVerEstadoCuenta = await Authorization.TienePermiso(User, Permisos.Facturacion.Abono);
+    var puedeRegistrarAbono = puedeVerEstadoCuenta
+        && Model.Estado != EstadoFactura.Pagada && Model.Estado != EstadoFactura.Anulada;
+    var puedeAnular = await Authorization.TienePermiso(User, Permisos.Facturacion.Anular);
+    var puedeAnularFactura = puedeAnular
+        && Model.Estado != EstadoFactura.Pagada && Model.Estado != EstadoFactura.Anulada;
+    var porcentajePagado = Model.MontoTotal > 0 ? (int)Math.Round(Model.MontoPagado / Model.MontoTotal * 100) : 0;
+    var colorBarra = porcentajePagado >= 100 ? "success" : porcentajePagado > 0 ? "warning" : "danger";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/facturas.css" />
+}
+
+<div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h1 class="h4 mb-0 fw-bold facturas-titulo">Factura #@Model.Id</h1>
+    <span class="badge bg-@bc fs-6">@bt</span>
+    <div class="ms-auto d-flex gap-2">
+        @if (puedeVerEstadoCuenta)
+        {
+            <a asp-action="EstadoCuenta" asp-route-clienteId="@Model.ClienteId" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-person-lines-fill me-1"></i>Estado de cuenta
+            </a>
+        }
+        @if (puedeRegistrarAbono)
+        {
+            <a asp-action="RegistrarAbono" asp-route-id="@Model.Id" class="btn btn-success btn-sm">
+                <i class="bi bi-cash-coin me-1"></i>Registrar abono
+            </a>
+        }
+        @if (puedeAnularFactura)
+        {
+            <form asp-action="Anular" asp-route-id="@Model.Id" method="post"
+                  class="form-confirmar d-inline"
+                  data-titulo="¿Anular esta factura?"
+                  data-texto="La factura #@Model.Id quedará anulada. No podrán registrarse más abonos sobre ella y no podrá revertirse."
+                  data-icono="warning"
+                  data-btn-confirmar="Sí, anular">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-x-circle me-1"></i>Anular factura
+                </button>
+            </form>
+        }
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-bold facturas-card-header">
+                <i class="bi bi-file-earmark-text me-1"></i>Datos de la factura
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-5">Cliente</dt>
+                    <dd class="col-7">@Model.ClienteNombre</dd>
+
+                    <dt class="col-5">Expediente</dt>
+                    <dd class="col-7">
+                        <a asp-controller="Expedientes" asp-action="Detalle" asp-route-id="@Model.ExpedienteId">#@Model.ExpedienteId</a>
+                    </dd>
+
+                    <dt class="col-5">Responsable</dt>
+                    <dd class="col-7">@Model.ResponsableNombre</dd>
+
+                    <dt class="col-5">Modalidad de pago</dt>
+                    <dd class="col-7">@textoModalidad</dd>
+
+                    <dt class="col-5">Fecha de emisión</dt>
+                    <dd class="col-7">@Model.FechaEmision.ToLocalTime().ToString("dd/MM/yyyy")</dd>
+
+                    @if (Model.FechaAnulacion is not null)
+                    {
+                        <dt class="col-5">Fecha de anulación</dt>
+                        <dd class="col-7">@Model.FechaAnulacion.Value.ToLocalTime().ToString("dd/MM/yyyy")</dd>
+                    }
+
+                    <dt class="col-5">Monto total</dt>
+                    <dd class="col-7 fw-bold fs-5">@simboloMoneda@Model.MontoTotal.ToString("N2")</dd>
+                </dl>
+
+                <hr />
+
+                <div class="mb-2 d-flex justify-content-between small fw-semibold">
+                    <span>Progreso de pago</span>
+                    <span>@porcentajePagado%</span>
+                </div>
+                <div class="progress mb-3" style="height:12px;">
+                    <div class="progress-bar bg-@colorBarra" style="width:@porcentajePagado%"></div>
+                </div>
+
+                <dl class="row mb-0">
+                    <dt class="col-5">Monto pagado</dt>
+                    <dd class="col-7 text-success fw-semibold">@simboloMoneda@Model.MontoPagado.ToString("N2")</dd>
+
+                    <dt class="col-5">Saldo pendiente</dt>
+                    <dd class="col-7 @(Model.SaldoPendiente > 0 ? "text-danger fw-bold" : "text-success fw-bold")">@simboloMoneda@Model.SaldoPendiente.ToString("N2")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-bold facturas-card-header">
+                <i class="bi bi-list-check me-1"></i>Servicios facturados
+            </div>
+            @if (Model.Servicios.Count == 0)
+            {
+                <div class="card-body">
+                    <p class="text-center text-muted mb-0 py-3">Sin servicios registrados en la propuesta origen.</p>
+                </div>
+            }
+            else
+            {
+                <div class="list-group list-group-flush">
+                    @foreach (var s in Model.Servicios)
+                    {
+                        <div class="list-group-item d-flex justify-content-between align-items-start gap-2">
+                            <span>
+                                <strong>@s.NombreServicio</strong>
+                                @if (!string.IsNullOrWhiteSpace(s.DescripcionServicio))
+                                {
+                                    <br />
+                                    <small class="text-muted">@s.DescripcionServicio</small>
+                                }
+                            </span>
+                            <span class="text-nowrap fw-semibold">@simboloMoneda@s.Precio.ToString("N2")</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header fw-bold facturas-card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-cash-stack me-1"></i>Historial de pagos</span>
+                <span class="badge bg-primary">@Model.Abonos.Count abono(s)</span>
+            </div>
+            @if (Model.Abonos.Count == 0)
+            {
+                <div class="card-body">
+                    <p class="text-center text-muted mb-0 py-3">Sin abonos registrados aún.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha</th>
+                                <th class="text-end">Monto</th>
+                                <th>Método</th>
+                                <th>Comprobante</th>
+                                <th>Registrado por</th>
+                                <th class="text-center">Estado</th>
+                                @if (puedeAnular)
+                                {
+                                    <th class="text-end">Acciones</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var a in Model.Abonos)
+                            {
+                                var textoMetodo = a.MetodoPago switch
+                                {
+                                    MetodoPago.Transferencia => "Transferencia",
+                                    MetodoPago.Sinpe => "SINPE Móvil",
+                                    MetodoPago.Efectivo => "Efectivo",
+                                    _ => "Otro"
+                                };
+                                <tr class="@(a.EstaAnulado ? "text-muted" : "")">
+                                    <td><small>@a.Fecha.ToString("dd/MM/yyyy")</small></td>
+                                    <td class="text-end fw-semibold @(a.EstaAnulado ? "" : "text-success")">@simboloMoneda@a.Monto.ToString("N2")</td>
+                                    <td><small>@textoMetodo@(string.IsNullOrWhiteSpace(a.NumeroComprobante) ? "" : $" ({a.NumeroComprobante})")</small></td>
+                                    <td>
+                                        @if (a.TieneComprobante)
+                                        {
+                                            <a asp-action="DescargarComprobante" asp-route-abonoId="@a.Id" class="small">
+                                                <i class="bi bi-paperclip me-1"></i>Ver
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted">—</small>
+                                        }
+                                    </td>
+                                    <td><small>@a.RegistradoPorNombre</small></td>
+                                    <td class="text-center">
+                                        @if (a.EstaAnulado)
+                                        {
+                                            <span class="badge bg-secondary" title="Anulado por @a.AnuladoPorNombre el @a.FechaAnulacion!.Value.ToLocalTime().ToString("dd/MM/yyyy")">Anulado</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">Activo</span>
+                                        }
+                                    </td>
+                                    @if (puedeAnular)
+                                    {
+                                        <td class="text-end">
+                                            @if (!a.EstaAnulado)
+                                            {
+                                                <form asp-action="AnularAbono" asp-route-abonoId="@a.Id" asp-route-facturaId="@Model.Id" method="post"
+                                                      class="form-confirmar d-inline"
+                                                      data-titulo="¿Anular este abono?"
+                                                      data-texto="El abono de @simboloMoneda@a.Monto.ToString("N2") quedará anulado y no contará hacia el saldo pagado de la factura. No puede revertirse."
+                                                      data-icono="warning"
+                                                      data-btn-confirmar="Sí, anular">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Anular abono">
+                                                        <i class="bi bi-x-circle"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

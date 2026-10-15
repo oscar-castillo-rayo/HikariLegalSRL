@@ -12,12 +12,12 @@
     <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left"></i>
     </a>
-    <h4 class="mb-0 fw-bold prospectos-titulo">Nuevo prospecto</h4>
+    <h1 class="h4 mb-0 fw-bold prospectos-titulo">Nuevo prospecto</h1>
 </div>
 
 <div class="card shadow-sm border-0 prospectos-form-card">
     <div class="card-body p-3 p-md-4">
-        <form asp-action="Crear" method="post" data-prospecto-direccion data-pais-base="1">
+        <form asp-action="Crear" method="post" data-prospecto-direccion data-pais-base="1" novalidate>
             @Html.AntiForgeryToken()
 
             <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-3"></div>
@@ -39,13 +39,13 @@
                     <span asp-validation-for="Prospecto.CedulaJuridica" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">
-                    <label asp-for="Prospecto.Telefono" class="form-label fw-semibold"></label>
-                    <input asp-for="Prospecto.Telefono" class="form-control" autocomplete="off" />
+                    <label asp-for="Prospecto.Telefono" class="form-label fw-semibold"></label> <span class="text-muted fw-normal small">(opcional)</span>
+                    <input asp-for="Prospecto.Telefono" type="tel" inputmode="tel" class="form-control" autocomplete="off" />
                     <span asp-validation-for="Prospecto.Telefono" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">
-                    <label asp-for="Prospecto.Correo" class="form-label fw-semibold"></label>
-                    <input asp-for="Prospecto.Correo" type="email" class="form-control" autocomplete="off" />
+                    <label asp-for="Prospecto.Correo" class="form-label fw-semibold"></label> <span class="text-muted fw-normal small">(opcional)</span>
+                    <input asp-for="Prospecto.Correo" type="email" inputmode="email" spellcheck="false" class="form-control" autocomplete="off" />
                     <span asp-validation-for="Prospecto.Correo" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">

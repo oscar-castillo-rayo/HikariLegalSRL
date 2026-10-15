@@ -1,0 +1,156 @@
+@model HikariLegalSRL.ViewModels.Propuestas.PropuestaIndexViewModel
+@using HikariLegalSRL.Models.Enums
+
+@{
+    ViewData["Title"] = "Propuestas";
+    var puedeCrear = await Authorization.TienePermiso(User, Permisos.Propuestas.Crear);
+    var puedeEditar = await Authorization.TienePermiso(User, Permisos.Propuestas.Editar);
+    var puedeEnviar = await Authorization.TienePermiso(User, Permisos.Propuestas.Enviar);
+    var puedeAceptar = await Authorization.TienePermiso(User, Permisos.Propuestas.Aceptar);
+    var puedeRechazar = await Authorization.TienePermiso(User, Permisos.Propuestas.Rechazar);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/propuestas.css" />
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <h1 class="h4 mb-0 fw-bold propuestas-titulo"><i class="bi bi-file-earmark-text me-2"></i>Propuestas</h1>
+    <a asp-action="Crear"
+       class="btn fw-semibold propuestas-btn-guardar propuestas-btn-accion @(puedeCrear ? "" : "disabled")"
+       aria-disabled="@(!puedeCrear)"
+       tabindex="@(puedeCrear ? "0" : "-1")"
+       onclick="@(puedeCrear ? null : "return false;")">
+        <i class="bi bi-plus-lg me-1"></i>Nueva propuesta
+    </a>
+</div>
+
+<form method="get" class="card shadow-sm border-0 p-3 mb-4 propuestas-filtros">
+    <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-6">
+            <label class="form-label small fw-semibold mb-1">Buscar</label>
+            <input name="buscar" value="@Model.Buscar" class="form-control"
+                   placeholder="Nombre del prospecto o cliente..." />
+        </div>
+        <div class="col-6 col-md-4">
+            <label class="form-label small fw-semibold mb-1">Estado</label>
+            <select name="estado" class="form-select">
+                <option value="">Todos</option>
+                @foreach (var estado in Enum.GetValues<EstadoPropuesta>())
+                {
+                    <option value="@estado" selected="@(Model.EstadoFiltro == estado)">@estado</option>
+                }
+            </select>
+        </div>
+        <div class="col-6 col-md-2 d-grid">
+            <button type="submit" class="btn btn-outline-secondary">
+                <i class="bi bi-search me-1"></i>Filtrar
+            </button>
+        </div>
+    </div>
+</form>
+
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 propuestas-tabla">
+            <thead>
+                <tr>
+                    <th>Destinatario</th>
+                    <th class="text-end">Monto</th>
+                    <th class="text-center">Estado</th>
+                    <th class="text-center">Modalidad</th>
+                    <th>Plazo</th>
+                    <th>Elaborada por</th>
+                    <th>Fecha</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Propuestas.Count == 0)
+                {
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            No hay propuestas que coincidan con los filtros.
+                        </td>
+                    </tr>
+                }
+                @foreach (var p in Model.Propuestas)
+                {
+                    var (bc, bt) = p.Estado switch
+                    {
+                        EstadoPropuesta.Borrador => ("secondary", "Borrador"),
+                        EstadoPropuesta.Enviada => ("primary", "Enviada"),
+                        EstadoPropuesta.Aceptada => ("success", "Aceptada"),
+                        EstadoPropuesta.Rechazada => ("danger", "Rechazada"),
+                        _ => ("secondary", p.Estado.ToString())
+                    };
+                    var simboloMoneda = p.Moneda == Moneda.Dolares ? "$" : "₡";
+                    <tr>
+                        <td class="fw-semibold">
+                            @p.Destinatario
+                            @if (p.EsProspecto)
+                            {
+                                <span class="badge bg-light text-dark ms-1 propuestas-badge-tipo">Prospecto</span>
+                            }
+                        </td>
+                        <td class="text-end">@simboloMoneda@p.MontoTotal.ToString("N2")</td>
+                        <td class="text-center"><span class="badge bg-@bc">@bt</span></td>
+                        <td class="text-center"><small>@p.ModalidadPago</small></td>
+                        <td><small>@p.PlazoDias días</small></td>
+                        <td><small>@p.ElaboradaPorNombre</small></td>
+                        <td><small>@p.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy")</small></td>
+                        <td class="text-end text-nowrap">
+                            <a asp-action="Detalle" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            @if (p.Estado == EstadoPropuesta.Borrador)
+                            {
+                                <a asp-action="Editar" asp-route-id="@p.Id"
+                                   class="btn btn-sm btn-outline-secondary propuestas-btn-accion @(puedeEditar ? "" : "disabled")"
+                                   aria-disabled="@(!puedeEditar)"
+                                   tabindex="@(puedeEditar ? "0" : "-1")"
+                                   onclick="@(puedeEditar ? null : "return false;")"
+                                   title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form asp-action="MarcarComoEnviada" asp-route-id="@p.Id" method="post" class="d-inline form-confirmar"
+                                      data-titulo="¿Enviar esta propuesta?"
+                                      data-texto="La propuesta pasará a estado enviada y ya no podrá editarse."
+                                      data-icono="question"
+                                      data-btn-confirmar="Sí, enviar">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-primary propuestas-btn-accion" title="Enviar" @(puedeEnviar ? null : "disabled")>
+                                        <i class="bi bi-send"></i>
+                                    </button>
+                                </form>
+                            }
+                            @if (p.Estado == EstadoPropuesta.Enviada)
+                            {
+                                <form asp-action="MarcarComoAceptada" asp-route-id="@p.Id" method="post" class="d-inline form-confirmar"
+                                      data-titulo="¿Aceptar esta propuesta?"
+                                      data-texto="@(p.EsProspecto ? "Se creará el cliente a partir del prospecto y se abrirá el expediente correspondiente." : "Se abrirá el expediente correspondiente.")"
+                                      data-icono="info"
+                                      data-btn-confirmar="Sí, aceptar">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-success propuestas-btn-accion" title="Aceptar" @(puedeAceptar ? null : "disabled")>
+                                        <i class="bi bi-check-lg"></i>
+                                    </button>
+                                </form>
+                                <form asp-action="MarcarComoRechazada" asp-route-id="@p.Id" method="post" class="d-inline form-confirmar"
+                                      data-titulo="¿Rechazar esta propuesta?"
+                                      data-texto="La propuesta quedará como registro histórico y no podrá modificarse."
+                                      data-icono="warning"
+                                      data-btn-confirmar="Sí, rechazar">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger propuestas-btn-accion" title="Rechazar" @(puedeRechazar ? null : "disabled")>
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

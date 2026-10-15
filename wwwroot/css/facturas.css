@@ -1,0 +1,24 @@
+.facturas-card-header {
+    background: #EAF0FB;
+    color: #1F3864;
+}
+
+.facturas-tabla thead th {
+    background: #1F3864;
+    border-bottom: none;
+    color: #fff;
+}
+
+.facturas-titulo {
+    color: #1F3864;
+}
+
+@media (max-width: 576px) {
+    .facturas-tabla {
+        font-size: .875rem;
+    }
+
+    .facturas-titulo {
+        font-size: 1.15rem;
+    }
+}

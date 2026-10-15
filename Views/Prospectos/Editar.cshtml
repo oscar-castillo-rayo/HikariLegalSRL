@@ -12,7 +12,7 @@
     <a asp-action="Index" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left"></i>
     </a>
-    <h4 class="mb-0 fw-bold prospectos-titulo">Editar prospecto</h4>
+    <h1 class="h4 mb-0 fw-bold prospectos-titulo">Editar prospecto</h1>
 </div>
 
 <div class="card shadow-sm border-0 prospectos-form-card">
@@ -21,7 +21,8 @@
               data-prospecto-direccion data-pais-base="1"
               data-provincia-actual="@Model.ProvinciaIdActual"
               data-canton-actual="@Model.CantonIdActual"
-              data-distrito-actual="@Model.Prospecto.Direccion.DistritoId">
+              data-distrito-actual="@Model.Prospecto.Direccion.DistritoId"
+              novalidate>
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="Id" />
             <input type="hidden" asp-for="ProvinciaIdActual" id="provinciaIdActual" />
@@ -46,13 +47,13 @@
                     <span asp-validation-for="Prospecto.CedulaJuridica" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">
-                    <label asp-for="Prospecto.Telefono" class="form-label fw-semibold"></label>
-                    <input asp-for="Prospecto.Telefono" class="form-control" autocomplete="off" />
+                    <label asp-for="Prospecto.Telefono" class="form-label fw-semibold"></label> <span class="text-muted fw-normal small">(opcional)</span>
+                    <input asp-for="Prospecto.Telefono" type="tel" inputmode="tel" class="form-control" autocomplete="off" />
                     <span asp-validation-for="Prospecto.Telefono" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">
-                    <label asp-for="Prospecto.Correo" class="form-label fw-semibold"></label>
-                    <input asp-for="Prospecto.Correo" type="email" class="form-control" autocomplete="off" />
+                    <label asp-for="Prospecto.Correo" class="form-label fw-semibold"></label> <span class="text-muted fw-normal small">(opcional)</span>
+                    <input asp-for="Prospecto.Correo" type="email" inputmode="email" spellcheck="false" class="form-control" autocomplete="off" />
                     <span asp-validation-for="Prospecto.Correo" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">

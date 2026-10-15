@@ -1,5 +1,6 @@
 using HikariLegalSRL.Authorization;
 using HikariLegalSRL.Data;
+using HikariLegalSRL.ModelBinding;
 using HikariLegalSRL.Models;
 using HikariLegalSRL.Services.Implementations;
 using HikariLegalSRL.Services.Interfaces;
@@ -15,7 +16,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSweetAlert2();
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    // Agregar un ModelBinderProvider personalizado para manejar decimales con formato invariante (punto como separador decimal)
+    options.ModelBinderProviders.Insert(0, new InvariantDecimalModelBinderProvider());
+});
 builder.Services.AddMemoryCache();
 builder.Services.AddAuthorization(options =>
 {
@@ -43,11 +48,22 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 //Interfaces and Services
+builder.Services.AddScoped<ITransaccionService, TransaccionService>();
 builder.Services.AddScoped<IBitacoraAuditoriaService, BitacoraAuditoriaService>();
 builder.Services.AddScoped<IGeografiaService, GeografiaService>();
 builder.Services.AddScoped<IProspectoService, ProspectoService>();
 builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<IActividadSeguimientoService, ActividadSeguimientoService>();
+builder.Services.AddScoped<IServicioService, ServicioService>();
+builder.Services.AddScoped<IPropuestaService, PropuestaService>();
+builder.Services.AddScoped<IExpedienteService, ExpedienteService>();
+builder.Services.AddScoped<IFacturaService, FacturaService>();
+builder.Services.AddScoped<IProBonoService, ProBonoService>();
+builder.Services.AddScoped<INotificacionService, NotificacionService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IReporteService, ReporteService>();
+builder.Services.AddScoped<IEvaluacionCalidadService, EvaluacionCalidadService>();
+builder.Services.AddHostedService<RevisionVencimientosBackgroundService>();
 
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 {
@@ -112,11 +128,10 @@ using (var scope = app.Services.CreateScope())
 }
 
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error/500");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    // El valor predeterminado de HSTS es 30 días. Se utiliza para indicar a los navegadores que solo deben comunicarse con el servidor a través de HTTPS.
     app.UseHsts();
 }
 

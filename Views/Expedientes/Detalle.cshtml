@@ -1,0 +1,726 @@
+@model HikariLegalSRL.ViewModels.Expedientes.ExpedienteDetalleViewModel
+@using HikariLegalSRL.Models.Enums
+@using System.Security.Claims
+
+@{
+    var e = Model.Expediente;
+    ViewData["Title"] = $"Expediente #{e.Id}";
+    var (bc, bt) = e.Estado switch
+    {
+        EstadoExpediente.Abierto => ("success", "Abierto"),
+        EstadoExpediente.Cerrado => ("secondary", "Cerrado"),
+        _ => ("secondary", e.Estado.ToString())
+    };
+    var esAbierto = e.Estado == EstadoExpediente.Abierto;
+    var puedeAgregarTarea = await Authorization.TienePermiso(User, Permisos.Expedientes.Crear) && esAbierto;
+    var puedeEditarTarea = await Authorization.TienePermiso(User, Permisos.Expedientes.EditarTarea);
+    var puedeEliminarTarea = await Authorization.TienePermiso(User, Permisos.Expedientes.EliminarTarea);
+    var puedeReasignar = await Authorization.TienePermiso(User, Permisos.Expedientes.Reasignar);
+    var puedeCerrar = await Authorization.TienePermiso(User, Permisos.Expedientes.Cerrar);
+    var hayTareasSinAprobar = e.Tareas.Count == 0 || e.Tareas.Any(t => t.Estado != EstadoTarea.Aprobada);
+    var puedeCargar = await Authorization.TienePermiso(User, Permisos.Expedientes.Cargar);
+    var puedeAprobar = await Authorization.TienePermiso(User, Permisos.Expedientes.Aprobar);
+    var puedeDevolver = await Authorization.TienePermiso(User, Permisos.Expedientes.Devolver);
+    var puedeGestionarAjenas = await Authorization.TienePermiso(User, Permisos.Expedientes.GestionarAjenas);
+    var puedeGestionarTareasPropias = await Authorization.TienePermiso(User, Permisos.Expedientes.GestionarTareasPropias);
+    var puedeVerFactura = await Authorization.TienePermiso(User, Permisos.Facturacion.Ver);
+    var puedeRegistrarCalidad = await Authorization.TienePermiso(User, Permisos.Calidad.Registrar);
+    var puedeVerCalidad = await Authorization.TienePermiso(User, Permisos.Calidad.Ver);
+    var usuarioActualId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var puedeRevisarCartera = puedeGestionarAjenas || e.ResponsableId == usuarioActualId;
+
+    var diasRestantes = (e.PlazoComprometido.Date - DateTime.Today).Days;
+    var claseDias = diasRestantes < 0 ? "bg-danger" : diasRestantes <= 2 ? "bg-warning text-dark" : "bg-light text-dark border";
+    var textoDias = diasRestantes < 0 ? $"{Math.Abs(diasRestantes)} día(s) vencido" : $"{diasRestantes} día(s) restantes";
+
+    string FormatoHoras(decimal horas)
+    {
+        var totalMinutos = (int)Math.Round(horas * 60);
+        return $"{totalMinutos / 60}h {totalMinutos % 60}min";
+    }
+
+    var columnas = new[]
+    {
+        ("Pendiente", "secondary", EstadoTarea.Pendiente),
+        ("En proceso", "primary", EstadoTarea.EnProceso),
+        ("Lista para revisión", "warning text-dark", EstadoTarea.ListaRevision),
+        ("Aprobada", "success", EstadoTarea.Aprobada),
+        ("Devuelta", "danger", EstadoTarea.Devuelta),
+    };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/expedientes.css" />
+}
+
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+        <h1 class="h4 mb-0 fw-bold expedientes-titulo">Expediente #@e.Id — @e.ClienteNombre</h1>
+        <small class="text-muted">
+            Responsable: @e.ResponsableNombre ·
+            Propuesta origen:
+            <a asp-controller="Propuestas" asp-action="Detalle" asp-route-id="@e.PropuestaId">#@e.PropuestaId</a>
+        </small>
+    </div>
+
+    <div class="ms-sm-auto d-flex flex-wrap align-items-center gap-2">
+        <span class="badge bg-@bc">@bt</span>
+        @if (e.FacturaId is not null && puedeVerFactura)
+        {
+            <a asp-controller="Facturas" asp-action="Detalle" asp-route-id="@e.FacturaId" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-receipt me-1"></i>Ver factura
+            </a>
+        }
+        @if (e.Estado == EstadoExpediente.Abierto)
+        {
+            <span class="badge fs-6 @claseDias">
+                <i class="bi bi-calendar-event me-1"></i>@e.PlazoComprometido.ToString("dd/MM/yyyy") (@textoDias)
+            </span>
+        }
+        else
+        {
+            <span class="badge fs-6 bg-light text-dark border">
+                <i class="bi bi-calendar-event me-1"></i>@e.PlazoComprometido.ToString("dd/MM/yyyy")
+            </span>
+        }
+        @if (e.Estado == EstadoExpediente.Cerrado)
+        {
+            @if (e.Evaluado)
+            {
+                <a asp-controller="Calidad" asp-action="Index"
+                   class="btn btn-warning btn-sm expedientes-btn-accion @(puedeVerCalidad ? null : "disabled")">
+                    <i class="bi bi-star-fill me-1"></i>Evaluación registrada
+                </a>
+            }
+            else
+            {
+                <a asp-controller="Calidad" asp-action="Registrar" asp-route-id="@e.Id"
+                   class="btn btn-outline-warning btn-sm expedientes-btn-accion @(puedeRegistrarCalidad ? null : "disabled")">
+                    <i class="bi bi-star me-1"></i>Evaluar calidad
+                </a>
+            }
+        }
+        @if (esAbierto)
+        {
+            <button type="button" class="btn btn-outline-primary btn-sm expedientes-btn-accion" data-bs-toggle="modal"
+                    data-bs-target="#modalReasignar" @(puedeReasignar ? null : "disabled")>
+                <i class="bi bi-person-gear me-1"></i>Cambiar asesor
+            </button>
+            <form asp-action="Cerrar" asp-route-id="@e.Id" method="post" class="d-inline form-confirmar"
+                  data-titulo="¿Cerrar este expediente?"
+                  data-texto="Se generará automáticamente la factura correspondiente y no se podrá revertir."
+                  data-icono="warning" data-btn-confirmar="Sí, cerrar">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline-danger btn-sm expedientes-btn-accion"
+                        title="@(hayTareasSinAprobar ? "El expediente debe tener al menos una tarea, y todas deben estar aprobadas, para poder cerrarse" : null)"
+                        @((puedeCerrar && !hayTareasSinAprobar) ? null : "disabled")>
+                    <i class="bi bi-lock-fill me-1"></i>Cerrar expediente
+                </button>
+            </form>
+        }
+        @if (puedeAgregarTarea)
+        {
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevaTarea">
+                <i class="bi bi-plus-lg me-1"></i>Agregar tarea
+            </button>
+        }
+    </div>
+</div>
+
+<div class="row g-3 expedientes-kanban">
+    @foreach (var (titulo, color, estadoCol) in columnas)
+    {
+        var tareasCol = e.Tareas.Where(t => t.Estado == estadoCol).ToList();
+        <div class="col-12 col-sm-6 col-lg">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-header fw-bold d-flex justify-content-between align-items-center text-white bg-@color">
+                    <span>@titulo</span>
+                    <span class="badge bg-white text-dark">@tareasCol.Count</span>
+                </div>
+                <div class="card-body p-2 expedientes-kanban-col">
+                    @if (tareasCol.Count == 0)
+                    {
+                        <p class="text-center text-muted small py-4 mb-0">Sin tareas</p>
+                    }
+                    @foreach (var t in tareasCol)
+                    {
+                        var (colorP, textoP) = t.Prioridad switch
+                        {
+                            PrioridadTarea.Alta => ("danger", "Alta"),
+                            PrioridadTarea.Media => ("warning text-dark", "Media"),
+                            PrioridadTarea.Baja => ("success", "Baja"),
+                            _ => ("secondary", t.Prioridad.ToString())
+                        };
+                        var vencida = t.Estado != EstadoTarea.Aprobada && t.FechaLimite.Date < DateTime.Today;
+                        var esMiTarea = esAbierto && puedeCargar && (t.ColaboradorId == usuarioActualId || puedeGestionarAjenas);
+                        // Puede revisar (o registrar horas de revisión de) esta tarea puntual quien puede
+                        // revisar el expediente en general (cartera), salvo que sea su propia tarea: ahí
+                        // hace falta además el permiso expedientes.gestionar_tareas_propias, porque por
+                        // defecto nadie puede aprobarse/devolverse a sí mismo (RF-008).
+                        var puedeRevisarEstaTarea = puedeRevisarCartera && (t.ColaboradorId != usuarioActualId || puedeGestionarTareasPropias);
+                        // Mientras la tarea está en revisión, las horas que se registran cuentan como
+                        // horas de revisión — por eso, además del propio colaborador, también puede
+                        // registrarlas quien puede revisar esta tarea en particular.
+                        var puedeRegistrarHoras = (esMiTarea && t.Estado is EstadoTarea.EnProceso or EstadoTarea.Devuelta)
+                            || (esAbierto && t.Estado == EstadoTarea.ListaRevision && puedeRevisarEstaTarea);
+                        <div class="card mb-2 expedientes-kanban-card @(vencida ? "border-danger" : "")">
+                            <div class="card-body p-2">
+                                <div class="d-flex justify-content-between align-items-start gap-1 mb-1">
+                                    <p class="mb-0 fw-semibold small">@t.Descripcion</p>
+                                    <span class="badge bg-@colorP flex-shrink-0" style="font-size:10px;">@textoP</span>
+                                </div>
+                                @if (esAbierto && t.Estado != EstadoTarea.Aprobada)
+                                {
+                                    <div class="d-flex gap-2 mb-1">
+                                        <button type="button" class="btn btn-sm p-0 expedientes-btn-accion" data-bs-toggle="modal"
+                                                data-bs-target="#modalEditarTarea-@t.Id" title="Editar tarea" @(puedeEditarTarea ? null : "disabled")>
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <form asp-action="EliminarTarea" method="post" class="form-confirmar"
+                                              data-titulo="¿Eliminar esta tarea?"
+                                              data-texto="'@t.Descripcion' se eliminará junto con sus horas y entregables registrados, y no se podrá recuperar."
+                                              data-icono="warning" data-btn-confirmar="Sí, eliminar">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="expedienteId" value="@e.Id" />
+                                            <input type="hidden" name="tareaId" value="@t.Id" />
+                                            <button type="submit" class="btn btn-sm p-0 text-danger expedientes-btn-accion" title="Eliminar tarea" @(puedeEliminarTarea ? null : "disabled")>
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                }
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-person me-1"></i>@t.ColaboradorNombre
+                                </small>
+                                <small class="d-block @(vencida ? "text-danger fw-bold" : "text-muted")">
+                                    <i class="bi bi-calendar-event me-1"></i>@t.FechaLimite.ToString("dd/MM/yyyy")
+                                    @if (vencida)
+                                    {
+                                        <i class="bi bi-exclamation-triangle-fill ms-1" title="Vencida"></i>
+                                    }
+                                </small>
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-clock me-1"></i>@FormatoHoras(t.HorasEstimadas) estimadas
+                                </small>
+                                @if (t.HorasRealesTotal > 0)
+                                {
+                                    <div class="expedientes-horas-panel">
+                                        <div class="expedientes-horas-panel-total">
+                                            <i class="bi bi-lightning-charge-fill me-1"></i>@FormatoHoras(t.HorasRealesTotal) reales
+                                        </div>
+                                        <div class="expedientes-horas-panel-desglose">
+                                            <span class="expedientes-horas-badge expedientes-horas-badge-colaborador" title="Horas del colaborador">
+                                                <i class="bi bi-person-fill"></i>@FormatoHoras(t.HorasColaborador)
+                                            </span>
+                                            <span class="expedientes-horas-badge expedientes-horas-badge-revisor" title="Horas de revisión">
+                                                <i class="bi bi-search"></i>@FormatoHoras(t.HorasRevisor)
+                                            </span>
+                                        </div>
+                                    </div>
+                                }
+                                @if (esMiTarea && t.Estado == EstadoTarea.Pendiente)
+                                {
+                                    <form asp-action="IniciarTarea" method="post" class="mt-2">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="expedienteId" value="@e.Id" />
+                                        <input type="hidden" name="tareaId" value="@t.Id" />
+                                        <button type="submit" class="btn btn-sm expedientes-btn-guardar w-100">
+                                            <i class="bi bi-play-fill me-1"></i>Iniciar
+                                        </button>
+                                    </form>
+                                }
+                                @if (esMiTarea && t.Estado == EstadoTarea.Devuelta)
+                                {
+                                    <form asp-action="IniciarTarea" method="post" class="mt-2">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="expedienteId" value="@e.Id" />
+                                        <input type="hidden" name="tareaId" value="@t.Id" />
+                                        <button type="submit" class="btn btn-sm expedientes-btn-guardar w-100">
+                                            <i class="bi bi-arrow-repeat me-1"></i>Reanudar tarea
+                                        </button>
+                                    </form>
+                                }
+                                @if (puedeRegistrarHoras && t.Estado is EstadoTarea.EnProceso or EstadoTarea.ListaRevision or EstadoTarea.Devuelta)
+                                {
+                                    <form asp-action="AgregarHoras" method="post" class="mt-2">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="expedienteId" value="@e.Id" />
+                                        <input type="hidden" name="tareaId" value="@t.Id" />
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" name="Horas" class="form-control"
+                                                   min="0" max="99" step="1" placeholder="0" title="Horas" />
+                                            <span class="input-group-text">h</span>
+                                            <input type="number" name="Minutos" class="form-control"
+                                                   min="0" max="59" step="1" placeholder="0" title="Minutos" />
+                                            <span class="input-group-text">min</span>
+                                            <button type="submit" class="btn btn-outline-success" title="Agregar tiempo">
+                                                <i class="bi bi-plus-lg"></i>
+                                            </button>
+                                        </div>
+                                    </form>
+                                }
+                                @if (esMiTarea && t.Estado is EstadoTarea.EnProceso or EstadoTarea.Devuelta)
+                                {
+                                    <div class="expedientes-archivos-panel mt-2">
+                                        @if (t.ArchivosRondaActual.Count > 0)
+                                        {
+                                            <ul class="expedientes-archivos-lista">
+                                                @foreach (var archivo in t.ArchivosRondaActual)
+                                                {
+                                                    <li>
+                                                        <a asp-action="DescargarEntregable" asp-route-archivoId="@archivo.Id" target="_blank" title="@archivo.NombreOriginal">
+                                                            <i class="bi bi-paperclip me-1"></i>@archivo.NombreOriginal
+                                                        </a>
+                                                        <form asp-action="EliminarArchivoEntregable" method="post" class="d-inline form-confirmar"
+                                                              data-titulo="¿Eliminar este archivo?" data-texto="'@archivo.NombreOriginal' se eliminará y no se podrá recuperar."
+                                                              data-icono="warning" data-btn-confirmar="Sí, eliminar">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="expedienteId" value="@e.Id" />
+                                                            <input type="hidden" name="archivoId" value="@archivo.Id" />
+                                                            <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Eliminar archivo">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        }
+                                        <form asp-action="AgregarArchivoEntregable" method="post" enctype="multipart/form-data" class="d-flex gap-1">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="expedienteId" value="@e.Id" />
+                                            <input type="hidden" name="tareaId" value="@t.Id" />
+                                            <input type="file" name="Archivos" class="form-control form-control-sm" title="Adjuntar archivos" multiple />
+                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Adjuntar archivos">
+                                                <i class="bi bi-paperclip"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                }
+                                @if (esMiTarea && t.Estado == EstadoTarea.EnProceso)
+                                {
+                                    <button type="button" class="btn btn-warning btn-sm w-100 mt-2" data-bs-toggle="modal"
+                                            data-bs-target="#modalListaRevision-@t.Id">
+                                        <i class="bi bi-hand-index-thumb me-1"></i>Lista para revisión
+                                    </button>
+                                }
+                                @if (esAbierto && t.Estado == EstadoTarea.ListaRevision && (puedeAprobar || puedeDevolver) && puedeRevisarEstaTarea)
+                                {
+                                    <button type="button" class="btn btn-sm expedientes-btn-guardar w-100 mt-2" data-bs-toggle="modal"
+                                            data-bs-target="#modalRevisar-@t.Id">
+                                        <i class="bi bi-clipboard-check me-1"></i>Revisar
+                                    </button>
+                                }
+                                @if (t.Historial.Count > 0)
+                                {
+                                    <button type="button" class="btn btn-outline-secondary btn-sm w-100 mt-2" data-bs-toggle="modal"
+                                            data-bs-target="#modalHistorial-@t.Id">
+                                        <i class="bi bi-clock-history me-1"></i>Historial
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@if (esAbierto && puedeCargar)
+{
+    @foreach (var t in e.Tareas.Where(t => t.Estado == EstadoTarea.EnProceso && (t.ColaboradorId == usuarioActualId || puedeGestionarAjenas)))
+    {
+        <div class="modal fade" id="modalListaRevision-@t.Id" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form asp-action="MarcarListaParaRevision" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="expedienteId" value="@e.Id" />
+                    <input type="hidden" name="tareaId" value="@t.Id" />
+                    <div class="modal-content">
+                        <div class="modal-header expedientes-card-header">
+                            <h5 class="modal-title">Lista para revisión — @t.Descripcion</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            @if (t.HorasRondaActual > 0)
+                            {
+                                <div class="alert alert-success py-2 small">
+                                    <i class="bi bi-lightning-charge-fill me-1"></i>
+                                    Tiempo registrado en esta ronda: <strong>@FormatoHoras(t.HorasRondaActual)</strong>.
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning py-2 small">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                    Todavía no has registrado tiempo en esta ronda. Cierra este cuadro y agrega tiempo con el botón
+                                    <i class="bi bi-plus-lg"></i> antes de enviar a revisión.
+                                </div>
+                            }
+                            @if (t.ArchivosRondaActual.Count > 0)
+                            {
+                                <p class="small mb-0">
+                                    <i class="bi bi-paperclip me-1"></i>@t.ArchivosRondaActual.Count archivo(s) adjunto(s) en esta ronda.
+                                </p>
+                            }
+                            else
+                            {
+                                <p class="small text-muted mb-0">
+                                    Sin archivos adjuntos (opcional). Cierra este cuadro y usa el botón <i class="bi bi-paperclip"></i> de la tarjeta para adjuntar antes de enviar.
+                                </p>
+                            }
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn text-white fw-semibold expedientes-btn-guardar" @(t.HorasRondaActual > 0 ? null : "disabled")>
+                                <i class="bi bi-hand-index-thumb me-1"></i>Enviar a revisión
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+}
+
+@if (esAbierto && (puedeAprobar || puedeDevolver) && puedeRevisarCartera)
+{
+    @foreach (var t in e.Tareas.Where(t => t.Estado == EstadoTarea.ListaRevision
+        && (t.ColaboradorId != usuarioActualId || puedeGestionarTareasPropias)))
+    {
+        <div class="modal fade" id="modalRevisar-@t.Id" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="expedienteId" value="@e.Id" />
+                    <input type="hidden" name="entregableId" value="@t.Historial.FirstOrDefault()?.EntregableId" />
+                    <div class="modal-content">
+                        <div class="modal-header expedientes-card-header">
+                            <h5 class="modal-title">Revisar entregable — @t.Descripcion</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            @if (t.HorasRevisionRondaActual > 0)
+                            {
+                                <div class="alert alert-success py-2 small">
+                                    <i class="bi bi-lightning-charge-fill me-1"></i>
+                                    Tiempo de revisión registrado: <strong>@FormatoHoras(t.HorasRevisionRondaActual)</strong>.
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning py-2 small">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                    Todavía no has registrado tiempo de revisión. Cierra este cuadro y agrega tiempo con el botón
+                                    <i class="bi bi-plus-lg"></i> antes de aprobar o devolver.
+                                </div>
+                            }
+                            @{ var archivosEnRevision = t.Historial.FirstOrDefault()?.Archivos ?? new List<HikariLegalSRL.Models.DTOs.ArchivoDTO>(); }
+                            @if (archivosEnRevision.Count > 0)
+                            {
+                                <ul class="expedientes-archivos-lista mb-3">
+                                    @foreach (var archivo in archivosEnRevision)
+                                    {
+                                        <li>
+                                            <a asp-action="DescargarEntregable" asp-route-archivoId="@archivo.Id" target="_blank" title="@archivo.NombreOriginal">
+                                                <i class="bi bi-paperclip me-1"></i>@archivo.NombreOriginal
+                                            </a>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Observaciones <span class="text-muted fw-normal">(obligatorio si devuelve)</span></label>
+                                    <textarea name="Observaciones" class="form-control" rows="3" maxlength="1000"></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Archivo adjunto (opcional)</label>
+                                    <input type="file" name="Archivo" class="form-control" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" formaction="@Url.Action("DevolverEntregable")" class="btn btn-outline-danger fw-semibold"
+                                    @((puedeDevolver && t.HorasRevisionRondaActual > 0) ? null : "disabled")>
+                                <i class="bi bi-arrow-counterclockwise me-1"></i>Devolver
+                            </button>
+                            <button type="submit" formaction="@Url.Action("AprobarEntregable")" class="btn text-white fw-semibold expedientes-btn-guardar"
+                                    @((puedeAprobar && t.HorasRevisionRondaActual > 0) ? null : "disabled")>
+                                <i class="bi bi-check-lg me-1"></i>Aprobar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+}
+
+@foreach (var t in e.Tareas.Where(t => t.Historial.Count > 0))
+{
+    <div class="modal fade" id="modalHistorial-@t.Id" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header expedientes-card-header">
+                    <h5 class="modal-title">Historial de revisión — @t.Descripcion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    @foreach (var ronda in t.Historial)
+                    {
+                        var (colorRonda, textoRonda) = ronda.Resultado switch
+                        {
+                            ResultadoRevision.Aprobada => ("success", "Aprobada"),
+                            ResultadoRevision.Devuelta => ("danger", "Devuelta"),
+                            _ => ("warning text-dark", "Pendiente de revisión")
+                        };
+                        <div class="expedientes-historial-ronda">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong class="small">Ronda @ronda.RondaRevision</strong>
+                                <span class="badge bg-@colorRonda">@textoRonda</span>
+                            </div>
+                            <small class="text-muted d-block">
+                                Entregable cargado el @ronda.FechaCarga.ToString("dd/MM/yyyy HH:mm") · @FormatoHoras(ronda.HorasReales) reales
+                            </small>
+                            @if (ronda.Archivos.Count > 0)
+                            {
+                                <ul class="expedientes-archivos-lista">
+                                    @foreach (var archivo in ronda.Archivos)
+                                    {
+                                        <li>
+                                            <a asp-action="DescargarEntregable" asp-route-archivoId="@archivo.Id" target="_blank" title="@archivo.NombreOriginal">
+                                                <i class="bi bi-paperclip me-1"></i>@archivo.NombreOriginal
+                                            </a>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            @if (ronda.Resultado.HasValue)
+                            {
+                                <small class="text-muted d-block">
+                                    Revisado por @ronda.RevisorNombre el @ronda.FechaRevision?.ToString("dd/MM/yyyy HH:mm") · @FormatoHoras(ronda.HorasRevision ?? 0) de revisión
+                                    @if (ronda.TieneArchivoRevision)
+                                    {
+                                        <a asp-action="DescargarArchivoRevision" asp-route-revisionId="@ronda.RevisionId" target="_blank" class="ms-1">
+                                            <i class="bi bi-paperclip"></i>
+                                        </a>
+                                    }
+                                </small>
+                                @if (!string.IsNullOrWhiteSpace(ronda.Observaciones))
+                                {
+                                    <p class="small mb-0 mt-1 fst-italic">"@ronda.Observaciones"</p>
+                                }
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (puedeAgregarTarea)
+{
+    <div class="modal fade" id="modalNuevaTarea" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form asp-action="AgregarTarea" asp-route-id="@e.Id" method="post" id="formNuevaTarea"
+                  data-plazo-comprometido="@e.PlazoComprometido.ToString("yyyy-MM-dd")" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-content">
+                    <div class="modal-header expedientes-card-header">
+                        <h5 class="modal-title">Agregar tarea</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info py-2 small">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Plazo comprometido del expediente: <strong>@e.PlazoComprometido.ToString("dd/MM/yyyy")</strong>.
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label asp-for="NuevaTarea.Descripcion" class="form-label fw-semibold">Descripción</label>
+                                <textarea asp-for="NuevaTarea.Descripcion" class="form-control" rows="3"
+                                          placeholder="Describe qué debe hacer el colaborador..."></textarea>
+                                <span asp-validation-for="NuevaTarea.Descripcion" class="text-danger small"></span>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="NuevaTarea.ColaboradorResponsableId" class="form-label fw-semibold">Colaborador responsable</label>
+                                <select asp-for="NuevaTarea.ColaboradorResponsableId" class="form-select">
+                                    <option value="">-- Seleccione --</option>
+                                    @foreach (var c in Model.Colaboradores)
+                                    {
+                                        <option value="@c.Id">@c.Nombre</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="NuevaTarea.ColaboradorResponsableId" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="NuevaTarea.FechaLimite" for="nuevaTareaFechaLimite" class="form-label fw-semibold">Fecha límite</label>
+                                <input asp-for="NuevaTarea.FechaLimite" id="nuevaTareaFechaLimite" class="form-control" type="date" />
+                                <span asp-validation-for="NuevaTarea.FechaLimite" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Horas estimadas</label>
+                                <div class="input-group">
+                                    <input asp-for="NuevaTarea.HorasEstimadasHoras" class="form-control" type="number" min="0" max="99" step="1" placeholder="0" />
+                                    <span class="input-group-text">h</span>
+                                    <input asp-for="NuevaTarea.HorasEstimadasMinutos" class="form-control" type="number" min="0" max="59" step="1" placeholder="0" />
+                                    <span class="input-group-text">min</span>
+                                </div>
+                                <span asp-validation-for="NuevaTarea.HorasEstimadasHoras" class="text-danger small"></span>
+                                <span asp-validation-for="NuevaTarea.HorasEstimadasMinutos" class="text-danger small"></span>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="NuevaTarea.Prioridad" class="form-label fw-semibold">Prioridad</label>
+                                <select asp-for="NuevaTarea.Prioridad" class="form-select">
+                                    <option value="">-- Seleccione --</option>
+                                    <option value="@PrioridadTarea.Baja">Baja</option>
+                                    <option value="@PrioridadTarea.Media" selected>Media</option>
+                                    <option value="@PrioridadTarea.Alta">Alta</option>
+                                </select>
+                                <span asp-validation-for="NuevaTarea.Prioridad" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn text-white fw-semibold expedientes-btn-guardar">
+                            <i class="bi bi-check-lg me-1"></i>Guardar tarea
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@if (esAbierto)
+{
+    @foreach (var t in e.Tareas.Where(t => t.Estado != EstadoTarea.Aprobada))
+    {
+        var totalMinutosEstimados = (int)Math.Round(t.HorasEstimadas * 60);
+        <div class="modal fade" id="modalEditarTarea-@t.Id" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form asp-action="EditarTarea" method="post" novalidate>
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="expedienteId" value="@e.Id" />
+                    <input type="hidden" name="tareaId" value="@t.Id" />
+                    <div class="modal-content">
+                        <div class="modal-header expedientes-card-header">
+                            <h5 class="modal-title">Editar tarea</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-info py-2 small">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Plazo comprometido del expediente: <strong>@e.PlazoComprometido.ToString("dd/MM/yyyy")</strong>.
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Descripción</label>
+                                    <textarea name="Descripcion" class="form-control" rows="3" maxlength="1000" required>@t.Descripcion</textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Colaborador responsable</label>
+                                    <select name="ColaboradorResponsableId" class="form-select" required>
+                                        <option value="">-- Seleccione --</option>
+                                        @foreach (var c in Model.Colaboradores)
+                                        {
+                                            <option value="@c.Id" selected="@(c.Id == t.ColaboradorId)">@c.Nombre</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Fecha límite</label>
+                                    <input name="FechaLimite" class="form-control" type="date" value="@t.FechaLimite.ToString("yyyy-MM-dd")" required />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Horas estimadas</label>
+                                    <div class="input-group">
+                                        <input name="HorasEstimadasHoras" class="form-control" type="number" min="0" max="99" step="1" value="@(totalMinutosEstimados / 60)" />
+                                        <span class="input-group-text">h</span>
+                                        <input name="HorasEstimadasMinutos" class="form-control" type="number" min="0" max="59" step="1" value="@(totalMinutosEstimados % 60)" />
+                                        <span class="input-group-text">min</span>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Prioridad</label>
+                                    <select name="Prioridad" class="form-select" required>
+                                        <option value="@PrioridadTarea.Baja" selected="@(t.Prioridad == PrioridadTarea.Baja)">Baja</option>
+                                        <option value="@PrioridadTarea.Media" selected="@(t.Prioridad == PrioridadTarea.Media)">Media</option>
+                                        <option value="@PrioridadTarea.Alta" selected="@(t.Prioridad == PrioridadTarea.Alta)">Alta</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn text-white fw-semibold expedientes-btn-guardar">
+                                <i class="bi bi-check-lg me-1"></i>Guardar cambios
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+}
+
+@if (esAbierto && puedeReasignar)
+{
+    <div class="modal fade" id="modalReasignar" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form asp-action="ReasignarResponsable" asp-route-id="@e.Id" method="post" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-content">
+                    <div class="modal-header expedientes-card-header">
+                        <h5 class="modal-title">Cambiar asesor</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <dl class="row mb-3">
+                            <dt class="col-5">Asesor actual</dt>
+                            <dd class="col-7">@e.ResponsableNombre</dd>
+                        </dl>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold" id="labelNuevoResponsable">Nuevo asesor</label>
+                                <div class="dropdown expedientes-dropdown-responsable">
+                                    <button type="button" class="form-select text-start expedientes-dropdown-toggle"
+                                            id="botonNuevoResponsable" data-bs-toggle="dropdown" aria-expanded="false"
+                                            aria-labelledby="labelNuevoResponsable">
+                                        <span id="textoNuevoResponsable">-- Seleccione --</span>
+                                    </button>
+                                    <ul class="dropdown-menu expedientes-dropdown-menu w-100" aria-labelledby="botonNuevoResponsable">
+                                        @foreach (var r in Model.Responsables)
+                                        {
+                                            <li><a class="dropdown-item" href="#" data-id="@r.Id" data-nombre="@r.Nombre">@r.Nombre</a></li>
+                                        }
+                                    </ul>
+                                    <input type="hidden" id="selectNuevoResponsable" name="ResponsableId"
+                                           data-val="true" data-val-required="Debe seleccionar un responsable" />
+                                </div>
+                                <span class="text-danger small" data-valmsg-for="ResponsableId" data-valmsg-replace="true"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn text-white fw-semibold expedientes-btn-guardar">Confirmar cambio</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/expedientes-tarea.js" asp-append-version="true"></script>
+    <script src="~/js/expedientes-reasignar.js" asp-append-version="true"></script>
+}
