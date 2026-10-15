@@ -22,6 +22,7 @@ namespace HikariLegalSRL.Services.Implementations
         private readonly ApplicationDbContext _context;
         private readonly IPermisoEvaluador _permisoEvaluador;
         private readonly IBitacoraAuditoriaService _bitacoraAuditoriaService;
+        private readonly INotificacionService _notificacionService;
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IConfiguration _configuration;
 
@@ -29,14 +30,38 @@ namespace HikariLegalSRL.Services.Implementations
             ApplicationDbContext context,
             IPermisoEvaluador permisoEvaluador,
             IBitacoraAuditoriaService bitacoraAuditoriaService,
+            INotificacionService notificacionService,
             IWebHostEnvironment webHostEnvironment,
             IConfiguration configuration)
         {
             _context = context;
             _permisoEvaluador = permisoEvaluador;
             _bitacoraAuditoriaService = bitacoraAuditoriaService;
+            _notificacionService = notificacionService;
             _webHostEnvironment = webHostEnvironment;
             _configuration = configuration;
+        }
+
+        // RF-009: notifica cambio de estado de una tarea al colaborador asignado, al
+        // responsable del expediente (cartera) y a quien tenga permiso de supervisión
+        // (equivalente a "Administrador" pero por permiso, no por rol) — sin duplicar al
+        // propio usuario que ejecutó la acción.
+        private async Task NotificarCambioEstadoTareaAsync(Tarea tarea, string usuarioActualId, string mensaje)
+        {
+            var destinatarios = new HashSet<string> { tarea.ColaboradorResponsableId, tarea.Expediente.ResponsableId };
+
+            var supervisores = await _permisoEvaluador.UsuariosActivosConPermisoAsync(Permisos.Expedientes.Supervisar);
+            foreach (var supervisor in supervisores)
+                destinatarios.Add(supervisor.Id);
+
+            destinatarios.Remove(usuarioActualId);
+
+            foreach (var destinatarioId in destinatarios)
+            {
+                await _notificacionService.Notificar(
+                    destinatarioId, TipoNotificacion.CambioEstadoTarea, mensaje,
+                    EntidadNotificacion.Tarea, tarea.TareaId);
+            }
         }
 
         private string ObtenerCarpetaEntregables()
@@ -316,6 +341,7 @@ namespace HikariLegalSRL.Services.Implementations
                 throw new ReglaNegocioException("Las horas estimadas deben ser mayores a 0.");
 
             var descripcionAnterior = tarea.Descripcion;
+            var colaboradorAnteriorId = tarea.ColaboradorResponsableId;
 
             tarea.Descripcion = dto.Descripcion;
             tarea.ColaboradorResponsableId = dto.ColaboradorResponsableId!;
@@ -341,6 +367,18 @@ namespace HikariLegalSRL.Services.Implementations
                 valorNuevo: $"Tarea '{tarea.Descripcion}'");
 
             await _context.SaveChangesAsync();
+
+            // RF-007 (equivalente a nivel de tarea): notificar al nuevo colaborador cuando
+            // "Editar tarea" cambia a quién está asignada. El colaborador anterior no se
+            // notifica: al dejar de ser ColaboradorResponsableId simplemente deja de ver la
+            // tarea, no hace falta avisarle.
+            if (colaboradorAnteriorId != tarea.ColaboradorResponsableId)
+            {
+                await _notificacionService.Notificar(
+                    tarea.ColaboradorResponsableId, TipoNotificacion.ReasignacionTarea,
+                    $"Se te asignó la tarea '{tarea.Descripcion}' (expediente #{tarea.ExpedienteId}).",
+                    EntidadNotificacion.Tarea, tarea.TareaId);
+            }
         }
 
         public async Task EliminarTarea(int tareaId, string usuarioActualId)
@@ -437,6 +475,12 @@ namespace HikariLegalSRL.Services.Implementations
                 valorNuevo: $"Responsable: {nuevoResponsable.NombreCompleto}");
 
             await _context.SaveChangesAsync();
+
+            // RF-007: notificar al nuevo responsable asignado.
+            await _notificacionService.Notificar(
+                nuevoResponsable.Id, TipoNotificacion.ReasignacionExpediente,
+                $"Ahora eres responsable del expediente #{expedienteId}.",
+                EntidadNotificacion.Expediente, expedienteId);
         }
 
         public async Task IniciarTarea(int tareaId, string usuarioActualId)
@@ -468,6 +512,9 @@ namespace HikariLegalSRL.Services.Implementations
                 valorNuevo: "en_proceso");
 
             await _context.SaveChangesAsync();
+
+            await NotificarCambioEstadoTareaAsync(tarea, usuarioActualId,
+                $"La tarea '{tarea.Descripcion}' pasó a 'en proceso'.");
         }
 
         public async Task MarcarListaParaRevision(int tareaId, string usuarioActualId)
@@ -530,6 +577,9 @@ namespace HikariLegalSRL.Services.Implementations
                 valorNuevo: $"lista_revision (horas reales ronda {rondaActual}: {horasReales}h)");
 
             await _context.SaveChangesAsync();
+
+            await NotificarCambioEstadoTareaAsync(tarea, usuarioActualId,
+                $"La tarea '{tarea.Descripcion}' está lista para revisión.");
         }
 
         private async Task<Entregable> ObtenerOCrearEntregableRondaActualAsync(Tarea tarea, string usuarioActualId)
@@ -819,6 +869,11 @@ namespace HikariLegalSRL.Services.Implementations
                     : $"devuelta (horas revisión ronda {entregable.RondaRevision}: {horasRevision}h) — {dto.Observaciones}");
 
             await _context.SaveChangesAsync();
+
+            var mensaje = resultado == ResultadoRevision.Aprobada
+                ? $"La tarea '{tarea.Descripcion}' fue aprobada."
+                : $"La tarea '{tarea.Descripcion}' fue devuelta: {dto.Observaciones}";
+            await NotificarCambioEstadoTareaAsync(tarea, usuarioActualId, mensaje);
         }
 
         public async Task<(string RutaAbsoluta, string NombreArchivo, string ContentType)?> ObtenerArchivoRevision(int revisionId)

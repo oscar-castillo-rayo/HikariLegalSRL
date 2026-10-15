@@ -1,0 +1,53 @@
+@model List<HikariLegalSRL.Models.DTOs.NotificacionDTO>
+@using HikariLegalSRL.Extensions
+
+@{
+    ViewData["Title"] = "Notificaciones";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/notificaciones.css" />
+}
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <h4 class="mb-0 fw-bold notificaciones-titulo">
+        <i class="bi bi-bell me-2"></i>Notificaciones
+    </h4>
+</div>
+
+@if (Model.Count == 0)
+{
+    <p class="text-center text-muted py-5">
+        <i class="bi bi-check-circle d-block fs-1 mb-2"></i>
+        No tienes notificaciones.
+    </p>
+}
+else
+{
+    <div class="list-group">
+        @foreach (var n in Model)
+        {
+            var (colorClase, icono) = n.Tipo.EstiloVisual();
+            <div class="list-group-item notificaciones-item @(n.Leida ? "notificaciones-item-leida" : "")">
+                <a href="/Notificaciones/Ir/@n.Id" class="notificaciones-item-link">
+                    <span class="notificaciones-item-icono text-@colorClase">
+                        <i class="bi @icono"></i>
+                    </span>
+                    <span class="notificaciones-item-texto">
+                        <span class="d-block">@n.Mensaje</span>
+                        <small class="text-muted">@n.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</small>
+                    </span>
+                </a>
+                <form asp-action="Eliminar" method="post" class="form-confirmar"
+                      data-titulo="¿Eliminar esta notificación?" data-texto="No se podrá recuperar."
+                      data-icono="warning" data-btn-confirmar="Sí, eliminar">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@n.Id" />
+                    <button type="submit" class="btn btn-sm btn-link text-danger" title="Eliminar">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
+            </div>
+        }
+    </div>
+}

@@ -1,0 +1,40 @@
+.dashboard-card-estimadas {
+    background: #1F3864;
+}
+
+.dashboard-card-header {
+    background: #EAF0FB;
+    color: #1F3864;
+}
+
+.dashboard-card-ok {
+    background: #6c757d;
+}
+
+.dashboard-card-proximas {
+    background: #B85C00;
+}
+
+.dashboard-card-vencidas {
+    background: #dc3545;
+}
+
+.dashboard-notificacion-item {
+    align-items: flex-start;
+    display: flex;
+    gap: .6rem;
+}
+
+.dashboard-notificacion-item i {
+    flex-shrink: 0;
+    font-size: 1.1rem;
+    margin-top: .15rem;
+}
+
+.dashboard-notificacion-texto {
+    min-width: 0;
+}
+
+.dashboard-titulo {
+    color: #1F3864;
+}

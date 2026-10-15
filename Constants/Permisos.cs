@@ -82,6 +82,7 @@ namespace HikariLegalSRL.Constants
             public const string Cargar          = "expedientes.cargar";
             public const string SerResponsable  = "expedientes.ser_responsable";
             public const string GestionarAjenas = "expedientes.gestionar_ajenas";
+            public const string Supervisar      = "expedientes.supervisar";
             public const string GestionarTareasPropias = "expedientes.gestionar_tareas_propias";
             public const string EditarTarea     = "expedientes.editar_tarea";
             public const string EliminarTarea   = "expedientes.eliminar_tarea";
@@ -120,7 +121,7 @@ namespace HikariLegalSRL.Constants
             Clientes.Ver, Clientes.Crear, Clientes.Editar, Clientes.Asignar, Clientes.Desactivar, Clientes.Reactivar, Clientes.SerResponsable,
             Servicios.Ver, Servicios.Crear, Servicios.Editar, Servicios.Desactivar, Servicios.Reactivar,
             Propuestas.Ver, Propuestas.Crear, Propuestas.Editar, Propuestas.Enviar, Propuestas.Aceptar, Propuestas.Rechazar,
-            Expedientes.Ver, Expedientes.Crear, Expedientes.Asignar, Expedientes.Reasignar, Expedientes.Cerrar, Expedientes.Aprobar, Expedientes.Devolver, Expedientes.Cargar, Expedientes.SerResponsable, Expedientes.GestionarAjenas, Expedientes.GestionarTareasPropias, Expedientes.EditarTarea, Expedientes.EliminarTarea,
+            Expedientes.Ver, Expedientes.Crear, Expedientes.Asignar, Expedientes.Reasignar, Expedientes.Cerrar, Expedientes.Aprobar, Expedientes.Devolver, Expedientes.Cargar, Expedientes.SerResponsable, Expedientes.GestionarAjenas, Expedientes.Supervisar, Expedientes.GestionarTareasPropias, Expedientes.EditarTarea, Expedientes.EliminarTarea,
             Facturacion.Ver, Facturacion.Generar, Facturacion.Anular, Facturacion.Abono, Facturacion.Probono, Facturacion.AprobarProbono,
             Reportes.Conversion, Reportes.Ingresos, Reportes.Geo, Reportes.Carga, Reportes.Calidad,
             Auditoria.Ver,
