@@ -15,7 +15,8 @@ namespace HikariLegalSRL.Controllers.Reportes
         private static readonly string[] PermisosDeReportes =
         {
             Permisos.Reportes.Conversion,
-            Permisos.Reportes.Ingresos
+            Permisos.Reportes.Ingresos,
+            Permisos.Reportes.Geo
         };
 
         private readonly IReporteService _reporteService;
@@ -65,6 +66,14 @@ namespace HikariLegalSRL.Controllers.Reportes
             DescartarRangoFechasInvalido(ref desde, ref hasta);
 
             var reporte = await _reporteService.ObtenerIngresosPorServicio(periodo, desde, hasta);
+            return View(reporte);
+        }
+
+        [HttpGet]
+        [Permiso(Permisos.Reportes.Geo)]
+        public async Task<IActionResult> DistribucionGeografica(string nivel = "provincia")
+        {
+            var reporte = await _reporteService.ObtenerDistribucionGeografica(nivel);
             return View(reporte);
         }
 
