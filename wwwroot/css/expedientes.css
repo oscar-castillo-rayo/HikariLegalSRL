@@ -1,3 +1,12 @@
+.expedientes-btn-accion:disabled,
+.expedientes-btn-accion.disabled {
+    background-color: #e9ecef;
+    border-color: #e9ecef;
+    color: #adb5bd;
+    opacity: 1;
+    pointer-events: none;
+}
+
 .expedientes-btn-guardar {
     background: #1F3864;
 }
@@ -11,6 +20,20 @@
     background: #EAF0FB;
     color: #1F3864;
 }
+
+.expedientes-dropdown-menu {
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.expedientes-dropdown-toggle {
+    display: flex;
+    align-items: center;
+}
+
+    .expedientes-dropdown-toggle.input-validation-error {
+        border-color: #dc3545;
+    }
 
 .expedientes-kanban-card {
     font-size: .8125rem;
