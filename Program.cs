@@ -59,6 +59,7 @@ builder.Services.AddScoped<IServicioService, ServicioService>();
 builder.Services.AddScoped<IPropuestaService, PropuestaService>();
 builder.Services.AddScoped<IExpedienteService, ExpedienteService>();
 builder.Services.AddScoped<IFacturaService, FacturaService>();
+builder.Services.AddScoped<IProBonoService, ProBonoService>();
 builder.Services.AddScoped<INotificacionService, NotificacionService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddHostedService<RevisionVencimientosBackgroundService>();

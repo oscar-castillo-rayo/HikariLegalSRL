@@ -1066,6 +1066,67 @@ namespace HikariLegalSRL.Migrations
                     b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
+            modelBuilder.Entity("HikariLegalSRL.Models.SolicitudProBono", b =>
+                {
+                    b.Property<int>("SolicitudProBonoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SolicitudProBonoId"));
+
+                    b.Property<int?>("ClienteId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ComentarioResolucion")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Decision")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<DateTime?>("FechaResolucion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaSolicitud")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("JustificacionEscrita")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("ProspectoId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ResueltoPorId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SolicitanteId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("SolicitudProBonoId");
+
+                    b.HasIndex("ClienteId");
+
+                    b.HasIndex("Decision");
+
+                    b.HasIndex("ProspectoId");
+
+                    b.HasIndex("ResueltoPorId");
+
+                    b.HasIndex("SolicitanteId");
+
+                    b.ToTable("SolicitudesProBono", t =>
+                        {
+                            t.HasCheckConstraint("CK_ProBono_Beneficiario", "([ClienteId] IS NOT NULL AND [ProspectoId] IS NULL) OR ([ClienteId] IS NULL AND [ProspectoId] IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_ProBono_Decision", "[Decision] IN ('pendiente', 'aprobada', 'rechazada')");
+                        });
+                });
+
             modelBuilder.Entity("HikariLegalSRL.Models.Tarea", b =>
                 {
                     b.Property<int>("TareaId")
@@ -1562,6 +1623,38 @@ namespace HikariLegalSRL.Migrations
                     b.Navigation("Entregable");
 
                     b.Navigation("Revisor");
+                });
+
+            modelBuilder.Entity("HikariLegalSRL.Models.SolicitudProBono", b =>
+                {
+                    b.HasOne("HikariLegalSRL.Models.Cliente", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("HikariLegalSRL.Models.Prospecto", "Prospecto")
+                        .WithMany()
+                        .HasForeignKey("ProspectoId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("HikariLegalSRL.Models.ApplicationUser", "ResueltoPor")
+                        .WithMany()
+                        .HasForeignKey("ResueltoPorId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("HikariLegalSRL.Models.ApplicationUser", "Solicitante")
+                        .WithMany()
+                        .HasForeignKey("SolicitanteId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Cliente");
+
+                    b.Navigation("Prospecto");
+
+                    b.Navigation("ResueltoPor");
+
+                    b.Navigation("Solicitante");
                 });
 
             modelBuilder.Entity("HikariLegalSRL.Models.Tarea", b =>
