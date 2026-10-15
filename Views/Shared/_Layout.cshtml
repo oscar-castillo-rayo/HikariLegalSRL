@@ -92,6 +92,12 @@
                             <i class="bi bi-heart me-2"></i>Pro Bono
                         </a>
                     }
+                    @if (await Authorization.TienePermiso(User, Permisos.Calidad.Ver))
+                    {
+                        <a class="@NavClass("Calidad")" asp-controller="Calidad" asp-action="Index">
+                            <i class="bi bi-star me-2"></i>Calidad
+                        </a>
+                    }
 
                     <div class="nav-section">Administración</div>
                     @if (await Authorization.TienePermiso(User, Permisos.Usuarios.Ver))
@@ -186,7 +192,7 @@
                     Swal.fire({
                         icon: 'success',
                         title: '¡Éxito!',
-                        text: '@TempData["Exito"]',
+                        text: @Json.Serialize(TempData["Exito"]),
                         timer: 3000,
                         showConfirmButton: false
                     });
@@ -201,7 +207,7 @@
                     Swal.fire({
                         icon: 'error',
                         title: 'Acción denegada',
-                        text: '@TempData["Error"]',
+                        text: @Json.Serialize(TempData["Error"]),
                         confirmButtonColor: '#0d6efd'
                     });
                 });
@@ -215,7 +221,7 @@
                     Swal.fire({
                         icon: 'info',
                         title: 'Información',
-                        text: '@TempData["Info"]',
+                        text: @Json.Serialize(TempData["Info"]),
                         confirmButtonColor: '#0d6efd'
                     });
                 });

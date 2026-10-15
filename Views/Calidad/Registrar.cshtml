@@ -1,0 +1,75 @@
+@model HikariLegalSRL.ViewModels.Calidad.EvaluacionRegistrarViewModel
+
+@{
+    ViewData["Title"] = "Registrar evaluación de calidad";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/calidad.css" />
+}
+
+<div class="d-flex align-items-center gap-2 mb-4">
+    <a asp-controller="Expedientes" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0 fw-bold calidad-titulo"><i class="bi bi-star me-2"></i>Registrar evaluación de calidad</h4>
+</div>
+
+<div class="card shadow-sm border-0" style="max-width:650px;">
+    <div class="card-body p-4">
+        <div class="alert alert-info small mb-4">
+            <i class="bi bi-info-circle me-2"></i>
+            Expediente <strong>#@Model.Expediente.ExpedienteId</strong> — Cliente: <strong>@Model.Expediente.ClienteNombre</strong>
+            (responsable: @Model.Expediente.ResponsableNombre@(Model.Expediente.FechaCierre is null ? "" : $", cerrado el {Model.Expediente.FechaCierre.Value.ToLocalTime():dd/MM/yyyy}")).
+            Una vez registrada, la evaluación no se puede modificar ni eliminar.
+        </div>
+
+        <form asp-action="Registrar" asp-route-id="@Model.Expediente.ExpedienteId" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-3"></div>
+
+            <div class="row g-3">
+                <div class="col-12">
+                    <span class="form-label fw-semibold d-block" id="lblPuntuacion">
+                        Puntuación del cliente (1 al 5) <span class="text-danger">*</span>
+                    </span>
+                    <div class="d-flex gap-3 mt-2" role="radiogroup" aria-labelledby="lblPuntuacion">
+                        @for (var i = 1; i <= 5; i++)
+                        {
+                            <div class="text-center">
+                                <input asp-for="Evaluacion.Puntuacion" type="radio" id="estrella@(i)" value="@i"
+                                       class="visually-hidden calidad-estrella-radio" />
+                                <label for="estrella@(i)" class="calidad-estrella-label" title="@i de 5">
+                                    <i class="bi bi-star"></i>
+                                </label>
+                                <div class="small text-muted">@i</div>
+                            </div>
+                        }
+                    </div>
+                    <span asp-validation-for="Evaluacion.Puntuacion" class="text-danger small d-block mt-1"></span>
+                </div>
+
+                <div class="col-12">
+                    <label asp-for="Evaluacion.Comentario" class="form-label fw-semibold">
+                        Comentario del cliente <small class="text-muted fw-normal">(opcional)</small>
+                    </label>
+                    <textarea asp-for="Evaluacion.Comentario" class="form-control" rows="4" maxlength="1000"
+                              placeholder="¿Qué destacó el cliente del servicio recibido?"></textarea>
+                    <span asp-validation-for="Evaluacion.Comentario" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-check-lg me-1"></i>Guardar evaluación
+                </button>
+                <a asp-controller="Expedientes" asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScripts")
+    <script src="~/js/calidad-estrellas.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,97 @@
+@model HikariLegalSRL.Models.DTOs.EvaluacionCalidadDetalleDTO
+
+@{
+    ViewData["Title"] = $"Evaluación del expediente #{Model.ExpedienteId}";
+    var puedeVerExpediente = await Authorization.TienePermiso(User, Permisos.Expedientes.Ver);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/calidad.css" />
+}
+
+<div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0 fw-bold calidad-titulo">Evaluación del expediente #@Model.ExpedienteId</h4>
+    <span class="calidad-estrellas fs-5" title="@Model.Puntuacion de 5">
+        @for (var i = 1; i <= 5; i++)
+        {
+            <i class="bi @(i <= Model.Puntuacion ? "bi-star-fill" : "bi-star")"></i>
+        }
+    </span>
+    <span class="visually-hidden">@Model.Puntuacion de 5</span>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-bold calidad-card-header">
+                <i class="bi bi-folder2-open me-1"></i>Expediente evaluado
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-5 text-muted small">Expediente</dt>
+                    <dd class="col-7 fw-semibold">
+                        @if (puedeVerExpediente)
+                        {
+                            <a asp-controller="Expedientes" asp-action="Detalle" asp-route-id="@Model.ExpedienteId">#@Model.ExpedienteId</a>
+                        }
+                        else
+                        {
+                            <span>#@Model.ExpedienteId</span>
+                        }
+                    </dd>
+
+                    <dt class="col-5 text-muted small">Cliente</dt>
+                    <dd class="col-7">@Model.ClienteNombre</dd>
+
+                    <dt class="col-5 text-muted small">Responsable</dt>
+                    <dd class="col-7">@Model.ResponsableNombre</dd>
+
+                    <dt class="col-5 text-muted small">Propuesta origen</dt>
+                    <dd class="col-7">#@Model.PropuestaId</dd>
+
+                    <dt class="col-5 text-muted small">Tareas</dt>
+                    <dd class="col-7">@Model.TotalTareas</dd>
+
+                    <dt class="col-5 text-muted small">Apertura</dt>
+                    <dd class="col-7">@Model.FechaApertura.ToLocalTime().ToString("dd/MM/yyyy")</dd>
+
+                    <dt class="col-5 text-muted small">Cierre</dt>
+                    <dd class="col-7">@(Model.FechaCierre is null ? "—" : Model.FechaCierre.Value.ToLocalTime().ToString("dd/MM/yyyy"))</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-bold calidad-card-header">
+                <i class="bi bi-star me-1"></i>Evaluación del cliente
+            </div>
+            <div class="card-body">
+                <dl class="row mb-3">
+                    <dt class="col-sm-4 text-muted small">Puntuación</dt>
+                    <dd class="col-sm-8 fw-semibold">@Model.Puntuacion de 5</dd>
+
+                    <dt class="col-sm-4 text-muted small">Evaluado por</dt>
+                    <dd class="col-sm-8">@Model.EvaluadoPorNombre</dd>
+
+                    <dt class="col-sm-4 text-muted small">Fecha de evaluación</dt>
+                    <dd class="col-sm-8">@Model.FechaEvaluacion.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                </dl>
+
+                <div class="text-muted small mb-1">Comentario</div>
+                @if (string.IsNullOrWhiteSpace(Model.Comentario))
+                {
+                    <p class="text-muted mb-0">El cliente no dejó comentario.</p>
+                }
+                else
+                {
+                    <p class="calidad-comentario-completo mb-0">@Model.Comentario</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
