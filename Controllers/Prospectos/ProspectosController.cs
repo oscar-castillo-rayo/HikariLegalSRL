@@ -20,6 +20,7 @@ namespace HikariLegalSRL.Controllers.Prospectos
         private readonly IActividadSeguimientoService _actividadSeguimientoService;
         private readonly IClienteService _clienteService;
         private readonly IGeografiaService _geografiaService;
+        private readonly IPermisoEvaluador _permisoEvaluador;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<ProspectosController> _logger;
 
@@ -28,6 +29,7 @@ namespace HikariLegalSRL.Controllers.Prospectos
             IActividadSeguimientoService actividadSeguimientoService,
             IClienteService clienteService,
             IGeografiaService geografiaService,
+            IPermisoEvaluador permisoEvaluador,
             UserManager<ApplicationUser> userManager,
             ILogger<ProspectosController> logger)
         {
@@ -35,6 +37,7 @@ namespace HikariLegalSRL.Controllers.Prospectos
             _actividadSeguimientoService = actividadSeguimientoService;
             _clienteService = clienteService;
             _geografiaService = geografiaService;
+            _permisoEvaluador = permisoEvaluador;
             _userManager = userManager;
             _logger = logger;
         }
@@ -376,9 +379,8 @@ namespace HikariLegalSRL.Controllers.Prospectos
 
         private async Task CargarResponsables(ConvertirClienteViewModel model)
         {
-            var responsables = await _userManager.GetUsersInRoleAsync(RolesBase.AbogadoAsesor);
+            var responsables = await _permisoEvaluador.UsuariosActivosConPermisoAsync(Permisos.Clientes.SerResponsable);
             model.Responsables = responsables
-                .Where(u => u.Activo)
                 .OrderBy(u => u.NombreCompleto)
                 .Select(u => new UsuarioOpcionDTO { Id = u.Id, Nombre = u.NombreCompleto })
                 .ToList();

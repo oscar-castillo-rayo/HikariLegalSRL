@@ -69,6 +69,8 @@ namespace HikariLegalSRL.Constants
                     new() { Codigo = "clientes.editar",     Nombre = "Editar",              Descripcion = "Actualizar la ficha del cliente" },
                     new() { Codigo = "clientes.asignar",    Nombre = "Asignar responsable", Descripcion = "Asignar o reasignar el abogado/asesor responsable" },
                     new() { Codigo = "clientes.desactivar", Nombre = "Desactivar",          Descripcion = "Eliminación lógica del cliente" },
+                    new() { Codigo = "clientes.reactivar",  Nombre = "Reactivar",           Descripcion = "Reactivar un cliente desactivado" },
+                    new() { Codigo = "clientes.ser_responsable", Nombre = "Ser responsable", Descripcion = "Puede ser asignado como responsable de la cartera de un cliente" },
                 }
             },
             new PermisoModulo

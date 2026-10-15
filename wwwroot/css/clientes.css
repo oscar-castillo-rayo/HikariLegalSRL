@@ -1,3 +1,22 @@
+.clientes-btn-accion:disabled,
+.clientes-btn-accion.disabled {
+    background-color: #e9ecef;
+    border-color: #e9ecef;
+    color: #adb5bd;
+    opacity: 1;
+    pointer-events: none;
+}
+
+.clientes-btn-guardar {
+    background: #1F3864;
+    color: #fff;
+}
+
+    .clientes-btn-guardar:hover {
+        background: #16294a;
+        color: #fff;
+    }
+
 .clientes-card-header {
     background: #EAF0FB;
     color: #1F3864;
@@ -14,8 +33,31 @@
     margin-bottom: .5rem;
 }
 
+.clientes-dropdown-menu {
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.clientes-dropdown-toggle {
+    display: flex;
+    align-items: center;
+}
+
+    .clientes-dropdown-toggle.input-validation-error {
+        border-color: #dc3545;
+    }
+
 .clientes-filtros {
     background: #f8f9fa;
+}
+
+.clientes-form-card {
+    max-width: 720px;
+}
+
+.clientes-seccion {
+    color: #6c757d;
+    letter-spacing: .05em;
 }
 
 .clientes-tabla tbody td {
@@ -37,6 +79,16 @@
 }
 
 @media (max-width: 575.98px) {
+
+    .clientes-btn-guardar,
+    .clientes-form-card .btn-outline-danger {
+        width: 100%;
+    }
+
+    .clientes-form-card {
+        border-radius: 0;
+        box-shadow: none !important;
+    }
 
     .clientes-tabla {
         font-size: .875rem;
