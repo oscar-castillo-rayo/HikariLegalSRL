@@ -1,4 +1,5 @@
 ﻿using HikariLegalSRL.Models;
+using HikariLegalSRL.Services.Interfaces;
 using HikariLegalSRL.ViewModels.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -15,15 +16,46 @@ namespace HikariLegalSRL.Controllers.Account
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IEmailSender _emailSender;
+        private readonly ITransaccionService _transaccionService;
+        private readonly IBitacoraAuditoriaService _bitacoraAuditoriaService;
+        private readonly ILogger<AccountController> _logger;
 
         public AccountController(
             SignInManager<ApplicationUser> signInManager,
             UserManager<ApplicationUser> userManager,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            ITransaccionService transaccionService,
+            IBitacoraAuditoriaService bitacoraAuditoriaService,
+            ILogger<AccountController> logger)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _emailSender = emailSender;
+            _transaccionService = transaccionService;
+            _bitacoraAuditoriaService = bitacoraAuditoriaService;
+            _logger = logger;
+        }
+
+        private async Task RegistrarAccesoDenegadoAsync(string correo, string motivo)
+        {
+            try
+            {
+                var usuario = await _userManager.FindByEmailAsync(correo);
+                if (usuario is null) return;
+
+                var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "desconocida";
+
+                await _transaccionService.EjecutarAsync(() => _bitacoraAuditoriaService.Registrar(
+                    usuarioId: usuario.Id,
+                    tipoAccion: "acceso_denegado",
+                    moduloAfectado: "Autenticación",
+                    registroAfectadoId: usuario.Id,
+                    valorNuevo: $"{motivo} (IP {ip})"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "No se pudo registrar en la bitácora el acceso denegado de {Correo}", correo);
+            }
         }
 
         [HttpGet]
@@ -52,6 +84,7 @@ namespace HikariLegalSRL.Controllers.Account
 
             if (result.IsNotAllowed)
             {
+                await RegistrarAccesoDenegadoAsync(model.Correo, "Intento de inicio de sesión con la cuenta inactiva");
                 ModelState.AddModelError(string.Empty, "Esta cuenta está inactiva. Contacte al administrador.");
 
                 return View(model);
@@ -59,11 +92,13 @@ namespace HikariLegalSRL.Controllers.Account
 
             if (result.IsLockedOut)
             {
+                await RegistrarAccesoDenegadoAsync(model.Correo, "Cuenta bloqueada temporalmente por intentos fallidos");
                 ModelState.AddModelError(string.Empty, "La cuenta está bloqueada temporalmente. Intenta nuevamente más tarde.");
 
                 return View(model);
             }
 
+            await RegistrarAccesoDenegadoAsync(model.Correo, "Contraseña incorrecta");
             ModelState.AddModelError(string.Empty, "Correo o contraseña incorrectos.");
 
             return View(model);

@@ -68,7 +68,7 @@ namespace HikariLegalSRL.Migrations
                         {
                             t.HasTrigger("TR_BitacoraAuditoria_Inmutable");
 
-                            t.HasCheckConstraint("CK_BitacoraAuditoria_TipoAccion", "[TipoAccion] IN ('crear', 'editar', 'eliminar', 'cambiar_estado', 'aprobar', 'rechazar')");
+                            t.HasCheckConstraint("CK_BitacoraAuditoria_TipoAccion", "[TipoAccion] IN ('crear', 'editar', 'eliminar', 'cambiar_estado', 'aprobar', 'rechazar', 'acceso_denegado')");
                         });
 
                     b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
