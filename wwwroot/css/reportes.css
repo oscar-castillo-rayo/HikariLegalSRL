@@ -1,0 +1,31 @@
+.reportes-titulo {
+    color: #1F3864;
+}
+
+.reportes-btn {
+    background: #1F3864;
+    color: #fff;
+}
+
+    .reportes-btn:hover {
+        background: #16294a;
+        color: #fff;
+    }
+
+.reportes-metrica-total {
+    background: #1F3864;
+}
+
+.reportes-tasa-alta {
+    color: #1D6A3A;
+}
+
+.reportes-tasa-baja {
+    color: #B85C00;
+}
+
+@media (max-width: 576px) {
+    .reportes-titulo {
+        font-size: 1.15rem;
+    }
+}
