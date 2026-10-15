@@ -61,6 +61,12 @@ namespace HikariLegalSRL.Controllers.Facturas
                 return RedirectToAction(nameof(Detalle), new { id });
             }
 
+            if (viewModel.MontoTotal <= 0)
+            {
+                TempData["Error"] = "Una factura con monto cero (pro bono) no admite abonos.";
+                return RedirectToAction(nameof(Detalle), new { id });
+            }
+
             return View(viewModel);
         }
 

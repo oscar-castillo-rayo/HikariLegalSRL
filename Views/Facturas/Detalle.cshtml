@@ -21,7 +21,8 @@
     };
     var puedeVerEstadoCuenta = await Authorization.TienePermiso(User, Permisos.Facturacion.Abono);
     var puedeRegistrarAbono = puedeVerEstadoCuenta
-        && Model.Estado != EstadoFactura.Pagada && Model.Estado != EstadoFactura.Anulada;
+        && Model.Estado != EstadoFactura.Pagada && Model.Estado != EstadoFactura.Anulada
+        && Model.MontoTotal > 0;
     var puedeAnular = await Authorization.TienePermiso(User, Permisos.Facturacion.Anular);
     var puedeAnularFactura = puedeAnular
         && Model.Estado != EstadoFactura.Pagada && Model.Estado != EstadoFactura.Anulada;
