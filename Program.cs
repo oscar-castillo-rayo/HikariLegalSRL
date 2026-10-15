@@ -50,6 +50,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 //Interfaces and Services
+builder.Services.AddScoped<ITransaccionService, TransaccionService>();
 builder.Services.AddScoped<IBitacoraAuditoriaService, BitacoraAuditoriaService>();
 builder.Services.AddScoped<IGeografiaService, GeografiaService>();
 builder.Services.AddScoped<IProspectoService, ProspectoService>();
