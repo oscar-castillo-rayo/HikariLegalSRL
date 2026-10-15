@@ -1,0 +1,78 @@
+@model List<HikariLegalSRL.Models.DTOs.FacturaListaDTO>
+@using HikariLegalSRL.Models.Enums
+
+@{
+    ViewData["Title"] = "Facturas";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/facturas.css" />
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <h4 class="mb-0 fw-bold facturas-titulo"><i class="bi bi-receipt me-2"></i>Facturas</h4>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 facturas-tabla">
+            <thead>
+                <tr>
+                    <th>Factura</th>
+                    <th>Cliente</th>
+                    <th>Expediente</th>
+                    <th>Modalidad</th>
+                    <th class="text-end">Monto total</th>
+                    <th class="text-center">Estado</th>
+                    <th>Emisión</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Count == 0)
+                {
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            No hay facturas registradas.
+                        </td>
+                    </tr>
+                }
+                @foreach (var f in Model)
+                {
+                    var (bc, bt) = f.Estado switch
+                    {
+                        EstadoFactura.Emitida => ("primary", "Emitida"),
+                        EstadoFactura.PagoParcial => ("warning text-dark", "Pago parcial"),
+                        EstadoFactura.Pagada => ("success", "Pagada"),
+                        EstadoFactura.Anulada => ("secondary", "Anulada"),
+                        _ => ("secondary", f.Estado.ToString())
+                    };
+                    var simboloMoneda = f.Moneda == Moneda.Dolares ? "$" : "₡";
+                    var textoModalidad = f.ModalidadPago switch
+                    {
+                        ModalidadPago.Contado => "Contado",
+                        ModalidadPago.Abono => "Abono",
+                        ModalidadPago.ProBono => "Pro bono",
+                        _ => f.ModalidadPago.ToString()
+                    };
+                    <tr>
+                        <td class="fw-semibold">#@f.Id</td>
+                        <td>@f.ClienteNombre</td>
+                        <td>
+                            <a asp-controller="Expedientes" asp-action="Detalle" asp-route-id="@f.ExpedienteId">#@f.ExpedienteId</a>
+                        </td>
+                        <td><small>@textoModalidad</small></td>
+                        <td class="text-end">@simboloMoneda@f.MontoTotal.ToString("N2")</td>
+                        <td class="text-center"><span class="badge bg-@bc">@bt</span></td>
+                        <td><small>@f.FechaEmision.ToLocalTime().ToString("dd/MM/yyyy")</small></td>
+                        <td class="text-end">
+                            <a asp-action="Detalle" asp-route-id="@f.Id" class="btn btn-sm btn-outline-primary" title="Ver factura">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

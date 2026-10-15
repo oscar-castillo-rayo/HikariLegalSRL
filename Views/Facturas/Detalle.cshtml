@@ -1,0 +1,106 @@
+@model HikariLegalSRL.Models.DTOs.FacturaDetalleDTO
+@using HikariLegalSRL.Models.Enums
+
+@{
+    ViewData["Title"] = $"Factura #{Model.Id}";
+    var (bc, bt) = Model.Estado switch
+    {
+        EstadoFactura.Emitida => ("primary", "Emitida"),
+        EstadoFactura.PagoParcial => ("warning text-dark", "Pago parcial"),
+        EstadoFactura.Pagada => ("success", "Pagada"),
+        EstadoFactura.Anulada => ("secondary", "Anulada"),
+        _ => ("secondary", Model.Estado.ToString())
+    };
+    var simboloMoneda = Model.Moneda == Moneda.Dolares ? "$" : "₡";
+    var textoModalidad = Model.ModalidadPago switch
+    {
+        ModalidadPago.Contado => "Contado",
+        ModalidadPago.Abono => "Abono",
+        ModalidadPago.ProBono => "Pro bono",
+        _ => Model.ModalidadPago.ToString()
+    };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/facturas.css" />
+}
+
+<div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0 fw-bold facturas-titulo">Factura #@Model.Id</h4>
+    <span class="badge bg-@bc fs-6">@bt</span>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-bold facturas-card-header">
+                <i class="bi bi-file-earmark-text me-1"></i>Datos de la factura
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-5">Cliente</dt>
+                    <dd class="col-7">@Model.ClienteNombre</dd>
+
+                    <dt class="col-5">Expediente</dt>
+                    <dd class="col-7">
+                        <a asp-controller="Expedientes" asp-action="Detalle" asp-route-id="@Model.ExpedienteId">#@Model.ExpedienteId</a>
+                    </dd>
+
+                    <dt class="col-5">Responsable</dt>
+                    <dd class="col-7">@Model.ResponsableNombre</dd>
+
+                    <dt class="col-5">Modalidad de pago</dt>
+                    <dd class="col-7">@textoModalidad</dd>
+
+                    <dt class="col-5">Fecha de emisión</dt>
+                    <dd class="col-7">@Model.FechaEmision.ToLocalTime().ToString("dd/MM/yyyy")</dd>
+
+                    @if (Model.FechaAnulacion is not null)
+                    {
+                        <dt class="col-5">Fecha de anulación</dt>
+                        <dd class="col-7">@Model.FechaAnulacion.Value.ToLocalTime().ToString("dd/MM/yyyy")</dd>
+                    }
+
+                    <dt class="col-5">Monto total</dt>
+                    <dd class="col-7 fw-bold fs-5">@simboloMoneda@Model.MontoTotal.ToString("N2")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-bold facturas-card-header">
+                <i class="bi bi-list-check me-1"></i>Servicios facturados
+            </div>
+            @if (Model.Servicios.Count == 0)
+            {
+                <div class="card-body">
+                    <p class="text-center text-muted mb-0 py-3">Sin servicios registrados en la propuesta origen.</p>
+                </div>
+            }
+            else
+            {
+                <div class="list-group list-group-flush">
+                    @foreach (var s in Model.Servicios)
+                    {
+                        <div class="list-group-item d-flex justify-content-between align-items-start gap-2">
+                            <span>
+                                <strong>@s.NombreServicio</strong>
+                                @if (!string.IsNullOrWhiteSpace(s.DescripcionServicio))
+                                {
+                                    <br />
+                                    <small class="text-muted">@s.DescripcionServicio</small>
+                                }
+                            </span>
+                            <span class="text-nowrap fw-semibold">@simboloMoneda@s.Precio.ToString("N2")</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

@@ -166,6 +166,13 @@ namespace HikariLegalSRL.Services.Implementations
             if (!tieneAcceso)
                 return null;
 
+            var facturaId = expediente.Estado == EstadoExpediente.Cerrado
+                ? await _context.Facturas
+                    .Where(f => f.ExpedienteId == id)
+                    .Select(f => (int?)f.FacturaId)
+                    .FirstOrDefaultAsync()
+                : null;
+
             return new ExpedienteDetalleViewModel
             {
                 Expediente = new ExpedienteDetalleDTO
@@ -179,6 +186,7 @@ namespace HikariLegalSRL.Services.Implementations
                     FechaApertura = expediente.FechaApertura,
                     FechaCierre = expediente.FechaCierre,
                     Estado = expediente.Estado,
+                    FacturaId = facturaId,
                     Tareas = expediente.Tareas
                         .OrderBy(t => t.FechaLimite)
                         .Select(t => new TareaListaDTO
@@ -481,6 +489,73 @@ namespace HikariLegalSRL.Services.Implementations
                 nuevoResponsable.Id, TipoNotificacion.ReasignacionExpediente,
                 $"Ahora eres responsable del expediente #{expedienteId}.",
                 EntidadNotificacion.Expediente, expedienteId);
+        }
+
+        public async Task CerrarExpediente(int expedienteId, string usuarioActualId)
+        {
+            var expediente = await _context.Expedientes
+                .Include(e => e.Cliente)
+                .Include(e => e.Propuesta)
+                .Include(e => e.Tareas)
+                .FirstOrDefaultAsync(e => e.ExpedienteId == expedienteId)
+                ?? throw new ReglaNegocioException("El expediente indicado no existe.");
+
+            if (expediente.Estado != EstadoExpediente.Abierto)
+                throw new ReglaNegocioException("El expediente ya está cerrado.");
+
+            // RF-007 (criterio confirmado con el usuario, 2026-09-18: la lectura literal del
+            // RF-007 solo menciona "pendiente"/"en proceso", pero se decidió exigir que todas
+            // las tareas estén aprobadas, así que "devuelta" y "lista_revision" también bloquean).
+            // También se exige al menos una tarea: sin esto, un expediente recién abierto (sin
+            // tareas todavía) se podía cerrar de inmediato y facturar el monto completo sin
+            // ningún trabajo registrado.
+            if (expediente.Tareas.Count == 0 || expediente.Tareas.Any(t => t.Estado != EstadoTarea.Aprobada))
+                throw new ReglaNegocioException("No se puede cerrar el expediente: debe tener al menos una tarea, y todas deben estar en estado 'Aprobada'.");
+
+            expediente.Estado = EstadoExpediente.Cerrado;
+            expediente.FechaCierre = DateTime.UtcNow;
+
+            // RF-007/RF-010: la modalidad de pago que rige la factura es la del cliente (no la
+            // de la propuesta, que puede haber quedado desactualizada) — un expediente pro bono
+            // igual genera el registro de factura, pero con monto cero para trazabilidad.
+            var esProBono = expediente.Cliente.ModalidadPago == ModalidadPago.ProBono;
+
+            var factura = new Factura
+            {
+                ExpedienteId = expediente.ExpedienteId,
+                ClienteId = expediente.ClienteId,
+                ModalidadPago = expediente.Cliente.ModalidadPago,
+                MontoTotal = esProBono ? 0 : expediente.Propuesta.MontoTotal,
+                Estado = EstadoFactura.Emitida,
+                FechaEmision = DateTime.UtcNow
+            };
+            _context.Facturas.Add(factura);
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new ReglaNegocioException(ex.Message);
+            }
+
+            await _bitacoraAuditoriaService.Registrar(
+                usuarioId: usuarioActualId,
+                tipoAccion: "cambiar_estado",
+                moduloAfectado: "Expedientes",
+                registroAfectadoId: expedienteId.ToString(),
+                valorAnterior: "abierto",
+                valorNuevo: "cerrado");
+
+            await _bitacoraAuditoriaService.Registrar(
+                usuarioId: usuarioActualId,
+                tipoAccion: "crear",
+                moduloAfectado: "Facturación",
+                registroAfectadoId: factura.FacturaId.ToString(),
+                valorNuevo: $"Factura generada al cerrar el expediente #{expedienteId}: modalidad {factura.ModalidadPago}, monto {factura.MontoTotal:N2}");
+
+            await _context.SaveChangesAsync();
         }
 
         public async Task IniciarTarea(int tareaId, string usuarioActualId)
