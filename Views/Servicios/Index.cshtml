@@ -1,0 +1,133 @@
+@model HikariLegalSRL.ViewModels.Servicios.ServicioIndexViewModel
+@using HikariLegalSRL.Models.Enums
+
+@{
+    ViewData["Title"] = "Catálogo de Servicios";
+    var puedeCrear = await Authorization.TienePermiso(User, Permisos.Servicios.Crear);
+    var puedeEditar = await Authorization.TienePermiso(User, Permisos.Servicios.Editar);
+    var puedeDesactivar = await Authorization.TienePermiso(User, Permisos.Servicios.Desactivar);
+    var puedeReactivar = await Authorization.TienePermiso(User, Permisos.Servicios.Reactivar);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/servicios.css" />
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <h4 class="mb-0 fw-bold servicios-titulo"><i class="bi bi-grid me-2"></i>Catálogo de Servicios</h4>
+    <a asp-action="Crear"
+       class="btn fw-semibold servicios-btn-guardar servicios-btn-accion @(puedeCrear ? "" : "disabled")"
+       aria-disabled="@(!puedeCrear)"
+       tabindex="@(puedeCrear ? "0" : "-1")"
+       onclick="@(puedeCrear ? null : "return false;")">
+        <i class="bi bi-plus-lg me-1"></i>Nuevo servicio
+    </a>
+</div>
+
+<form method="get" class="card shadow-sm border-0 p-3 mb-4 servicios-filtros">
+    <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-8">
+            <label class="form-label small fw-semibold mb-1">Buscar</label>
+            <input name="buscar" value="@Model.Buscar" class="form-control"
+                   placeholder="Nombre o área del servicio..." />
+        </div>
+        <div class="col-12 col-md-4 d-grid">
+            <button type="submit" class="btn btn-outline-secondary">
+                <i class="bi bi-search me-1"></i>Filtrar
+            </button>
+        </div>
+    </div>
+</form>
+
+<div class="card shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 servicios-tabla">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Área</th>
+                    <th class="text-end">Precio base</th>
+                    <th class="text-center">Tipo</th>
+                    <th class="text-center">Estado</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Servicios.Count == 0)
+                {
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            No hay servicios que coincidan con los filtros.
+                        </td>
+                    </tr>
+                }
+                @foreach (var s in Model.Servicios)
+                {
+                    var (badgeTipo, textoTipo) = s.TipoServicio switch
+                    {
+                        TipoServicio.Ofrecido => ("bg-primary", "Ofrecido"),
+                        TipoServicio.Solicitado => ("bg-secondary", "Solicitado"),
+                        _ => ("bg-secondary", s.TipoServicio.ToString())
+                    };
+                    var (badgeEstado, textoEstado) = s.Estado switch
+                    {
+                        EstadoServicio.Activo => ("bg-success", "Activo"),
+                        EstadoServicio.Inactivo => ("bg-secondary", "Inactivo"),
+                        _ => ("bg-secondary", s.Estado.ToString())
+                    };
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">@s.Nombre</div>
+                            @if (!string.IsNullOrWhiteSpace(s.Descripcion))
+                            {
+                                <small class="text-muted d-inline-block servicios-descripcion-preview" title="@s.Descripcion">@s.Descripcion</small>
+                            }
+                        </td>
+                        <td>@s.AreaCategoria</td>
+                        <td class="text-end">₡@s.PrecioBase.ToString("N2")</td>
+                        <td class="text-center"><span class="badge @badgeTipo">@textoTipo</span></td>
+                        <td class="text-center"><span class="badge @badgeEstado">@textoEstado</span></td>
+                        <td class="text-end text-nowrap">
+                            <a asp-action="Editar" asp-route-id="@s.Id"
+                               class="btn btn-sm btn-outline-secondary servicios-btn-accion @(puedeEditar ? "" : "disabled")"
+                               aria-disabled="@(!puedeEditar)"
+                               tabindex="@(puedeEditar ? "0" : "-1")"
+                               onclick="@(puedeEditar ? null : "return false;")"
+                               title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            @if (s.Estado == EstadoServicio.Activo)
+                            {
+                                <form asp-action="Desactivar" asp-route-id="@s.Id" method="post"
+                                      class="d-inline form-confirmar"
+                                      data-titulo="¿Desactivar este servicio?"
+                                      data-texto="@($"{s.Nombre} no estará disponible para nuevas propuestas.")"
+                                      data-icono="warning"
+                                      data-btn-confirmar="Sí, desactivar">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger servicios-btn-accion" title="Desactivar" @(puedeDesactivar ? null : "disabled")>
+                                        <i class="bi bi-slash-circle"></i>
+                                    </button>
+                                </form>
+                            }
+                            @if (s.Estado == EstadoServicio.Inactivo)
+                            {
+                                <form asp-action="Reactivar" asp-route-id="@s.Id" method="post"
+                                      class="d-inline form-confirmar"
+                                      data-titulo="¿Reactivar este servicio?"
+                                      data-texto="@($"{s.Nombre} volverá a estar disponible para nuevas propuestas.")"
+                                      data-icono="info"
+                                      data-btn-confirmar="Sí, reactivar">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-success servicios-btn-accion" title="Reactivar" @(puedeReactivar ? null : "disabled")>
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                    </button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

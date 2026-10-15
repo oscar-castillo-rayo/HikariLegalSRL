@@ -51,6 +51,15 @@ namespace HikariLegalSRL.Constants
             public const string SerResponsable  = "clientes.ser_responsable";
         }
 
+        public static class Servicios
+        {
+            public const string Ver        = "servicios.ver";
+            public const string Crear      = "servicios.crear";
+            public const string Editar     = "servicios.editar";
+            public const string Desactivar = "servicios.desactivar";
+            public const string Reactivar  = "servicios.reactivar";
+        }
+
         public static class Propuestas
         {
             public const string Ver     = "propuestas.ver";
@@ -102,6 +111,7 @@ namespace HikariLegalSRL.Constants
             Usuarios.Ver, Usuarios.Crear, Usuarios.Editar, Usuarios.Activar, Usuarios.GestionarRoles,
             Prospectos.Ver, Prospectos.Crear, Prospectos.Editar, Prospectos.Calificar, Prospectos.Convertir, Prospectos.Descartar, Prospectos.Reactivar,
             Clientes.Ver, Clientes.Crear, Clientes.Editar, Clientes.Asignar, Clientes.Desactivar, Clientes.Reactivar, Clientes.SerResponsable,
+            Servicios.Ver, Servicios.Crear, Servicios.Editar, Servicios.Desactivar, Servicios.Reactivar,
             Propuestas.Ver, Propuestas.Crear, Propuestas.Editar, Propuestas.Enviar, Propuestas.Aceptar,
             Expedientes.Ver, Expedientes.Crear, Expedientes.Asignar, Expedientes.Cerrar, Expedientes.Aprobar, Expedientes.Devolver, Expedientes.Cargar,
             Facturacion.Ver, Facturacion.Generar, Facturacion.Anular, Facturacion.Abono, Facturacion.Probono, Facturacion.AprobarProbono,
