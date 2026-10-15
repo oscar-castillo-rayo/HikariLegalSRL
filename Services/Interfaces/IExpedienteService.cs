@@ -22,5 +22,7 @@ namespace HikariLegalSRL.Services.Interfaces
         Task MarcarListaParaRevision(int tareaId, CargarEntregableDTO dto, string usuarioActualId);
 
         Task<(string RutaAbsoluta, string NombreArchivo, string ContentType)?> ObtenerArchivoEntregable(int entregableId);
+
+        Task AgregarHoras(int tareaId, AgregarHorasDTO dto, string usuarioActualId);
     }
 }

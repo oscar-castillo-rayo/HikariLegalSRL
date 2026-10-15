@@ -130,12 +130,6 @@
                                 <small class="text-muted d-block">
                                     <i class="bi bi-clock me-1"></i>@FormatoHoras(t.HorasEstimadas) estimadas
                                 </small>
-                                @if (t.HorasReales.HasValue)
-                                {
-                                    <small class="d-block expedientes-horas-reales">
-                                        <i class="bi bi-lightning-charge-fill me-1"></i>@FormatoHoras(t.HorasReales.Value) reales
-                                    </small>
-                                }
                                 @if (t.TieneArchivoAdjunto)
                                 {
                                     <small class="d-block">
@@ -144,20 +138,55 @@
                                         </a>
                                     </small>
                                 }
+                                @if (t.HorasRealesTotal > 0)
+                                {
+                                    <div class="expedientes-horas-panel">
+                                        <div class="expedientes-horas-panel-total">
+                                            <i class="bi bi-lightning-charge-fill me-1"></i>@FormatoHoras(t.HorasRealesTotal) reales
+                                        </div>
+                                        <div class="expedientes-horas-panel-desglose">
+                                            <span class="expedientes-horas-badge expedientes-horas-badge-colaborador" title="Horas del colaborador">
+                                                <i class="bi bi-person-fill"></i>@FormatoHoras(t.HorasColaborador)
+                                            </span>
+                                            <span class="expedientes-horas-badge expedientes-horas-badge-revisor" title="Horas de revisión">
+                                                <i class="bi bi-search"></i>@FormatoHoras(t.HorasRevisor)
+                                            </span>
+                                        </div>
+                                    </div>
+                                }
                                 @if (esMiTarea && t.Estado == EstadoTarea.Pendiente)
                                 {
                                     <form asp-action="IniciarTarea" method="post" class="mt-2">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="expedienteId" value="@e.Id" />
                                         <input type="hidden" name="tareaId" value="@t.Id" />
-                                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                                        <button type="submit" class="btn btn-sm expedientes-btn-guardar w-100">
                                             <i class="bi bi-play-fill me-1"></i>Iniciar
                                         </button>
                                     </form>
                                 }
+                                @if (esMiTarea && t.Estado is EstadoTarea.EnProceso or EstadoTarea.ListaRevision or EstadoTarea.Devuelta)
+                                {
+                                    <form asp-action="AgregarHoras" method="post" class="mt-2">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="expedienteId" value="@e.Id" />
+                                        <input type="hidden" name="tareaId" value="@t.Id" />
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" name="Horas" class="form-control"
+                                                   min="0" max="99" step="1" placeholder="0" title="Horas" />
+                                            <span class="input-group-text">h</span>
+                                            <input type="number" name="Minutos" class="form-control"
+                                                   min="0" max="59" step="1" placeholder="0" title="Minutos" />
+                                            <span class="input-group-text">min</span>
+                                            <button type="submit" class="btn btn-outline-success" title="Agregar tiempo">
+                                                <i class="bi bi-plus-lg"></i>
+                                            </button>
+                                        </div>
+                                    </form>
+                                }
                                 @if (esMiTarea && t.Estado == EstadoTarea.EnProceso)
                                 {
-                                    <button type="button" class="btn btn-outline-warning btn-sm mt-2" data-bs-toggle="modal"
+                                    <button type="button" class="btn btn-warning btn-sm w-100 mt-2" data-bs-toggle="modal"
                                             data-bs-target="#modalListaRevision-@t.Id">
                                         <i class="bi bi-hand-index-thumb me-1"></i>Lista para revisión
                                     </button>
@@ -191,18 +220,22 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                         </div>
                         <div class="modal-body">
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <label class="form-label fw-semibold">Horas reales trabajadas</label>
-                                    <div class="input-group">
-                                        <input type="number" name="Horas" class="form-control"
-                                               min="0" max="99" step="1" placeholder="0" />
-                                        <span class="input-group-text">h</span>
-                                        <input type="number" name="Minutos" class="form-control"
-                                               min="0" max="59" step="1" placeholder="0" />
-                                        <span class="input-group-text">min</span>
-                                    </div>
+                            @if (t.HorasRondaActual > 0)
+                            {
+                                <div class="alert alert-success py-2 small">
+                                    <i class="bi bi-lightning-charge-fill me-1"></i>
+                                    Tiempo registrado en esta ronda: <strong>@FormatoHoras(t.HorasRondaActual)</strong>.
                                 </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning py-2 small">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                    Todavía no has registrado tiempo en esta ronda. Cierra este cuadro y agrega tiempo con el botón
+                                    <i class="bi bi-plus-lg"></i> antes de enviar a revisión.
+                                </div>
+                            }
+                            <div class="row g-3">
                                 <div class="col-12">
                                     <label class="form-label fw-semibold">Entregable (opcional)</label>
                                     <input type="file" name="Archivo" class="form-control" />
@@ -211,7 +244,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn text-white fw-semibold expedientes-btn-guardar">
+                            <button type="submit" class="btn text-white fw-semibold expedientes-btn-guardar" @(t.HorasRondaActual > 0 ? null : "disabled")>
                                 <i class="bi bi-hand-index-thumb me-1"></i>Enviar a revisión
                             </button>
                         </div>

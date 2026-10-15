@@ -785,6 +785,49 @@ namespace HikariLegalSRL.Migrations
                     b.ToTable("Provincias");
                 });
 
+            modelBuilder.Entity("HikariLegalSRL.Models.RegistroHoras", b =>
+                {
+                    b.Property<int>("RegistroHorasId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RegistroHorasId"));
+
+                    b.Property<DateTime>("FechaHora")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Minutos")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Rol")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("nvarchar(12)");
+
+                    b.Property<int>("RondaRevision")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TareaId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UsuarioId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("RegistroHorasId");
+
+                    b.HasIndex("TareaId");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("RegistrosHoras", t =>
+                        {
+                            t.HasCheckConstraint("CK_RegistroHoras_Minutos", "[Minutos] > 0");
+
+                            t.HasCheckConstraint("CK_RegistroHoras_Rol", "[Rol] IN ('colaborador', 'revisor')");
+                        });
+                });
+
             modelBuilder.Entity("HikariLegalSRL.Models.Tarea", b =>
                 {
                     b.Property<int>("TareaId")
@@ -1170,6 +1213,25 @@ namespace HikariLegalSRL.Migrations
                     b.Navigation("Pais");
                 });
 
+            modelBuilder.Entity("HikariLegalSRL.Models.RegistroHoras", b =>
+                {
+                    b.HasOne("HikariLegalSRL.Models.Tarea", "Tarea")
+                        .WithMany("RegistrosHoras")
+                        .HasForeignKey("TareaId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("HikariLegalSRL.Models.ApplicationUser", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Tarea");
+
+                    b.Navigation("Usuario");
+                });
+
             modelBuilder.Entity("HikariLegalSRL.Models.Tarea", b =>
                 {
                     b.HasOne("HikariLegalSRL.Models.ApplicationUser", "ColaboradorResponsable")
@@ -1268,6 +1330,8 @@ namespace HikariLegalSRL.Migrations
             modelBuilder.Entity("HikariLegalSRL.Models.Tarea", b =>
                 {
                     b.Navigation("Entregables");
+
+                    b.Navigation("RegistrosHoras");
                 });
 #pragma warning restore 612, 618
         }
