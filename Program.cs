@@ -1,4 +1,5 @@
 using HikariLegalSRL.Authorization;
+using HikariLegalSRL.Constants;
 using HikariLegalSRL.Data;
 using HikariLegalSRL.ModelBinding;
 using HikariLegalSRL.Models;
@@ -67,6 +68,7 @@ builder.Services.AddScoped<INotificacionService, NotificacionService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IReporteService, ReporteService>();
 builder.Services.AddScoped<IEvaluacionCalidadService, EvaluacionCalidadService>();
+builder.Services.AddHostedService<DbSeedBackgroundService>();
 builder.Services.AddHostedService<RevisionVencimientosBackgroundService>();
 
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
@@ -124,12 +126,10 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 var app = builder.Build();
 
-// Seed en la base de datos para crear el usuario administrador si no existe
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    await DbInitializer.SeedAsync(services);
-}
+// El seed (roles, permisos del Administrador y usuario administrador) corre en segundo plano
+// en DbSeedBackgroundService, después de que la aplicación arrancó.
+if (app.Environment.IsDevelopment())
+    PermisosCatalogo.Validar();
 
 
 if (!app.Environment.IsDevelopment())

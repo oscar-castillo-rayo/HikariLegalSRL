@@ -1,5 +1,6 @@
 using HikariLegalSRL.Constants;
 using HikariLegalSRL.Models;
+using HikariLegalSRL.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 
@@ -13,44 +14,43 @@ namespace HikariLegalSRL.Data
         {
             var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
             var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-            var environment = services.GetRequiredService<IHostEnvironment>();
+            var transaccionService = services.GetRequiredService<ITransaccionService>();
 
-            // En desarrollo, detener el arranque si el catálogo y las constantes están desalineados.
-            if (environment.IsDevelopment())
-                PermisosCatalogo.Validar();
-
-            await SeedRolesAsync(roleManager);
+            await SeedRolesAsync(roleManager, transaccionService);
             await SincronizarPermisosAdminAsync(roleManager);
-            await SeedAdminUserAsync(userManager);
+            await SeedAdminUserAsync(userManager, transaccionService);
         }
 
         // Crea los roles base que aún no existan. Al crear un rol NO fijo por primera vez le siembra
         // sus permisos por defecto; si el rol ya existe, no se tocan sus permisos (los administra el
         // Administrador desde la UI). Idempotente.
-        private static async Task SeedRolesAsync(RoleManager<ApplicationRole> roleManager)
+        private static async Task SeedRolesAsync(RoleManager<ApplicationRole> roleManager, ITransaccionService transaccionService)
         {
             foreach (var def in RolesBase.Todos)
             {
                 if (await roleManager.RoleExistsAsync(def.Nombre))
                     continue;
 
-                var rol = new ApplicationRole
+                await transaccionService.EjecutarAsync(async () =>
                 {
-                    Name = def.Nombre,
-                    Descripcion = def.Descripcion,
-                    EsFijo = def.EsFijo,
-                    Activo = true
-                };
+                    var rol = new ApplicationRole
+                    {
+                        Name = def.Nombre,
+                        Descripcion = def.Descripcion,
+                        EsFijo = def.EsFijo,
+                        Activo = true
+                    };
 
-                var creado = await roleManager.CreateAsync(rol);
-                if (!creado.Succeeded)
-                    continue;
+                    var creado = await roleManager.CreateAsync(rol);
+                    if (!creado.Succeeded)
+                        return;
 
-                if (RolesBase.PermisosPorDefecto.TryGetValue(def.Nombre, out var codigos))
-                {
-                    foreach (var codigo in codigos)
-                        await roleManager.AddClaimAsync(rol, new Claim(Permisos.ClaimType, codigo));
-                }
+                    if (RolesBase.PermisosPorDefecto.TryGetValue(def.Nombre, out var codigos))
+                    {
+                        foreach (var codigo in codigos)
+                            await roleManager.AddClaimAsync(rol, new Claim(Permisos.ClaimType, codigo));
+                    }
+                });
             }
         }
 
@@ -75,25 +75,28 @@ namespace HikariLegalSRL.Data
         }
 
         // Crea el usuario administrador inicial si no existe y lo asigna al rol Administrador.
-        private static async Task SeedAdminUserAsync(UserManager<ApplicationUser> userManager)
+        private static async Task SeedAdminUserAsync(UserManager<ApplicationUser> userManager, ITransaccionService transaccionService)
         {
             const string adminEmail = "admin@hikarilegal.com"; //para pruebas, se puede cambiar después desde la UI. La contraseña inicial es "Admin123!".
 
             if (await userManager.FindByEmailAsync(adminEmail) is not null)
                 return;
 
-            var adminUser = new ApplicationUser
+            await transaccionService.EjecutarAsync(async () =>
             {
-                UserName = adminEmail,
-                Email = adminEmail,
-                NombreCompleto = "Administrador",
-                EmailConfirmed = true,
-                Especialidad = "Admin",
-            };
+                var adminUser = new ApplicationUser
+                {
+                    UserName = adminEmail,
+                    Email = adminEmail,
+                    NombreCompleto = "Administrador",
+                    EmailConfirmed = true,
+                    Especialidad = "Admin",
+                };
 
-            var result = await userManager.CreateAsync(adminUser, "Admin123!");
-            if (result.Succeeded)
-                await userManager.AddToRoleAsync(adminUser, RolesBase.Administrador);
+                var result = await userManager.CreateAsync(adminUser, "Admin123!");
+                if (result.Succeeded)
+                    await userManager.AddToRoleAsync(adminUser, RolesBase.Administrador);
+            });
         }
     }
 }
