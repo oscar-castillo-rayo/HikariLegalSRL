@@ -553,7 +553,7 @@ namespace HikariLegalSRL.Services.Implementations
                 ClienteId = clienteId,
                 PropuestaId = propuesta.PropuestaId,
                 ResponsableId = responsableId,
-                PlazoComprometido = DateTime.UtcNow.Date.AddDays(propuesta.PlazoDias),
+                PlazoComprometido = DateTime.Today.AddDays(propuesta.PlazoDias),
                 FechaApertura = DateTime.UtcNow,
                 Estado = EstadoExpediente.Abierto
             };
