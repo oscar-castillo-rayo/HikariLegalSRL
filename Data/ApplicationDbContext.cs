@@ -907,7 +907,7 @@ namespace HikariLegalSRL.Data
                 {
                     t.HasCheckConstraint(
                         "CK_BitacoraAuditoria_TipoAccion",
-                        "[TipoAccion] IN ('crear', 'editar', 'eliminar', 'cambiar_estado', 'aprobar', 'rechazar')"
+                        "[TipoAccion] IN ('crear', 'editar', 'eliminar', 'cambiar_estado', 'aprobar', 'rechazar', 'acceso_denegado')"
                     );
                     t.HasTrigger("TR_BitacoraAuditoria_Inmutable");
                 });

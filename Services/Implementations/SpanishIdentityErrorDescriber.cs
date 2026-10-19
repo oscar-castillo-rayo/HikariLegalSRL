@@ -19,7 +19,7 @@ namespace HikariLegalSRL.Services.Implementations
         public override IdentityError PasswordTooShort(int length) => new()
         {
             Code = nameof(PasswordTooShort),
-            Description = $"La contraseña debe tener al menos'{length}' caracteres"
+            Description = $"La contraseña debe tener al menos {length} caracteres"
         };
 
         public override IdentityError PasswordRequiresNonAlphanumeric() => new()

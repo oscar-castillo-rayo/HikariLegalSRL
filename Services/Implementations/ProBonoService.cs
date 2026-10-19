@@ -211,8 +211,11 @@ namespace HikariLegalSRL.Services.Implementations
             if (dto.Decision is null || dto.Decision == DecisionProBono.Pendiente)
                 throw new ReglaNegocioException("Debe seleccionar aprobar o rechazar la solicitud.");
 
+            if (string.IsNullOrWhiteSpace(dto.ComentarioResolucion))
+                throw new ReglaNegocioException("Debe indicar la justificación de la decisión.");
+
             solicitud.Decision = dto.Decision.Value;
-            solicitud.ComentarioResolucion = dto.ComentarioResolucion;
+            solicitud.ComentarioResolucion = dto.ComentarioResolucion.Trim();
             solicitud.ResueltoPorId = usuarioActualId;
             solicitud.FechaResolucion = DateTime.UtcNow;
 
@@ -232,7 +235,7 @@ namespace HikariLegalSRL.Services.Implementations
                 moduloAfectado: "ProBono",
                 registroAfectadoId: solicitud.SolicitudProBonoId.ToString(),
                 valorAnterior: "pendiente",
-                valorNuevo: $"{solicitud.Decision.ToString().ToLower()}: {dto.ComentarioResolucion}");
+                valorNuevo: $"{solicitud.Decision.ToString().ToLower()}: {solicitud.ComentarioResolucion}");
 
             try
             {
