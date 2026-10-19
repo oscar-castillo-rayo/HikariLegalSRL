@@ -256,7 +256,7 @@ namespace HikariLegalSRL.Services.Implementations
                 })
                 .ToListAsync();
 
-            var asignables = await _permisoEvaluador.UsuariosActivosConPermisoAsync(Permisos.Expedientes.Cargar);
+            var asignables = await _permisoEvaluador.UsuariosActivosConPermisoAsync(Permisos.Expedientes.RecibirTareas);
 
             var colaboradores = asignables
                 .Select(u => (Id: u.Id, u.NombreCompleto, u.Especialidad))

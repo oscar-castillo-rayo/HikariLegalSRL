@@ -12,6 +12,7 @@ namespace HikariLegalSRL.Models.DTOs
         public decimal HorasEstimadas { get; set; }
         public PrioridadTarea Prioridad { get; set; }
         public EstadoTarea Estado { get; set; }
+        public bool RequiereEntregable { get; set; }
         public DateTime FechaCreacion { get; set; }
 
         public decimal HorasColaborador { get; set; }
