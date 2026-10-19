@@ -500,7 +500,7 @@
                                 <span class="badge bg-@colorRonda">@textoRonda</span>
                             </div>
                             <small class="text-muted d-block">
-                                Entregable cargado el @ronda.FechaCarga.ToString("dd/MM/yyyy HH:mm") · @FormatoHoras(ronda.HorasReales) reales
+                                Entregable cargado el @ronda.FechaCarga.ToLocalTime().ToString("dd/MM/yyyy HH:mm") · @FormatoHoras(ronda.HorasReales) reales
                             </small>
                             @if (ronda.Archivos.Count > 0)
                             {
@@ -518,7 +518,7 @@
                             @if (ronda.Resultado.HasValue)
                             {
                                 <small class="text-muted d-block">
-                                    Revisado por @ronda.RevisorNombre el @ronda.FechaRevision?.ToString("dd/MM/yyyy HH:mm") · @FormatoHoras(ronda.HorasRevision ?? 0) de revisión
+                                    Revisado por @ronda.RevisorNombre el @ronda.FechaRevision?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") · @FormatoHoras(ronda.HorasRevision ?? 0) de revisión
                                     @if (ronda.TieneArchivoRevision)
                                     {
                                         <a asp-action="DescargarArchivoRevision" asp-route-revisionId="@ronda.RevisionId" target="_blank" class="ms-1">

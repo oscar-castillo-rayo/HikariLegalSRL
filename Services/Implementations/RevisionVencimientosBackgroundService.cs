@@ -46,7 +46,7 @@ namespace HikariLegalSRL.Services.Implementations
             var notificacionService = scope.ServiceProvider.GetRequiredService<INotificacionService>();
             var permisoEvaluador = scope.ServiceProvider.GetRequiredService<IPermisoEvaluador>();
 
-            var hoy = DateTime.UtcNow.Date;
+            var hoy = DateTime.Today;
 
             var supervisores = await permisoEvaluador.UsuariosActivosConPermisoAsync(Permisos.Expedientes.Supervisar);
 
@@ -171,7 +171,7 @@ namespace HikariLegalSRL.Services.Implementations
             {
                 await notificacionService.NotificarSiNoExiste(
                     actividad.ResponsableId, TipoNotificacion.AlertaSeguimientoProximo,
-                    $"La actividad de seguimiento '{actividad.Titulo}' está programada para el {actividad.FechaHora:dd/MM/yyyy HH:mm}.",
+                    $"La actividad de seguimiento '{actividad.Titulo}' está programada para el {actividad.FechaHora.ToLocalTime():dd/MM/yyyy HH:mm}.",
                     EntidadNotificacion.ActividadSeguimiento, actividad.ActividadSeguimientoId);
             }
         }

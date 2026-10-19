@@ -538,15 +538,14 @@ namespace HikariLegalSRL.Services.Implementations
             return texto.Length == 0 ? texto : char.ToUpper(texto[0], cultura) + texto[1..];
         }
 
-        // Mismo criterio de zona horaria ya usado en RevisionVencimientosBackgroundService
-        // (DateTime.UtcNow.Date) para no repetir el bug de +1 día ya documentado en otras
-        // pantallas que usan DateTime.Today (hora local del servidor).
+        // Las fechas de calendario se resuelven contra DateTime.Today (hora local del servidor,
+        // fijada en Costa Rica), igual que las pantallas, para no repetir el bug de +1 día.
         private static (DateTime Desde, DateTime Hasta) ResolverRango(string periodo, DateTime? desde, DateTime? hasta)
         {
             if (desde.HasValue && hasta.HasValue)
                 return (desde.Value.Date, hasta.Value.Date);
 
-            var hoy = DateTime.UtcNow.Date;
+            var hoy = DateTime.Today;
 
             return periodo switch
             {
