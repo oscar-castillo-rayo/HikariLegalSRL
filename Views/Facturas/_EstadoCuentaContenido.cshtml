@@ -73,7 +73,7 @@
                         _ => ("secondary", f.Estado.ToString())
                     };
                     var simbolo = f.Moneda == Moneda.Dolares ? "$" : "₡";
-                    var puedeAbonarEstaFactura = puedeRegistrarAbono && f.Estado != EstadoFactura.Pagada && f.Estado != EstadoFactura.Anulada;
+                    var puedeAbonarEstaFactura = puedeRegistrarAbono && f.Estado != EstadoFactura.Pagada && f.Estado != EstadoFactura.Anulada && f.MontoTotal > 0;
                     <tr>
                         <td class="fw-semibold">#@f.Id</td>
                         <td><a asp-controller="Expedientes" asp-action="Detalle" asp-route-id="@f.ExpedienteId">#@f.ExpedienteId</a></td>

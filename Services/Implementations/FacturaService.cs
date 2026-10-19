@@ -210,6 +210,9 @@ namespace HikariLegalSRL.Services.Implementations
             if (factura.Estado == EstadoFactura.Anulada)
                 throw new ReglaNegocioException("No se pueden registrar abonos sobre una factura anulada.");
 
+            if (factura.MontoTotal <= 0)
+                throw new ReglaNegocioException("Una factura con monto cero (pro bono) no admite abonos.");
+
             var montoPagado = await _context.Abonos
                 .Where(a => a.FacturaId == facturaId && a.FechaAnulacion == null)
                 .SumAsync(a => (decimal?)a.Monto) ?? 0;

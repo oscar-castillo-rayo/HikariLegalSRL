@@ -80,7 +80,7 @@
                                 <a asp-action="EstadoCuenta" asp-route-clienteId="@f.ClienteId" class="btn btn-sm btn-outline-secondary" title="Estado de cuenta">
                                     <i class="bi bi-person-lines-fill"></i>
                                 </a>
-                                if (f.Estado != EstadoFactura.Pagada && f.Estado != EstadoFactura.Anulada)
+                                if (f.Estado != EstadoFactura.Pagada && f.Estado != EstadoFactura.Anulada && f.MontoTotal > 0)
                                 {
                                     <a asp-action="RegistrarAbono" asp-route-id="@f.Id" class="btn btn-sm btn-outline-success" title="Registrar abono">
                                         <i class="bi bi-cash-coin"></i>
