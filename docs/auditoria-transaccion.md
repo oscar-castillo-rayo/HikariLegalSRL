@@ -82,7 +82,7 @@ Detalles importantes:
 - **Cualquier** excepción revierte, incluida `ReglaNegocioException` (una validación que falla a mitad de camino también deshace lo ya guardado).
 - Las acciones diferidas **nunca lanzan hacia afuera**: si borrar un archivo falla, se registra en el log pero no cambia el resultado de la operación.
 - `AlConfirmar` / `AlRevertir` solo se pueden registrar **dentro** de `EjecutarAsync`; fuera lanzan `InvalidOperationException`.
-- Si algún día se activa `EnableRetryOnFailure` en EF, `BeginTransaction` manual lanzará una excepción clara y habrá que ajustarlo **en este único archivo**.
+- `EnableRetryOnFailure` ya está activo (ver §3.5): todo el ciclo abrir transacción, operación, guardado final y commit se ejecuta dentro de una estrategia de ejecución de EF, y este único archivo es el que lo adapta.
 
 ### 3.3 Por qué también arregla las auditorías perdidas
 
@@ -113,6 +113,43 @@ private async Task<int> MarcarComoAceptadaInterno(int id, string usuarioActualId
     // ...la lógica de siempre, con sus SaveChanges y sus Registrar...
 }
 ```
+
+### 3.5 Reintentos ante errores transitorios (despliegue en Azure SQL serverless)
+
+**Motivo:** Azure SQL Database en nivel serverless se pausa solo. Mientras se reanuda (hasta ~60 s) la primera conexión falla con errores transitorios como el 40613. Para que la aplicación se recupere sin mostrar error, `Program.cs` activa `EnableRetryOnFailure(maxRetryCount: 6, maxRetryDelay: 30 s)` sobre `UseSqlServer`.
+
+**Problema:** una estrategia con reintentos **no admite** transacciones abiertas a mano con `BeginTransactionAsync` fuera de ella (EF lanza `InvalidOperationException`). `TransaccionService` es el único lugar del proyecto que las abre, así que es el único archivo que cambia: la firma de las dos sobrecargas de `EjecutarAsync` y todos sus llamadores quedan igual.
+
+```mermaid
+flowchart TD
+    A["EjecutarAsync(operacion)"] --> B{"¿Ya hay una transacción abierta?"}
+    B -->|Sí| C["Ejecuta la operación directamente (anidada)"]
+    B -->|No| S["Captura el estado de las entidades que el llamador<br/>ya tenía cargadas en el DbContext"]
+    S --> E["CreateExecutionStrategy().ExecuteAsync"]
+    E --> I["Intento N: BeginTransaction → operación → SaveChanges final → Commit"]
+    I -->|éxito| OK["Ejecuta AlConfirmar UNA vez<br/>y devuelve el resultado"]
+    I -->|falla| F["Rollback<br/>+ restaura el estado previo del tracker<br/>+ ejecuta los AlRevertir de ESE intento y los vacía"]
+    F --> T{"¿Error transitorio<br/>y quedan reintentos?"}
+    T -->|Sí, se registra un warning| I
+    T -->|No| X["ChangeTracker.Clear y relanza la excepción"]
+```
+
+**Acciones diferidas (`AlConfirmar` / `AlRevertir`).** Se registran **dentro** de la operación (`ExigirTransaccion` lo obliga), por lo que cada intento registra las suyas desde cero y se vacían al terminar cada intento:
+
+- `AlConfirmar`: solo se ejecutan tras el commit exitoso del intento final. Nunca en intentos intermedios.
+- `AlRevertir`: limpian efectos en disco **de su propio intento** (la carpeta del abono, el archivo de la revisión). Por eso se ejecutan al final de cada intento fallido, una vez cada una: si se pospusieran hasta el final, el reintento escribiría en otra carpeta (el abono recibe un `AbonoId` nuevo) y la del intento fallido quedaría huérfana. Ninguna envía correos ni escribe en la bitácora; esas escrituras son filas dentro de la transacción y se revierten con ella.
+- Las notificaciones y correos siguen enviándose **fuera** de `EjecutarAsync`, después del commit, así que un reintento no puede duplicarlos.
+
+**Change tracker.** Si un intento falla después de agregar entidades, el reintento volvería a agregarlas y se duplicarían. La solución obvia, `ChangeTracker.Clear()` entre intentos, es incorrecta aquí: los controllers de Usuarios y Roles cargan y modifican entidades de Identity **antes** de llamar a `EjecutarIdentityAsync` (`usuario.Activo = false`, `usuario.NombreCompleto = ...`) y la lambda las reutiliza. Se probó: sin restaurar su estado, el reintento falla con `ConcurrencyFailure`, porque tras el primer `SaveChanges` (revertido en la base) el `ConcurrencyStamp` original del tracker ya no coincide con el de la fila. Por eso, al fallar un intento:
+
+1. Se desvinculan las entidades que el intento cargó o agregó (la operación las vuelve a cargar o crear).
+2. Las que el llamador ya tenía cargadas vuelven a su estado exacto de antes del primer intento (valores originales, valores actuales y estado).
+
+Solo si el error es definitivo (no transitorio, o se agotaron los reintentos) se hace `ChangeTracker.Clear()`, como antes.
+
+**Registro.** Cada reintento deja un `LogWarning` ("Reintentando la transacción (intento N)...") con la excepción del intento anterior. Si se agotan los reintentos EF lanza `RetryLimitExceededException` (la excepción original queda en `InnerException`); los errores no transitorios, como `ReglaNegocioException`, se relanzan tal cual y sin reintentar.
+
+Los errores de negocio (`ReglaNegocioException` y `TransaccionFallidaException`) nunca son transitorios, así que se atrapan dentro del intento, se hace el rollback y se relanzan **fuera** de la estrategia de EF con `ExceptionDispatchInfo`. Sin esto el comportamiento en producción es el mismo, pero con el depurador de Visual Studio la excepción atraviesa código de EF (que no es "mi código") y el depurador se detiene como "excepción no controlada por el usuario" aunque el controller la capture y muestre el aviso.
 
 ## 4. Aplicación por módulo
 
@@ -246,4 +283,7 @@ Las tres auditorías perdidas ahora sí quedan registradas (adjuntar archivo, el
 
 - **Aislamiento:** se usa el predeterminado de SQL Server (READ COMMITTED). Evita datos a medias, pero no cierra por sí solo las carreras entre dos usuarios simultáneos (por ejemplo, dos administradores desactivándose a la vez, el caso "último administrador activo").
 - **Archivos huérfanos por caída del proceso:** si la aplicación muere entre escribir un archivo y hacer el rollback, el archivo queda en disco. No es una inconsistencia de la base de datos y es raro.
+- **Commit ambiguo:** si la conexión se cae justo durante el `COMMIT`, SQL Server pudo haberlo confirmado aunque el cliente vea un error transitorio; el reintento repetiría la operación. Es una ventana de milisegundos y EF no la cubre sin una verificación propia (`verifySucceeded`), que no se implementó.
+- **Errores transitorios que se transforman antes de llegar a la estrategia:** varios servicios capturan `DbUpdateException` alrededor de su primer `SaveChanges` y lo relanzan como `ReglaNegocioException` con el mensaje de SQL. Si el error transitorio ocurre justo ahí, no se reintenta. El caso típico (la base pausada, que falla al abrir la conexión) no pasa por ahí.
+- **Tiempo de conexión:** la cadena de conexión de Azure debería llevar `Connect Timeout=30` (predeterminado 15 s) para que cada intento aguante la reanudación; se configura en Azure, no en `appsettings.json`.
 - **Carpetas vacías:** al borrar los archivos de una tarea queda su carpeta vacía (ya ocurría antes).

@@ -1,7 +1,10 @@
 using HikariLegalSRL.Data;
+using HikariLegalSRL.Exceptions;
 using HikariLegalSRL.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage;
+using System.Runtime.ExceptionServices;
 
 namespace HikariLegalSRL.Services.Implementations
 {
@@ -32,28 +35,82 @@ namespace HikariLegalSRL.Services.Implementations
             if (_context.Database.CurrentTransaction is not null)
                 return await operacion();
 
-            await using var transaccion = await _context.Database.BeginTransactionAsync();
+            var entidadesPrevias = CapturarEntidadesPrevias();
+            var intento = 0;
+            Exception? errorIntentoAnterior = null;
+            ExceptionDispatchInfo? errorDeNegocio = null;
+            T resultado;
 
             try
             {
-                var resultado = await operacion();
-                await _context.SaveChangesAsync();
-                await transaccion.CommitAsync();
+                resultado = await _context.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+                {
+                    intento++;
+                    if (intento > 1)
+                    {
+                        _logger.LogWarning(errorIntentoAnterior, "Reintentando la transacción (intento {Intento}) tras un error transitorio de la base de datos.", intento);
+                    }
 
-                Ejecutar(_alConfirmar, "confirmar");
-                return resultado;
+                    await using var transaccion = await _context.Database.BeginTransactionAsync();
+
+                    try
+                    {
+                        var resultadoIntento = await operacion();
+                        await _context.SaveChangesAsync();
+                        await transaccion.CommitAsync();
+                        return resultadoIntento;
+                    }
+                    catch (Exception ex)
+                    {
+                        errorIntentoAnterior = ex;
+                        await RevertirAsync(transaccion);
+
+                        try
+                        {
+                            RestaurarEntidadesPrevias(entidadesPrevias);
+                        }
+                        catch (Exception errorRestauracion)
+                        {
+                            _logger.LogError(errorRestauracion, "No se pudo restaurar el estado previo de las entidades tras un intento fallido.");
+                        }
+
+                        Ejecutar(_alRevertir, "revertir");
+                        _alRevertir.Clear();
+                        _alConfirmar.Clear();
+
+                        if (ex is ReglaNegocioException or TransaccionFallidaException)
+                        {
+                            errorDeNegocio = ExceptionDispatchInfo.Capture(ex);
+                            return default!;
+                        }
+
+                        throw;
+                    }
+                });
             }
             catch
             {
-                await RevertirAsync(transaccion);
-                Ejecutar(_alRevertir, "revertir");
+                _context.ChangeTracker.Clear();
                 throw;
+            }
+
+            if (errorDeNegocio is not null)
+            {
+                _context.ChangeTracker.Clear();
+                errorDeNegocio.Throw();
+            }
+
+            try
+            {
+                Ejecutar(_alConfirmar, "confirmar");
             }
             finally
             {
                 _alConfirmar.Clear();
                 _alRevertir.Clear();
             }
+
+            return resultado;
         }
 
         public void AlConfirmar(Action accion)
@@ -84,8 +141,35 @@ namespace HikariLegalSRL.Services.Implementations
             {
                 _logger.LogError(ex, "No se pudo revertir la transacción.");
             }
+        }
 
-            _context.ChangeTracker.Clear();
+        private List<EntidadPrevia> CapturarEntidadesPrevias()
+        {
+            return _context.ChangeTracker.Entries()
+                .Where(e => e.State is EntityState.Unchanged or EntityState.Modified or EntityState.Deleted)
+                .Select(e => new EntidadPrevia(e, e.State, e.OriginalValues.Clone(), e.CurrentValues.Clone()))
+                .ToList();
+        }
+
+        private void RestaurarEntidadesPrevias(List<EntidadPrevia> entidadesPrevias)
+        {
+            var previas = entidadesPrevias.Select(p => p.Entrada.Entity).ToHashSet(ReferenceEqualityComparer.Instance);
+
+            foreach (var entrada in _context.ChangeTracker.Entries().ToList())
+            {
+                if (!previas.Contains(entrada.Entity))
+                    entrada.State = EntityState.Detached;
+            }
+
+            foreach (var previa in entidadesPrevias)
+            {
+                previa.Entrada.State = EntityState.Unchanged;
+                previa.Entrada.OriginalValues.SetValues(previa.Originales);
+                previa.Entrada.CurrentValues.SetValues(previa.Actuales);
+
+                if (previa.Estado == EntityState.Deleted)
+                    previa.Entrada.State = EntityState.Deleted;
+            }
         }
 
         private void Ejecutar(List<Action> acciones, string momento)
@@ -102,5 +186,7 @@ namespace HikariLegalSRL.Services.Implementations
                 }
             }
         }
+
+        private sealed record EntidadPrevia(EntityEntry Entrada, EntityState Estado, PropertyValues Originales, PropertyValues Actuales);
     }
 }
