@@ -46,7 +46,7 @@
                         EstadoExpediente.Cerrado => ("secondary", "Cerrado"),
                         _ => ("secondary", e.Estado.ToString())
                     };
-                    var diasRestantes = (e.PlazoComprometido.Date - DateTime.Today).Days;
+                    var diasRestantes = (e.PlazoComprometido.Date - HoraCostaRica.Hoy).Days;
                     var claseDias = e.Estado != EstadoExpediente.Abierto ? "bg-light text-dark border"
                         : diasRestantes < 0 ? "bg-danger"
                         : diasRestantes <= 2 ? "bg-warning text-dark"

@@ -57,7 +57,7 @@
                             </small>
                         </td>
                         <td class="text-center"><span class="badge bg-@bc">@bt</span></td>
-                        <td><small>@s.FechaSolicitud.ToLocalTime().ToString("dd/MM/yyyy")</small></td>
+                        <td><small>@s.FechaSolicitud.ALocal().ToString("dd/MM/yyyy")</small></td>
                         <td><small>@(s.ResueltoPorNombre ?? "—")</small></td>
                         <td class="text-end">
                             <a asp-action="Detalle" asp-route-id="@s.Id" class="btn btn-sm btn-outline-primary" title="Ver solicitud">

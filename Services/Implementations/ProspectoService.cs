@@ -39,6 +39,12 @@ namespace HikariLegalSRL.Services.Implementations
 
                 if (correoDuplicado)
                     throw new ReglaNegocioException("Ya existe un prospecto registrado con ese correo electrónico.");
+
+                var correoDeCliente = await _context.Clientes
+                    .AnyAsync(c => c.Correo == dto.Correo);
+
+                if (correoDeCliente)
+                    throw new ReglaNegocioException("Ya existe un cliente registrado con ese correo electrónico.");
             }
 
             if (dto.Calificacion.HasValue && (dto.Calificacion < 1 || dto.Calificacion > 5))
@@ -273,6 +279,12 @@ namespace HikariLegalSRL.Services.Implementations
 
                 if (correoDuplicado)
                     throw new ReglaNegocioException("Ya existe un prospecto registrado con ese correo electrónico.");
+
+                var correoDeCliente = await _context.Clientes
+                    .AnyAsync(c => c.Correo == dto.Correo);
+
+                if (correoDeCliente)
+                    throw new ReglaNegocioException("Ya existe un cliente registrado con ese correo electrónico.");
             }
 
             if (dto.Direccion.PaisId is null or < 1)

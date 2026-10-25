@@ -1,4 +1,5 @@
 using HikariLegalSRL.Data;
+using HikariLegalSRL.Extensions;
 using HikariLegalSRL.Models.DTOs;
 using HikariLegalSRL.Models.Enums;
 using HikariLegalSRL.Services.Interfaces;
@@ -19,7 +20,7 @@ namespace HikariLegalSRL.Services.Implementations
 
         public async Task<DashboardDTO> ObtenerResumen(string usuarioId)
         {
-            var limite = DateTime.Today.AddDays(3);
+            var limite = HoraCostaRica.Hoy.AddDays(3);
 
             var tareasProximas = await _context.Tareas
                 .AsNoTracking()

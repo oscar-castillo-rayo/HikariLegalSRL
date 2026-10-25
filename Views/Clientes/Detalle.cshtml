@@ -121,7 +121,7 @@
                     <dd class="col-7">@(Model.SectorEconomico ?? "—")</dd>
 
                     <dt class="col-5">Cliente desde</dt>
-                    <dd class="col-7">@Model.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                    <dd class="col-7">@Model.FechaCreacion.ALocal().ToString("dd/MM/yyyy HH:mm")</dd>
 
                     <dt class="col-5">Responsable</dt>
                     <dd class="col-7">@Model.ResponsableNombre</dd>

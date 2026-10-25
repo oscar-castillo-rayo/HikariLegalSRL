@@ -106,16 +106,16 @@
                     <dt class="col-5">Elaborada por</dt>
                     <dd class="col-7">@Model.ElaboradaPorNombre</dd>
                     <dt class="col-5">Fecha de creación</dt>
-                    <dd class="col-7">@Model.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                    <dd class="col-7">@Model.FechaCreacion.ALocal().ToString("dd/MM/yyyy HH:mm")</dd>
                     @if (Model.FechaEnvio is not null)
                     {
                         <dt class="col-5">Fecha de envío</dt>
-                        <dd class="col-7">@Model.FechaEnvio.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                        <dd class="col-7">@Model.FechaEnvio.Value.ALocal().ToString("dd/MM/yyyy HH:mm")</dd>
                     }
                     @if (Model.FechaResolucion is not null)
                     {
                         <dt class="col-5">Fecha de resolución</dt>
-                        <dd class="col-7">@Model.FechaResolucion.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                        <dd class="col-7">@Model.FechaResolucion.Value.ALocal().ToString("dd/MM/yyyy HH:mm")</dd>
                     }
                     @if (!string.IsNullOrWhiteSpace(Model.DescripcionGeneral))
                     {

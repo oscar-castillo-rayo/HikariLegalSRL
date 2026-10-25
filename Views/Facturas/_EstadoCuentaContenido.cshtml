@@ -81,7 +81,7 @@
                         <td class="text-end text-success">@simbolo@f.MontoPagado.ToString("N2")</td>
                         <td class="text-end @(f.SaldoPendiente > 0 ? "text-danger fw-semibold" : "")">@simbolo@f.SaldoPendiente.ToString("N2")</td>
                         <td class="text-center"><span class="badge bg-@bc">@bt</span></td>
-                        <td><small>@f.FechaEmision.ToLocalTime().ToString("dd/MM/yyyy")</small></td>
+                        <td><small>@f.FechaEmision.ALocal().ToString("dd/MM/yyyy")</small></td>
                         <td class="text-end">
                             <a asp-action="Detalle" asp-route-id="@f.Id" class="btn btn-sm btn-outline-primary" title="Ver factura">
                                 <i class="bi bi-eye"></i>

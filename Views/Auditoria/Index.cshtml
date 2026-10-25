@@ -113,7 +113,7 @@
                 {
                     var accion = acciones.FirstOrDefault(a => a.Valor == r.TipoAccion);
                     <tr>
-                        <td><small>@r.FechaHora.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</small></td>
+                        <td><small>@r.FechaHora.ALocal().ToString("dd/MM/yyyy HH:mm:ss")</small></td>
                         <td><small>@r.UsuarioNombre</small></td>
                         <td>
                             <span class="badge bg-secondary">@r.ModuloAfectado</span>

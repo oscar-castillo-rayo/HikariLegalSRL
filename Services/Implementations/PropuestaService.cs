@@ -1,5 +1,6 @@
 using HikariLegalSRL.Data;
 using HikariLegalSRL.Exceptions;
+using HikariLegalSRL.Extensions;
 using HikariLegalSRL.Models;
 using HikariLegalSRL.Models.DTOs;
 using HikariLegalSRL.Models.Enums;
@@ -553,7 +554,7 @@ namespace HikariLegalSRL.Services.Implementations
                 ClienteId = clienteId,
                 PropuestaId = propuesta.PropuestaId,
                 ResponsableId = responsableId,
-                PlazoComprometido = DateTime.Today.AddDays(propuesta.PlazoDias),
+                PlazoComprometido = HoraCostaRica.Hoy.AddDays(propuesta.PlazoDias),
                 FechaApertura = DateTime.UtcNow,
                 Estado = EstadoExpediente.Abierto
             };

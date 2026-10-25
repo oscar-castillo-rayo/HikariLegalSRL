@@ -1,6 +1,7 @@
 using System.Globalization;
 using HikariLegalSRL.Constants;
 using HikariLegalSRL.Data;
+using HikariLegalSRL.Extensions;
 using HikariLegalSRL.Models.DTOs;
 using HikariLegalSRL.Models.Enums;
 using HikariLegalSRL.Services.Interfaces;
@@ -37,12 +38,13 @@ namespace HikariLegalSRL.Services.Implementations
         public async Task<ReporteConversionPropuestasDTO> ObtenerConversionPropuestas(string periodo, DateTime? desde, DateTime? hasta)
         {
             var (desdeFinal, hastaFinal) = ResolverRango(periodo, desde, hasta);
+            var (desdeUtc, hastaUtc) = HoraCostaRica.LimitesUtc(desdeFinal, hastaFinal);
 
             var estados = await _context.Propuestas
                 .AsNoTracking()
                 .Where(p => p.FechaEnvio != null
-                    && p.FechaEnvio.Value.Date >= desdeFinal
-                    && p.FechaEnvio.Value.Date <= hastaFinal)
+                    && p.FechaEnvio >= desdeUtc
+                    && p.FechaEnvio < hastaUtc)
                 .Select(p => p.Estado)
                 .ToListAsync();
 
@@ -72,12 +74,15 @@ namespace HikariLegalSRL.Services.Implementations
         public async Task<ReporteConversionProspectosDTO> ObtenerConversionProspectos(string periodo, DateTime? desde, DateTime? hasta)
         {
             var (desdeFinal, hastaFinal) = ResolverRango(periodo, desde, hasta);
+            var (desdeUtc, hastaUtc) = HoraCostaRica.LimitesUtc(desdeFinal, hastaFinal);
 
-            var prospectos = await _context.Prospectos
+            var prospectos = (await _context.Prospectos
                 .AsNoTracking()
-                .Where(p => p.FechaCreacion.Date >= desdeFinal && p.FechaCreacion.Date <= hastaFinal)
+                .Where(p => p.FechaCreacion >= desdeUtc && p.FechaCreacion < hastaUtc)
                 .Select(p => new { p.FechaCreacion, p.Estado })
-                .ToListAsync();
+                .ToListAsync())
+                .Select(p => new { FechaCreacion = p.FechaCreacion.ALocal(), p.Estado })
+                .ToList();
 
             var total = prospectos.Count;
             var convertidos = prospectos.Count(p => p.Estado == EstadoProspecto.Convertido);
@@ -132,12 +137,13 @@ namespace HikariLegalSRL.Services.Implementations
         public async Task<ReporteIngresosServicioDTO> ObtenerIngresosPorServicio(string periodo, DateTime? desde, DateTime? hasta)
         {
             var (desdeFinal, hastaFinal) = ResolverRango(periodo, desde, hasta);
+            var (desdeUtc, hastaUtc) = HoraCostaRica.LimitesUtc(desdeFinal, hastaFinal);
 
             var facturas = await _context.Facturas
                 .AsNoTracking()
                 .Where(f => f.Estado != EstadoFactura.Anulada
-                    && f.FechaEmision.Date >= desdeFinal
-                    && f.FechaEmision.Date <= hastaFinal)
+                    && f.FechaEmision >= desdeUtc
+                    && f.FechaEmision < hastaUtc)
                 .Include(f => f.Expediente)
                     .ThenInclude(e => e.Propuesta)
                         .ThenInclude(p => p.Servicios)
@@ -241,7 +247,7 @@ namespace HikariLegalSRL.Services.Implementations
 
         public async Task<ReporteCargaTrabajoDTO> ObtenerCargaTrabajo()
         {
-            var hoy = DateTime.Today;
+            var hoy = HoraCostaRica.Hoy;
 
             var tareasAbiertas = await _context.Tareas
                 .AsNoTracking()
@@ -297,34 +303,35 @@ namespace HikariLegalSRL.Services.Implementations
         public async Task<ReporteComparativoServiciosDTO> ObtenerComparativoServicios(string periodo, DateTime? desde, DateTime? hasta)
         {
             var (desdeFinal, hastaFinal) = ResolverRango(periodo, desde, hasta);
+            var (desdeUtc, hastaUtc) = HoraCostaRica.LimitesUtc(desdeFinal, hastaFinal);
 
             var usos = await _context.PropuestaServicios
                 .AsNoTracking()
                 .Where(ps => ps.Propuesta.FechaEnvio != null
-                    && ps.Propuesta.FechaEnvio.Value.Date >= desdeFinal
-                    && ps.Propuesta.FechaEnvio.Value.Date <= hastaFinal)
+                    && ps.Propuesta.FechaEnvio >= desdeUtc
+                    && ps.Propuesta.FechaEnvio < hastaUtc)
                 .Select(ps => new { ps.ServicioId, ps.PropuestaId, ps.Propuesta.Estado })
                 .ToListAsync();
 
             var propuestasOfrecidas = await _context.Propuestas
                 .AsNoTracking()
                 .CountAsync(p => p.FechaEnvio != null
-                    && p.FechaEnvio.Value.Date >= desdeFinal
-                    && p.FechaEnvio.Value.Date <= hastaFinal);
+                    && p.FechaEnvio >= desdeUtc
+                    && p.FechaEnvio < hastaUtc);
 
             var propuestasAceptadas = await _context.Propuestas
                 .AsNoTracking()
                 .CountAsync(p => p.Estado == EstadoPropuesta.Aceptada
                     && p.FechaEnvio != null
-                    && p.FechaEnvio.Value.Date >= desdeFinal
-                    && p.FechaEnvio.Value.Date <= hastaFinal);
+                    && p.FechaEnvio >= desdeUtc
+                    && p.FechaEnvio < hastaUtc);
 
             var propuestasRechazadas = await _context.Propuestas
                 .AsNoTracking()
                 .CountAsync(p => p.Estado == EstadoPropuesta.Rechazada
                     && p.FechaEnvio != null
-                    && p.FechaEnvio.Value.Date >= desdeFinal
-                    && p.FechaEnvio.Value.Date <= hastaFinal);
+                    && p.FechaEnvio >= desdeUtc
+                    && p.FechaEnvio < hastaUtc);
 
             var ofrecidoPorServicio = usos
                 .GroupBy(u => u.ServicioId)
@@ -390,13 +397,14 @@ namespace HikariLegalSRL.Services.Implementations
         public async Task<ReporteRentabilidadDTO> ObtenerRentabilidad(string periodo, DateTime? desde, DateTime? hasta)
         {
             var (desdeFinal, hastaFinal) = ResolverRango(periodo, desde, hasta);
+            var (desdeUtc, hastaUtc) = HoraCostaRica.LimitesUtc(desdeFinal, hastaFinal);
 
             var expedientes = await _context.Expedientes
                 .AsNoTracking()
                 .Where(e => e.Estado == EstadoExpediente.Cerrado
                     && e.FechaCierre != null
-                    && e.FechaCierre.Value.Date >= desdeFinal
-                    && e.FechaCierre.Value.Date <= hastaFinal)
+                    && e.FechaCierre >= desdeUtc
+                    && e.FechaCierre < hastaUtc)
                 .Select(e => new
                 {
                     e.ExpedienteId,
@@ -538,14 +546,14 @@ namespace HikariLegalSRL.Services.Implementations
             return texto.Length == 0 ? texto : char.ToUpper(texto[0], cultura) + texto[1..];
         }
 
-        // Las fechas de calendario se resuelven contra DateTime.Today (hora local del servidor,
-        // fijada en Costa Rica), igual que las pantallas, para no repetir el bug de +1 día.
+        // Las fechas de calendario se resuelven contra HoraCostaRica.Hoy (la fecha de Costa Rica,
+        // no la del servidor), igual que las pantallas, para no repetir el bug de +1 día.
         private static (DateTime Desde, DateTime Hasta) ResolverRango(string periodo, DateTime? desde, DateTime? hasta)
         {
             if (desde.HasValue && hasta.HasValue)
                 return (desde.Value.Date, hasta.Value.Date);
 
-            var hoy = DateTime.Today;
+            var hoy = HoraCostaRica.Hoy;
 
             return periodo switch
             {

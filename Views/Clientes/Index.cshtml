@@ -80,7 +80,7 @@
                         <td class="text-center"><span class="badge @badgeModalidad">@textoModalidad</span></td>
                         <td class="d-none d-xl-table-cell"><small>@c.ResponsableNombre</small></td>
                         <td class="text-center"><span class="badge @badgeEstado">@textoEstado</span></td>
-                        <td class="d-none d-xl-table-cell"><small>@c.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy")</small></td>
+                        <td class="d-none d-xl-table-cell"><small>@c.FechaCreacion.ALocal().ToString("dd/MM/yyyy")</small></td>
                         <td class="text-end text-nowrap">
                             <a asp-action="Detalle" asp-route-id="@c.Id"
                                class="btn btn-sm btn-outline-primary" title="Ver detalle">

@@ -37,7 +37,7 @@
             <div class="card-body">
                 <dl class="row mb-0">
                     <dt class="col-5 text-muted small">Fecha y hora</dt>
-                    <dd class="col-7">@Model.FechaHora.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</dd>
+                    <dd class="col-7">@Model.FechaHora.ALocal().ToString("dd/MM/yyyy HH:mm:ss")</dd>
 
                     <dt class="col-5 text-muted small">Usuario</dt>
                     <dd class="col-7 fw-semibold">@Model.UsuarioNombre</dd>

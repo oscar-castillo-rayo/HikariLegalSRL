@@ -1,5 +1,6 @@
 ﻿using HikariLegalSRL.Controllers.BitacoraAuditoria;
 using HikariLegalSRL.Data;
+using HikariLegalSRL.Extensions;
 using HikariLegalSRL.Models.DTOs;
 using HikariLegalSRL.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -61,13 +62,13 @@ namespace HikariLegalSRL.Services.Implementations
 
             if (filtro.Desde.HasValue)
             {
-                var desdeUtc = DateTime.SpecifyKind(TruncarAMinuto(filtro.Desde.Value), DateTimeKind.Local).ToUniversalTime();
+                var desdeUtc = TruncarAMinuto(filtro.Desde.Value).AUtc();
                 query = query.Where(b => b.FechaHora >= desdeUtc);
             }
 
             if (filtro.Hasta.HasValue)
             {
-                var hastaUtc = DateTime.SpecifyKind(TruncarAMinuto(filtro.Hasta.Value).AddMinutes(1), DateTimeKind.Local).ToUniversalTime();
+                var hastaUtc = TruncarAMinuto(filtro.Hasta.Value).AddMinutes(1).AUtc();
                 query = query.Where(b => b.FechaHora < hastaUtc);
             }
 

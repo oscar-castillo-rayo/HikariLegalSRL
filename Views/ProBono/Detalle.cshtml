@@ -41,7 +41,7 @@
                     <dd class="col-7">@Model.SolicitanteNombre</dd>
 
                     <dt class="col-5 text-muted small">Fecha de solicitud</dt>
-                    <dd class="col-7">@Model.FechaSolicitud.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                    <dd class="col-7">@Model.FechaSolicitud.ALocal().ToString("dd/MM/yyyy HH:mm")</dd>
 
                     @if (Model.Decision != DecisionProBono.Pendiente)
                     {
@@ -49,7 +49,7 @@
                         <dd class="col-7">@Model.ResueltoPorNombre</dd>
 
                         <dt class="col-5 text-muted small">Fecha de resolución</dt>
-                        <dd class="col-7">@Model.FechaResolucion!.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                        <dd class="col-7">@Model.FechaResolucion!.Value.ALocal().ToString("dd/MM/yyyy HH:mm")</dd>
                     }
 
                     @if (Model.Decision == DecisionProBono.Aprobada)
