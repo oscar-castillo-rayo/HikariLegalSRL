@@ -11,12 +11,12 @@ namespace HikariLegalSRL.ViewModels.Usuarios
         [StringLength(150, ErrorMessage = "El nombre no puede superar los 150 caracteres.")]
         public string NombreCompleto { get; set; }
 
-        [StringLength(100)]
+        [StringLength(100, ErrorMessage = "El correo electrónico no puede superar los 100 caracteres.")]
         [EmailAddress(ErrorMessage = "El correo electrónico no es válido.")]
         [Required(ErrorMessage = "El correo electrónico es obligatorio.")]
         public string Correo { get; set; }
 
-        [StringLength(100)]
+        [StringLength(100, ErrorMessage = "La especialidad no puede superar los 100 caracteres.")]
         public string? Especialidad { get; set; }
 
         [Required(ErrorMessage = "Debe seleccionar un rol.")]

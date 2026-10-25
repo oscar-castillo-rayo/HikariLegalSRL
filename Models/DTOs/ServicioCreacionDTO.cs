@@ -6,14 +6,14 @@ namespace HikariLegalSRL.Models.DTOs
     public class ServicioCreacionDTO
     {
         [Required(ErrorMessage = "El nombre del servicio es requerido")]
-        [MaxLength(150)]
+        [MaxLength(150, ErrorMessage = "El nombre del servicio no puede superar los 150 caracteres")]
         public string Nombre { get; set; } = null!;
 
         [Required(ErrorMessage = "El área o categoría es requerida")]
-        [MaxLength(100)]
+        [MaxLength(100, ErrorMessage = "El área o categoría no puede superar los 100 caracteres")]
         public string AreaCategoria { get; set; } = null!;
 
-        [MaxLength(1000)]
+        [MaxLength(1000, ErrorMessage = "La descripción no puede superar los 1000 caracteres")]
         public string? Descripcion { get; set; }
 
         [Required(ErrorMessage = "El precio base es requerido")]

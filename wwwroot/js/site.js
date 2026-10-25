@@ -135,4 +135,44 @@
         });
     });
 
+    const mensajesNativos = function (campo) {
+        const v = campo.validity;
+        if (v.valueMissing) {
+            if (campo.type === 'checkbox') return 'Debe marcar esta casilla para continuar.';
+            if (campo.tagName === 'SELECT' || campo.type === 'radio') return 'Seleccione una opción de la lista.';
+            if (campo.type === 'file') return 'Seleccione un archivo.';
+            return 'Complete este campo.';
+        }
+        if (v.typeMismatch) {
+            if (campo.type === 'email') return 'Ingrese un correo electrónico válido.';
+            if (campo.type === 'url') return 'Ingrese una URL válida.';
+            return 'El valor ingresado no es válido.';
+        }
+        if (v.badInput) return 'Ingrese un valor válido.';
+        if (v.rangeUnderflow) return 'El valor debe ser mayor o igual a ' + campo.min + '.';
+        if (v.rangeOverflow) return 'El valor debe ser menor o igual a ' + campo.max + '.';
+        if (v.stepMismatch) return 'Ingrese un valor válido; el paso permitido es ' + campo.step + '.';
+        if (v.tooShort) return 'Ingrese al menos ' + campo.minLength + ' caracteres.';
+        if (v.tooLong) return 'No ingrese más de ' + campo.maxLength + ' caracteres.';
+        if (v.patternMismatch) return campo.title || 'El valor no tiene el formato solicitado.';
+        return '';
+    };
+
+    document.addEventListener('invalid', function (e) {
+        const campo = e.target;
+        if (!campo.setCustomValidity) {
+            return;
+        }
+        campo.setCustomValidity('');
+        campo.setCustomValidity(mensajesNativos(campo));
+    }, true);
+
+    ['input', 'change'].forEach(function (evento) {
+        document.addEventListener(evento, function (e) {
+            if (e.target.setCustomValidity) {
+                e.target.setCustomValidity('');
+            }
+        });
+    });
+
 });

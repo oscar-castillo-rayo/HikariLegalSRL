@@ -4,10 +4,10 @@ namespace HikariLegalSRL.ViewModels.Auth
 {
     public class ResetPasswordViewModel
     {
-        [Required]
+        [Required(ErrorMessage = "El correo electrónico es obligatorio.")]
         public string Email { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "El código de restablecimiento es obligatorio.")]
         public string Code { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "La nueva contraseña es obligatoria.")]

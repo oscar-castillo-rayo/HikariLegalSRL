@@ -21,6 +21,7 @@ builder.Services.AddControllersWithViews(options =>
 {
     // Agregar un ModelBinderProvider personalizado para manejar decimales con formato invariante (punto como separador decimal)
     options.ModelBinderProviders.Insert(0, new InvariantDecimalModelBinderProvider());
+    MensajesModelBindingEspanol.Aplicar(options.ModelBindingMessageProvider);
 });
 builder.Services.AddMemoryCache();
 builder.Services.AddAuthorization(options =>

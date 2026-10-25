@@ -18,7 +18,7 @@ namespace HikariLegalSRL.Models.DTOs
         [Required(ErrorMessage = "Debe seleccionar el método de pago")]
         public MetodoPago? MetodoPago { get; set; }
 
-        [MaxLength(50)]
+        [MaxLength(50, ErrorMessage = "El número de comprobante no puede superar los 50 caracteres")]
         public string? NumeroComprobante { get; set; }
 
         public IFormFile? Comprobante { get; set; }

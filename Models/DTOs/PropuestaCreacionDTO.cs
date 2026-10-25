@@ -19,7 +19,7 @@ namespace HikariLegalSRL.Models.DTOs
         [Required(ErrorMessage = "Debe seleccionar la modalidad de pago")]
         public ModalidadPago? ModalidadPago { get; set; }
 
-        [MaxLength(2000)]
+        [MaxLength(2000, ErrorMessage = "La descripción general no puede superar los 2000 caracteres")]
         public string? DescripcionGeneral { get; set; }
 
         public List<PropuestaServicioItemDTO> Servicios { get; set; } = new();

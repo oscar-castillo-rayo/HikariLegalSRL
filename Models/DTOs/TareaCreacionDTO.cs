@@ -6,7 +6,7 @@ namespace HikariLegalSRL.Models.DTOs
     public class TareaCreacionDTO
     {
         [Required(ErrorMessage = "La descripción es requerida")]
-        [MaxLength(1000)]
+        [MaxLength(1000, ErrorMessage = "La descripción no puede superar los 1000 caracteres")]
         public string Descripcion { get; set; } = null!;
 
         [Required(ErrorMessage = "Debe seleccionar un colaborador responsable")]

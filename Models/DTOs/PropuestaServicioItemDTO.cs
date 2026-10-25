@@ -7,7 +7,7 @@ namespace HikariLegalSRL.Models.DTOs
         [Required(ErrorMessage = "Debe seleccionar un servicio")]
         public int? ServicioId { get; set; }
 
-        [MaxLength(1000)]
+        [MaxLength(1000, ErrorMessage = "La descripción del servicio no puede superar los 1000 caracteres")]
         public string? DescripcionServicio { get; set; }
 
         [Required(ErrorMessage = "El precio es requerido")]
