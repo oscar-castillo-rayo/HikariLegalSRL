@@ -5,21 +5,26 @@ namespace HikariLegalSRL.Models.DTOs
 {
     public class ServicioCreacionDTO
     {
+        [Display(Name = "Nombre")]
         [Required(ErrorMessage = "El nombre del servicio es requerido")]
         [MaxLength(150)]
         public string Nombre { get; set; } = null!;
 
+        [Display(Name = "Área / Categoría")]
         [Required(ErrorMessage = "El área o categoría es requerida")]
         [MaxLength(100)]
         public string AreaCategoria { get; set; } = null!;
 
+        [Display(Name = "Descripción")]
         [MaxLength(1000)]
         public string? Descripcion { get; set; }
 
+        [Display(Name = "Precio base")]
         [Required(ErrorMessage = "El precio base es requerido")]
         [Range(0, double.MaxValue, ErrorMessage = "El precio base no puede ser negativo")]
         public decimal PrecioBase { get; set; }
 
+        [Display(Name = "Tipo de servicio")]
         [Required(ErrorMessage = "Debe seleccionar el tipo de servicio")]
         public TipoServicio? TipoServicio { get; set; }
     }

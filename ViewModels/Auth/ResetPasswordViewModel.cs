@@ -10,10 +10,12 @@ namespace HikariLegalSRL.ViewModels.Auth
         [Required]
         public string Code { get; set; } = string.Empty;
 
+        [Display(Name = "Nueva contraseña")]
         [Required(ErrorMessage = "La nueva contraseña es obligatoria.")]
         [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
 
+        [Display(Name = "Confirmar contraseña")]
         [Required(ErrorMessage = "Debe confirmar la contraseña.")]
         [DataType(DataType.Password)]
         [Compare("Password", ErrorMessage = "Las contraseñas no coinciden.")]
