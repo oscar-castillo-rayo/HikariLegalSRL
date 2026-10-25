@@ -17,8 +17,14 @@
     const formTitulo = document.getElementById('formActividadTitulo');
 
     function fechaLocalInput(fecha) {
-        const desfase = fecha.getTimezoneOffset() * 60000;
-        return new Date(fecha.getTime() - desfase).toISOString().slice(0, 16);
+        return new Intl.DateTimeFormat('sv-SE', {
+            timeZone: 'America/Costa_Rica',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        }).format(fecha).replace(' ', 'T');
     }
 
     function abrir(el) {

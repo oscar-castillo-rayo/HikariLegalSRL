@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using HikariLegalSRL.Extensions;
 using HikariLegalSRL.Models.Enums;
 using Microsoft.AspNetCore.Http;
 
@@ -12,7 +13,7 @@ namespace HikariLegalSRL.Models.DTOs
 
         [Required(ErrorMessage = "La fecha del abono es requerida")]
         [DataType(DataType.Date)]
-        public DateTime Fecha { get; set; } = DateTime.Today;
+        public DateTime Fecha { get; set; } = HoraCostaRica.Hoy;
 
         [Required(ErrorMessage = "Debe seleccionar el método de pago")]
         public MetodoPago? MetodoPago { get; set; }

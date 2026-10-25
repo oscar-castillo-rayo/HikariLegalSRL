@@ -56,10 +56,10 @@
                     <dd class="col-7">@Model.TotalTareas</dd>
 
                     <dt class="col-5 text-muted small">Apertura</dt>
-                    <dd class="col-7">@Model.FechaApertura.ToLocalTime().ToString("dd/MM/yyyy")</dd>
+                    <dd class="col-7">@Model.FechaApertura.ALocal().ToString("dd/MM/yyyy")</dd>
 
                     <dt class="col-5 text-muted small">Cierre</dt>
-                    <dd class="col-7">@(Model.FechaCierre is null ? "—" : Model.FechaCierre.Value.ToLocalTime().ToString("dd/MM/yyyy"))</dd>
+                    <dd class="col-7">@(Model.FechaCierre is null ? "—" : Model.FechaCierre.Value.ALocal().ToString("dd/MM/yyyy"))</dd>
                 </dl>
             </div>
         </div>
@@ -79,7 +79,7 @@
                     <dd class="col-sm-8">@Model.EvaluadoPorNombre</dd>
 
                     <dt class="col-sm-4 text-muted small">Fecha de evaluación</dt>
-                    <dd class="col-sm-8">@Model.FechaEvaluacion.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                    <dd class="col-sm-8">@Model.FechaEvaluacion.ALocal().ToString("dd/MM/yyyy HH:mm")</dd>
                 </dl>
 
                 <div class="text-muted small mb-1">Comentario</div>

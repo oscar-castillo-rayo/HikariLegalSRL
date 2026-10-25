@@ -105,7 +105,7 @@
                             }
                         </td>
                         <td class="text-center"><span class="badge @badge">@texto</span></td>
-                        <td class="d-none d-xl-table-cell"><small>@p.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy")</small></td>
+                        <td class="d-none d-xl-table-cell"><small>@p.FechaCreacion.ALocal().ToString("dd/MM/yyyy")</small></td>
                         <td class="text-end text-nowrap">
                             <a asp-action="Detalle" asp-route-id="@p.Id"
                                class="btn btn-sm btn-outline-primary" title="Ver detalle">

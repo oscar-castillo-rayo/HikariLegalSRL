@@ -1,5 +1,6 @@
 using HikariLegalSRL.Data;
 using HikariLegalSRL.Exceptions;
+using HikariLegalSRL.Extensions;
 using HikariLegalSRL.Models;
 using HikariLegalSRL.Models.DTOs;
 using HikariLegalSRL.Models.Enums;
@@ -75,7 +76,7 @@ namespace HikariLegalSRL.Services.Implementations
                 TipoActividad = dto.Tipo,
                 Titulo = dto.Titulo.Trim(),
                 Descripcion = string.IsNullOrWhiteSpace(dto.Descripcion) ? null : dto.Descripcion.Trim(),
-                FechaHora = dto.FechaHora.ToUniversalTime(),
+                FechaHora = dto.FechaHora.AUtc(),
                 UsuarioRegistroId = usuarioActualId,
                 ResponsableId = dto.ResponsableId
             };
@@ -120,7 +121,7 @@ namespace HikariLegalSRL.Services.Implementations
             actividad.TipoActividad = dto.Tipo;
             actividad.Titulo = dto.Titulo.Trim();
             actividad.Descripcion = string.IsNullOrWhiteSpace(dto.Descripcion) ? null : dto.Descripcion.Trim();
-            actividad.FechaHora = dto.FechaHora.ToUniversalTime();
+            actividad.FechaHora = dto.FechaHora.AUtc();
             actividad.ResponsableId = dto.ResponsableId;
 
             try

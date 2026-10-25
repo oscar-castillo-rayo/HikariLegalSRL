@@ -141,6 +141,14 @@
         cuerpoItems.appendChild(fila);
     }
 
+    function renumerarFilas() {
+        Array.from(cuerpoItems.children).forEach((fila, posicion) => {
+            fila.querySelectorAll('[name^="Propuesta.Servicios["]').forEach(campo => {
+                campo.name = campo.name.replace(/^Propuesta\.Servicios\[\d+\]/, `Propuesta.Servicios[${posicion}]`);
+            });
+        });
+    }
+
     btnAgregarServicio.addEventListener('click', () => agregarFila());
 
     const iniciales = window.propuestaServiciosIniciales;
@@ -164,7 +172,9 @@
                 } else {
                     alert('Debe agregar al menos un servicio a la propuesta.');
                 }
+                return;
             }
+            renumerarFilas();
         });
     }
 })();

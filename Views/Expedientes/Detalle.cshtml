@@ -30,7 +30,7 @@
     var usuarioActualId = User.FindFirstValue(ClaimTypes.NameIdentifier);
     var puedeRevisarCartera = puedeGestionarAjenas || e.ResponsableId == usuarioActualId;
 
-    var diasRestantes = (e.PlazoComprometido.Date - DateTime.Today).Days;
+    var diasRestantes = (e.PlazoComprometido.Date - HoraCostaRica.Hoy).Days;
     var claseDias = diasRestantes < 0 ? "bg-danger" : diasRestantes <= 2 ? "bg-warning text-dark" : "bg-light text-dark border";
     var textoDias = diasRestantes < 0 ? $"{Math.Abs(diasRestantes)} día(s) vencido" : $"{diasRestantes} día(s) restantes";
 
@@ -155,7 +155,7 @@
                             PrioridadTarea.Baja => ("success", "Baja"),
                             _ => ("secondary", t.Prioridad.ToString())
                         };
-                        var vencida = t.Estado != EstadoTarea.Aprobada && t.FechaLimite.Date < DateTime.Today;
+                        var vencida = t.Estado != EstadoTarea.Aprobada && t.FechaLimite.Date < HoraCostaRica.Hoy;
                         var esMiTarea = esAbierto && puedeCargar && (t.ColaboradorId == usuarioActualId || puedeGestionarAjenas);
                         // Puede revisar (o registrar horas de revisión de) esta tarea puntual quien puede
                         // revisar el expediente en general (cartera), salvo que sea su propia tarea: ahí
@@ -500,7 +500,7 @@
                                 <span class="badge bg-@colorRonda">@textoRonda</span>
                             </div>
                             <small class="text-muted d-block">
-                                Entregable cargado el @ronda.FechaCarga.ToLocalTime().ToString("dd/MM/yyyy HH:mm") · @FormatoHoras(ronda.HorasReales) reales
+                                Entregable cargado el @ronda.FechaCarga.ALocal().ToString("dd/MM/yyyy HH:mm") · @FormatoHoras(ronda.HorasReales) reales
                             </small>
                             @if (ronda.Archivos.Count > 0)
                             {
@@ -518,7 +518,7 @@
                             @if (ronda.Resultado.HasValue)
                             {
                                 <small class="text-muted d-block">
-                                    Revisado por @ronda.RevisorNombre el @ronda.FechaRevision?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") · @FormatoHoras(ronda.HorasRevision ?? 0) de revisión
+                                    Revisado por @ronda.RevisorNombre el @ronda.FechaRevision?.ALocal().ToString("dd/MM/yyyy HH:mm") · @FormatoHoras(ronda.HorasRevision ?? 0) de revisión
                                     @if (ronda.TieneArchivoRevision)
                                     {
                                         <a asp-action="DescargarArchivoRevision" asp-route-revisionId="@ronda.RevisionId" target="_blank" class="ms-1">

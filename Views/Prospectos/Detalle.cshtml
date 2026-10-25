@@ -134,7 +134,7 @@
                     </dd>
 
                     <dt class="col-5">Registrado</dt>
-                    <dd class="col-7">@p.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                    <dd class="col-7">@p.FechaCreacion.ALocal().ToString("dd/MM/yyyy HH:mm")</dd>
 
                     <dt class="col-5">Creado por</dt>
                     <dd class="col-7">@p.CreadoPor</dd>
@@ -210,8 +210,8 @@
                                  data-tipo-label="@EtiquetaTipo(a.TipoActividad)"
                                  data-titulo="@a.Titulo"
                                  data-descripcion="@a.Descripcion"
-                                 data-fecha="@a.FechaHora.ToLocalTime().ToString("yyyy-MM-ddTHH:mm")"
-                                 data-fecha-texto="@a.FechaHora.ToLocalTime().ToString("dd/MM/yyyy HH:mm")"
+                                 data-fecha="@a.FechaHora.ALocal().ToString("yyyy-MM-ddTHH:mm")"
+                                 data-fecha-texto="@a.FechaHora.ALocal().ToString("dd/MM/yyyy HH:mm")"
                                  data-responsable-id="@a.ResponsableId"
                                  data-responsable="@a.ResponsableNombre"
                                  data-registrado-por="@a.RegistradoPor">
@@ -229,7 +229,7 @@
                                                 <i class="bi bi-person-badge me-1"></i>Responsable: @a.ResponsableNombre
                                             </span>
                                             <span class="text-dark">
-                                                <i class="bi bi-calendar-event me-1"></i>@a.FechaHora.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                                <i class="bi bi-calendar-event me-1"></i>@a.FechaHora.ALocal().ToString("dd/MM/yyyy HH:mm")
                                             </span>
                                         </div>
                                     </div>

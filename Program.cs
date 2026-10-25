@@ -131,10 +131,6 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
     PermisosCatalogo.Validar();
 
-var desfaseServidor = TimeZoneInfo.Local.GetUtcOffset(DateTime.UtcNow);
-if (desfaseServidor != TimeSpan.FromHours(-6))
-    app.Logger.LogWarning("La zona horaria del servidor es UTC{Desfase}, no la de Costa Rica (UTC-6): los plazos y vencimientos se calcularán con la fecha del servidor. En Azure configure WEBSITE_TIME_ZONE='Central America Standard Time'.", desfaseServidor);
-
 
 if (!app.Environment.IsDevelopment())
 {

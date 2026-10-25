@@ -57,7 +57,7 @@
                             <small class="text-muted">@(string.IsNullOrWhiteSpace(e.ComentarioResumen) ? "—" : e.ComentarioResumen.TrimEnd() + (e.ComentarioTieneMas ? "…" : ""))</small>
                         </td>
                         <td class="d-none d-xl-table-cell"><small>@e.EvaluadoPorNombre</small></td>
-                        <td><small>@e.FechaEvaluacion.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</small></td>
+                        <td><small>@e.FechaEvaluacion.ALocal().ToString("dd/MM/yyyy HH:mm")</small></td>
                         <td class="text-end">
                             <a asp-action="Detalle" asp-route-id="@e.EvaluacionId" class="btn btn-sm btn-outline-primary" title="Ver detalle de la evaluación">
                                 <i class="bi bi-eye"></i>

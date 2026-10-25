@@ -98,7 +98,7 @@
                         <td class="text-center"><small>@p.ModalidadPago</small></td>
                         <td><small>@p.PlazoDias días</small></td>
                         <td><small>@p.ElaboradaPorNombre</small></td>
-                        <td><small>@p.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy")</small></td>
+                        <td><small>@p.FechaCreacion.ALocal().ToString("dd/MM/yyyy")</small></td>
                         <td class="text-end text-nowrap">
                             <a asp-action="Detalle" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary" title="Ver detalle">
                                 <i class="bi bi-eye"></i>

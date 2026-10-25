@@ -93,12 +93,12 @@
                     <dd class="col-7">@textoModalidad</dd>
 
                     <dt class="col-5">Fecha de emisión</dt>
-                    <dd class="col-7">@Model.FechaEmision.ToLocalTime().ToString("dd/MM/yyyy")</dd>
+                    <dd class="col-7">@Model.FechaEmision.ALocal().ToString("dd/MM/yyyy")</dd>
 
                     @if (Model.FechaAnulacion is not null)
                     {
                         <dt class="col-5">Fecha de anulación</dt>
-                        <dd class="col-7">@Model.FechaAnulacion.Value.ToLocalTime().ToString("dd/MM/yyyy")</dd>
+                        <dd class="col-7">@Model.FechaAnulacion.Value.ALocal().ToString("dd/MM/yyyy")</dd>
                     }
 
                     <dt class="col-5">Monto total</dt>
@@ -219,7 +219,7 @@
                                     <td class="text-center">
                                         @if (a.EstaAnulado)
                                         {
-                                            <span class="badge bg-secondary" title="Anulado por @a.AnuladoPorNombre el @a.FechaAnulacion!.Value.ToLocalTime().ToString("dd/MM/yyyy")">Anulado</span>
+                                            <span class="badge bg-secondary" title="Anulado por @a.AnuladoPorNombre el @a.FechaAnulacion!.Value.ALocal().ToString("dd/MM/yyyy")">Anulado</span>
                                         }
                                         else
                                         {

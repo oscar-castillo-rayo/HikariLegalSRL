@@ -20,7 +20,7 @@
         <div class="alert alert-info small mb-4">
             <i class="bi bi-info-circle me-2"></i>
             Expediente <strong>#@Model.Expediente.ExpedienteId</strong> — Cliente: <strong>@Model.Expediente.ClienteNombre</strong>
-            (responsable: @Model.Expediente.ResponsableNombre@(Model.Expediente.FechaCierre is null ? "" : $", cerrado el {Model.Expediente.FechaCierre.Value.ToLocalTime():dd/MM/yyyy}")).
+            (responsable: @Model.Expediente.ResponsableNombre@(Model.Expediente.FechaCierre is null ? "" : $", cerrado el {Model.Expediente.FechaCierre.Value.ALocal():dd/MM/yyyy}")).
             Una vez registrada, la evaluación no se puede modificar ni eliminar.
         </div>
 
