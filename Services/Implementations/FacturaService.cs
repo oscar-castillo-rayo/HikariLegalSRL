@@ -11,6 +11,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Implementa IFacturaService: contiene la lógica de las facturas, los abonos y el estado de cuenta.
+    /// </summary>
     public class FacturaService : IFacturaService
     {
         private static readonly HashSet<string> ExtensionesComprobantePermitidas = new(StringComparer.OrdinalIgnoreCase)
@@ -42,12 +45,8 @@ namespace HikariLegalSRL.Services.Implementations
             _configuration = configuration;
         }
 
-        // RF-010: el Abogado/Asesor solo consulta las facturas de su propia cartera.
-        // Se usa Expediente.ResponsableId (no Cliente.ResponsableId) para que la visibilidad
-        // siga a quien realmente gestiona ese caso puntual: si un expediente se reasigna
-        // (HU-016) sin reasignar también al cliente, quien lo trabajó debe poder ver la
-        // factura que generó, no el responsable original del cliente que ya no tiene relación
-        // con ese caso. Administrador y Asistente (quienes pueden registrar abonos) ven todas.
+        // Quien no puede registrar abonos solo ve las facturas de los expedientes que lleva
+        // (Expediente.ResponsableId, no el del cliente, para que siga las reasignaciones).
         private async Task<bool> PuedeVerTodasAsync(string usuarioActualId)
         {
             var usuarioActual = await _context.Users.FindAsync(usuarioActualId);
@@ -55,8 +54,7 @@ namespace HikariLegalSRL.Services.Implementations
                 && await _permisoEvaluador.TienePermisoAsync(usuarioActual, Permisos.Facturacion.Abono);
         }
 
-        // RF-010: solo el Administrador puede anular una factura o un abono — un nivel de
-        // autoridad más estricto que registrar abonos (Administrador + Asistente).
+        // Anular una factura o un abono requiere un permiso más estricto que registrar abonos.
         private async Task<bool> PuedeAnularAsync(string usuarioActualId)
         {
             var usuarioActual = await _context.Users.FindAsync(usuarioActualId);
@@ -327,9 +325,7 @@ namespace HikariLegalSRL.Services.Implementations
             return (rutaAbsoluta, nombreArchivo, contentType);
         }
 
-        // RF-010: el estado de cuenta agrega todas las facturas de un cliente (no una sola,
-        // como en ObtenerDetalle) y es exclusivo de quien puede registrar abonos
-        // (Administrador/Asistente) — el Abogado/Asesor no tiene acceso a esta vista.
+        // Agrega todas las facturas del cliente; solo para quien puede registrar abonos.
         public async Task<EstadoCuentaDTO?> ObtenerEstadoCuenta(int clienteId, string usuarioActualId)
         {
             var puedeVer = await PuedeVerTodasAsync(usuarioActualId);
@@ -363,10 +359,7 @@ namespace HikariLegalSRL.Services.Implementations
                 })
                 .ToListAsync();
 
-            // Una factura anulada no cuenta hacia los totales (quedó sin efecto), aunque
-            // sigue apareciendo en el historial de la lista para trazabilidad. Se agrupa por
-            // moneda porque un mismo cliente puede tener propuestas en colones y en dólares:
-            // sumarlas directamente daría un total sin sentido.
+            // Las facturas anuladas no suman a los totales, que se agrupan por moneda.
             var totales = facturas
                 .Where(f => f.Estado != EstadoFactura.Anulada)
                 .GroupBy(f => f.Moneda)
@@ -424,10 +417,7 @@ namespace HikariLegalSRL.Services.Implementations
             await _context.SaveChangesAsync();
         }
 
-        // HU-024 (ampliación acordada con el usuario): anular un abono puntual sin anular toda
-        // la factura, ya que Factura.ExpedienteId es único 1:1 y anular la factura completa
-        // impide volver a facturar ese expediente. El abono nunca se borra — solo se marca,
-        // igual criterio que Bitácora de Auditoría y Evaluaciones de Calidad (inmutables).
+        // Anula un abono sin anular la factura. El abono no se borra, solo se marca.
         public async Task AnularAbono(int abonoId, string usuarioActualId)
             => await _transaccionService.EjecutarAsync(() => AnularAbonoInterno(abonoId, usuarioActualId));
 

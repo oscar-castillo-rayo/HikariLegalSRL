@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HikariLegalSRL.Controllers.Notificaciones
 {
+    /// <summary>
+    /// Muestra las notificaciones de la persona usuaria y permite abrirlas, con lo que se marcan como leídas, o eliminarlas.
+    /// </summary>
     [Authorize]
     public class NotificacionesController : Controller
     {

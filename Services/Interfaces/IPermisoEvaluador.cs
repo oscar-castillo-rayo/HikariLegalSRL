@@ -3,6 +3,9 @@ using HikariLegalSRL.Models;
 
 namespace HikariLegalSRL.Services.Interfaces
 {
+    /// <summary>
+    /// Define la evaluación de los permisos de una persona usuaria a partir de los de sus roles, la búsqueda de quienes tienen un permiso y la invalidación de la caché de un rol.
+    /// </summary>
     public interface IPermisoEvaluador
     {
         Task<bool> TienePermisoAsync(ClaimsPrincipal user, string codigo);

@@ -6,12 +6,13 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HikariLegalSRL.Controllers.Reportes
 {
+    /// <summary>
+    /// Genera los reportes de analítica de la firma: conversión de propuestas y de prospectos, ingresos por servicio, distribución geográfica, carga de trabajo, Core Business y rentabilidad.
+    /// </summary>
     [Authorize]
     public class ReportesController : Controller
     {
-        // Cada reporte tiene su propio permiso (Reportes.Conversion, Reportes.Ingresos, ...) y el
-        // Index es el hub de todos ellos: no puede exigir uno solo, porque un usuario con acceso
-        // a un reporte pero no a otro igual debe poder entrar y ver el que sí le corresponde.
+        // Cada reporte tiene su propio permiso; el Index no exige uno solo porque es el hub de todos.
         private static readonly string[] PermisosDeReportes =
         {
             Permisos.Reportes.Conversion,
@@ -108,9 +109,7 @@ namespace HikariLegalSRL.Controllers.Reportes
             return View(reporte);
         }
 
-        // Un rango invertido no bloquea la pantalla: se avisa por SweetAlert (mismo patrón de
-        // TempData["Error"] que usa el resto de la app) y se ignora el filtro, cayendo al rango
-        // por defecto del período seleccionado en vez de mostrar la pantalla rota o vacía.
+        // Con un rango invertido se avisa por TempData["Error"] y se usa el rango por defecto del período.
         private void DescartarRangoFechasInvalido(ref DateTime? desde, ref DateTime? hasta)
         {
             if (!desde.HasValue || !hasta.HasValue || desde.Value.Date <= hasta.Value.Date)

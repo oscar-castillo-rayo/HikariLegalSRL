@@ -3,6 +3,9 @@ using HikariLegalSRL.Models.Enums;
 
 namespace HikariLegalSRL.Services.Interfaces
 {
+    /// <summary>
+    /// Define la creación, la consulta, la lectura y la eliminación de las notificaciones de una persona usuaria.
+    /// </summary>
     public interface INotificacionService
     {
         // Crea la notificación si no existe ya una igual (mismo tipo + misma entidad + mismo

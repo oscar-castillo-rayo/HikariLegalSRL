@@ -9,6 +9,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Implementa IServicioService: contiene la lógica del catálogo de servicios.
+    /// </summary>
     public class ServicioService : IServicioService
     {
         private readonly ApplicationDbContext _context;

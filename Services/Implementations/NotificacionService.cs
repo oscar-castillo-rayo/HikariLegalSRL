@@ -8,6 +8,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Implementa INotificacionService: crea, consulta, marca como leídas y elimina las notificaciones.
+    /// </summary>
     public class NotificacionService : INotificacionService
     {
         private readonly ApplicationDbContext _context;

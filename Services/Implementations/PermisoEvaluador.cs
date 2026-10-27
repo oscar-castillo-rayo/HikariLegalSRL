@@ -8,6 +8,9 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Implementa IPermisoEvaluador: calcula los permisos de una persona usuaria según sus roles y guarda en caché los de cada rol.
+    /// </summary>
     public class PermisoEvaluador : IPermisoEvaluador
     {
         private readonly RoleManager<ApplicationRole> _roleManager;

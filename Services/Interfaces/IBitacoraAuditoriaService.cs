@@ -2,6 +2,9 @@
 
 namespace HikariLegalSRL.Services.Interfaces
 {
+    /// <summary>
+    /// Define el registro de acciones en la bitácora de auditoría y su consulta: listado con filtros, detalle y usuarios con registros.
+    /// </summary>
     public interface IBitacoraAuditoriaService
     {
         Task Registrar(

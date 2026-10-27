@@ -8,6 +8,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Implementa IEvaluacionCalidadService: contiene la lógica de las evaluaciones de calidad de los expedientes cerrados.
+    /// </summary>
     public class EvaluacionCalidadService : IEvaluacionCalidadService
     {
         private const int LongitudResumenComentario = 80;

@@ -10,6 +10,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Implementa IProspectoService: contiene la lógica del registro y el seguimiento de los prospectos.
+    /// </summary>
     public class ProspectoService : IProspectoService
     {
         private readonly ApplicationDbContext _context;

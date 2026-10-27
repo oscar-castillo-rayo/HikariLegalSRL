@@ -1,8 +1,6 @@
 namespace HikariLegalSRL.Constants
 {
-   // Permisos define los códigos de permisos utilizados en la aplicación, organizados por módulos y acciones. 
-   // Cada módulo contiene una lista de acciones que representan los permisos específicos que se pueden asignar a 
-   // los roles dentro del sistema. 
+   // Códigos de permisos de la aplicación, organizados por módulo y acción.
     public static class Permisos
     {
         // Tipo de Claim con el que se almacena cada permiso en `AspNetRoleClaims`.

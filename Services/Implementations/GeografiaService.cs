@@ -5,6 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Implementa IGeografiaService: consulta el catálogo de países, provincias, cantones y distritos.
+    /// </summary>
     public class GeografiaService : IGeografiaService
     {
         private readonly ApplicationDbContext _context;

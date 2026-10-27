@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HikariLegalSRL.Controllers.Dashboard
 {
+    /// <summary>
+    /// Presenta el dashboard de inicio con las tareas por vencer, las tareas vencidas y las notificaciones recientes de la persona usuaria.
+    /// </summary>
     [Authorize]
     public class DashboardController : Controller
     {

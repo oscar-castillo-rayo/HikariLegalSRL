@@ -3,11 +3,8 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace HikariLegalSRL.ModelBinding
 {
-    // Los <input type="number"> de HTML5 siempre envían el valor con punto decimal,
-    // sin importar la cultura de la página. Este binder interpreta los decimales
-    // recibidos en formularios usando cultura invariante para que ese envío siempre
-    // se pueda parsear, independientemente de la cultura del sistema (p. ej. es-CR,
-    // donde el separador decimal es la coma).
+    // Los input number envían el decimal con punto; se parsea con cultura invariante para
+    // que funcione aunque la cultura del sistema use coma (es-CR).
     public class InvariantDecimalModelBinder : IModelBinder
     {
         public Task BindModelAsync(ModelBindingContext bindingContext)

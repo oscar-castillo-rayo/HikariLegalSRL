@@ -2,6 +2,9 @@
 
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Traduce al español los mensajes de error de ASP.NET Core Identity.
+    /// </summary>
     public class SpanishIdentityErrorDescriber : IdentityErrorDescriber
     {
         public override IdentityError DuplicateEmail(string email) => new()

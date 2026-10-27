@@ -9,6 +9,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Implementa IActividadSeguimientoService: contiene la lógica de las actividades de seguimiento de los prospectos.
+    /// </summary>
     public class ActividadSeguimientoService : IActividadSeguimientoService
     {
         private readonly ApplicationDbContext _context;

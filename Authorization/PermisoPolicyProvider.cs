@@ -4,8 +4,7 @@ using Microsoft.Extensions.Options;
 
 namespace HikariLegalSRL.Authorization
 {
-    // Proveedor de políticas dinámico. Evita tener que definir una política por cada permiso en el catálogo, y 
-    // permite que el atributo [Permiso] funcione con cualquier código de permiso definido en PermisosCatalogo.
+    // Crea la política de cada código de PermisosCatalogo bajo demanda.
     public class PermisoPolicyProvider : DefaultAuthorizationPolicyProvider
     {
         public PermisoPolicyProvider(IOptions<AuthorizationOptions> options) : base(options)

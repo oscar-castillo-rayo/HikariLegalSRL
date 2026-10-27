@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace HikariLegalSRL.Authorization
 {
-   // Sirve para poder usar el método TienePermiso en las vistas HTML, para poder validar si un usuario tiene un permiso específico.(similar a lo que hace el atributo [Authorize] en los controladores)
+   // Permite validar permisos en las vistas con TienePermiso.
     public static class AuthViewExtensions
     {
         public static async Task<bool> TienePermiso(

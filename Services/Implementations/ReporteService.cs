@@ -9,6 +9,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Implementa IReporteService: calcula los reportes de analítica de la firma.
+    /// </summary>
     public class ReporteService : IReporteService
     {
         private const string NivelPais = "pais";
@@ -31,10 +34,8 @@ namespace HikariLegalSRL.Services.Implementations
             _permisoEvaluador = permisoEvaluador;
         }
 
-        // RF-012: tasa de conversión = propuestas Aceptadas ÷ total de propuestas Enviadas en el
-        // período (Enviadas aquí es cualquier propuesta que salió de Borrador, sin importar si
-        // ya fue resuelta). El período filtra por FechaEnvio, no por FechaCreacion, porque una
-        // propuesta en Borrador (sin enviar) no participa todavía de ninguna tasa de conversión.
+        // Tasa = aceptadas ÷ enviadas (toda propuesta que salió de Borrador). El período filtra
+        // por FechaEnvio.
         public async Task<ReporteConversionPropuestasDTO> ObtenerConversionPropuestas(string periodo, DateTime? desde, DateTime? hasta)
         {
             var (desdeFinal, hastaFinal) = ResolverRango(periodo, desde, hasta);
@@ -66,11 +67,8 @@ namespace HikariLegalSRL.Services.Implementations
             };
         }
 
-        // RF-012: mismo criterio que ObtenerConversionPropuestas — el período filtra por la fecha
-        // de registro del prospecto (no hay una fecha de conversión/descarte propia en el modelo),
-        // y sobre ese mismo grupo se cuenta cuántos quedaron en cada estado actual. La tasa usa el
-        // total de prospectos registrados en el período como base (convertidos ÷ total), tal como
-        // pide la HU literalmente.
+        // El período filtra por la fecha de registro del prospecto. Tasa = convertidos ÷ total
+        // registrados en el período.
         public async Task<ReporteConversionProspectosDTO> ObtenerConversionProspectos(string periodo, DateTime? desde, DateTime? hasta)
         {
             var (desdeFinal, hastaFinal) = ResolverRango(periodo, desde, hasta);
@@ -125,15 +123,9 @@ namespace HikariLegalSRL.Services.Implementations
             };
         }
 
-        // RF-012: "ingresos facturados" = monto de facturas emitidas (no anuladas) en el período,
-        // filtradas por FechaEmision. Una Factura no guarda sus servicios propios — se navega
-        // Factura → Expediente → Propuesta → PropuestaServicio (ver comentario en FacturaService).
-        // Como una factura puede cubrir varios servicios, el monto se reparte entre sus áreas
-        // (CatalogoServicio.AreaCategoria) en proporción al precio de cada servicio dentro de la
-        // propuesta — así una factura pro bono (MontoTotal = 0, ver HU-021/025) reparte cero sin
-        // inflar ningún área, en vez de contar el precio nominal de la propuesta como si se hubiera
-        // facturado. Los montos se agrupan también por Moneda (igual que EstadoCuentaDTO en
-        // FacturaService) porque sumar colones y dólares directamente no tiene sentido.
+        // Suma las facturas emitidas (no anuladas) del período por FechaEmision. El monto se
+        // reparte entre las áreas de los servicios de la propuesta en proporción a su precio,
+        // y se agrupa por Moneda.
         public async Task<ReporteIngresosServicioDTO> ObtenerIngresosPorServicio(string periodo, DateTime? desde, DateTime? hasta)
         {
             var (desdeFinal, hastaFinal) = ResolverRango(periodo, desde, hasta);

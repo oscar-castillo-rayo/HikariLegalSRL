@@ -3,6 +3,9 @@ using HikariLegalSRL.ViewModels.Clientes;
 
 namespace HikariLegalSRL.Services.Interfaces
 {
+    /// <summary>
+    /// Define las operaciones sobre los clientes: conversión desde un prospecto, consulta, edición, desactivación, reactivación y reasignación del responsable.
+    /// </summary>
     public interface IClienteService
     {
         Task<int> ConvertirDesdeProspecto(int prospectoId, ClienteConversionDTO dto, string usuarioActualId);

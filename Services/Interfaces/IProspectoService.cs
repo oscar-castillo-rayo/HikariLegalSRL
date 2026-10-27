@@ -4,6 +4,9 @@ using HikariLegalSRL.ViewModels.Prospectos;
 
 namespace HikariLegalSRL.Services.Interfaces
 {
+    /// <summary>
+    /// Define las operaciones sobre los prospectos: registro, consulta, edición, descarte y reactivación.
+    /// </summary>
     public interface IProspectoService
     {
         Task<int> Crear(ProspectoCreacionDTO dto, string usuarioActualId);

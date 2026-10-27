@@ -4,6 +4,9 @@ using HikariLegalSRL.ViewModels.Propuestas;
 
 namespace HikariLegalSRL.Services.Interfaces
 {
+    /// <summary>
+    /// Define las operaciones sobre las propuestas: datos para elaborarlas, consulta, creación, edición y cambios de estado.
+    /// </summary>
     public interface IPropuestaService
     {
         Task<List<OpcionComboDTO>> ObtenerProspectosActivos();

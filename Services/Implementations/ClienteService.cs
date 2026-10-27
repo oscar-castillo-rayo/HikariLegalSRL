@@ -12,6 +12,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Implementa IClienteService: contiene la lógica de los clientes, incluida la conversión de un prospecto.
+    /// </summary>
     public class ClienteService : IClienteService
     {
         private readonly ApplicationDbContext _context;

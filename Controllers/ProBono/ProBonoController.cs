@@ -11,6 +11,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HikariLegalSRL.Controllers.ProBono
 {
+    /// <summary>
+    /// Gestiona las solicitudes de servicios pro bono: listado, detalle, registro y resolución.
+    /// </summary>
     [Authorize]
     public class ProBonoController : Controller
     {

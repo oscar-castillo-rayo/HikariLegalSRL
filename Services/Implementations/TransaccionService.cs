@@ -8,6 +8,9 @@ using System.Runtime.ExceptionServices;
 
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Implementa ITransaccionService: ejecuta operaciones en una transacción y las acciones posteriores a confirmarla o revertirla.
+    /// </summary>
     public class TransaccionService : ITransaccionService
     {
         private readonly ApplicationDbContext _context;

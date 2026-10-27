@@ -7,9 +7,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HikariLegalSRL.Services.Implementations
 {
-    // RF-009: revisa periódicamente tareas, expedientes y actividades de seguimiento
-    // próximos a vencer o ya vencidos, y genera las notificaciones correspondientes.
-    // NotificarSiNoExiste evita duplicar la misma alerta en cada barrida.
+    /// <summary>
+    /// Revisa periódicamente tareas, expedientes y actividades de seguimiento
+    /// próximos a vencer o ya vencidos, y genera las notificaciones correspondientes.
+    /// NotificarSiNoExiste evita duplicar la misma alerta en cada barrida.
+    /// </summary>
     public class RevisionVencimientosBackgroundService : BackgroundService
     {
         private static readonly TimeSpan Intervalo = TimeSpan.FromMinutes(30);
@@ -60,10 +62,8 @@ namespace HikariLegalSRL.Services.Implementations
             {
                 var diasRestantes = (tarea.FechaLimite.Date - hoy).Days;
 
-                // Escala en 3 pasos, cada uno con su propio Tipo (2026-09-17, decisión del
-                // usuario, no especificada en el documento): T-3 solo colaborador + responsable
-                // de esa cartera; T-1 se suma quien tenga expedientes.supervisar; ya vencida,
-                // los 3 reciben un único aviso (NotificarSiNoExiste no lo repite día a día).
+                // Tres avisos: a 3 días al colaborador y al responsable; a 1 día se suman los
+                // supervisores; vencida, los tres reciben un único aviso.
                 if (diasRestantes < 0)
                 {
                     var destinatariosVencida = new HashSet<string>(supervisores.Select(s => s.Id))
@@ -119,10 +119,7 @@ namespace HikariLegalSRL.Services.Implementations
             {
                 var diasRestantes = (expediente.PlazoComprometido.Date - hoy).Days;
 
-                // Mismo esquema de 3 pasos que tarea (2026-09-17, decisión del usuario): 5 días
-                // → 1 día → vencido. El aviso de vencido es solo eso, un aviso — el expediente
-                // NO se cierra automáticamente por estar vencido, sigue "Abierto" hasta que
-                // alguien lo cierre a mano.
+                // Avisos a 5 días, a 1 día y al vencer; el expediente vencido no se cierra solo.
                 if (diasRestantes < 0)
                 {
                     var destinatariosVencido = new HashSet<string>(supervisores.Select(s => s.Id))
