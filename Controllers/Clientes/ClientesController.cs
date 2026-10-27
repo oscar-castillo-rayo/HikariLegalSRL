@@ -11,6 +11,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HikariLegalSRL.Controllers.Clientes
 {
+    /// <summary>
+    /// Gestiona la cartera de clientes: listado, detalle, edición, desactivación, reactivación y reasignación del responsable.
+    /// </summary>
     [Authorize]
     public class ClientesController : Controller
     {

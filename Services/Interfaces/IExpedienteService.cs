@@ -3,6 +3,9 @@ using HikariLegalSRL.ViewModels.Expedientes;
 
 namespace HikariLegalSRL.Services.Interfaces
 {
+    /// <summary>
+    /// Define las operaciones sobre los expedientes y sus tareas: consulta, planificación, cambios de estado, entregables, horas, revisión y cierre del expediente.
+    /// </summary>
     public interface IExpedienteService
     {
         Task<List<ExpedienteListaDTO>> Listar(string usuarioActualId);

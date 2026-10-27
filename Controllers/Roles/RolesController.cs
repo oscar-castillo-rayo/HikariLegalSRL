@@ -12,6 +12,9 @@ using System.Security.Claims;
 
 namespace HikariLegalSRL.Controllers.Roles
 {
+    /// <summary>
+    /// Administra los roles del sistema y sus permisos: listado, creación, edición, activación, desactivación y asignación de permisos.
+    /// </summary>
     public class RolesController : Controller
     {
 

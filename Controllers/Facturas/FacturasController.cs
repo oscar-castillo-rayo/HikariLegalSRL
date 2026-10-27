@@ -12,6 +12,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HikariLegalSRL.Controllers.Facturas
 {
+    /// <summary>
+    /// Gestiona la facturación y los pagos: listado, detalle, registro y anulación de abonos, estado de cuenta, anulación de facturas y descarga de comprobantes.
+    /// </summary>
     [Authorize]
     public class FacturasController : Controller
     {
@@ -122,9 +125,7 @@ namespace HikariLegalSRL.Controllers.Facturas
             return View(estadoCuenta);
         }
 
-        // Variante AJAX de RegistrarAbono para HU-023: se usa desde la pantalla de Estado de
-        // Cuenta para que los totales y el historial se actualicen sin recargar la página
-        // (el cliente vuelve a pedir el contenido parcial de EstadoCuenta tras un éxito).
+        // Variante AJAX de RegistrarAbono para actualizar el Estado de Cuenta sin recargar.
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Permiso(Permisos.Facturacion.Abono)]
@@ -170,9 +171,7 @@ namespace HikariLegalSRL.Controllers.Facturas
             return RedirectToAction(nameof(Detalle), new { id });
         }
 
-        // HU-024 (ampliación acordada): anula un abono puntual sin anular toda la factura,
-        // ya que la factura no puede volver a generarse para el mismo expediente (índice
-        // único). facturaId solo se usa para saber a dónde redirigir.
+        // Anula un abono sin anular la factura. facturaId solo sirve para redirigir.
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Permiso(Permisos.Facturacion.Anular)]

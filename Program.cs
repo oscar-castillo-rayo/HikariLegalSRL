@@ -135,7 +135,6 @@ if (app.Environment.IsDevelopment())
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error/500");
-    // El valor predeterminado de HSTS es 30 días. Se utiliza para indicar a los navegadores que solo deben comunicarse con el servidor a través de HTTPS.
     app.UseHsts();
 }
 

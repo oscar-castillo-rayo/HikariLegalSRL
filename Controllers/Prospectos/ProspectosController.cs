@@ -13,6 +13,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HikariLegalSRL.Controllers.Prospectos
 {
+    /// <summary>
+    /// Gestiona los prospectos: listado, detalle, registro, edición, descarte, reactivación, actividades de seguimiento y conversión a cliente.
+    /// </summary>
     [Authorize]
     public class ProspectosController : Controller
     {

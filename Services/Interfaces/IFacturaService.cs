@@ -3,6 +3,9 @@ using HikariLegalSRL.ViewModels.Facturas;
 
 namespace HikariLegalSRL.Services.Interfaces
 {
+    /// <summary>
+    /// Define las operaciones de facturación y pagos: consulta, registro y anulación de abonos, estado de cuenta, anulación de facturas y descarga de comprobantes.
+    /// </summary>
     public interface IFacturaService
     {
         Task<List<FacturaListaDTO>> Listar(string usuarioActualId);

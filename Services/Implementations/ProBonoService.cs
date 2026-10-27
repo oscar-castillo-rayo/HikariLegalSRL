@@ -9,6 +9,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Implementa IProBonoService: contiene la lógica de las solicitudes pro bono y su resolución.
+    /// </summary>
     public class ProBonoService : IProBonoService
     {
         private readonly ApplicationDbContext _context;
@@ -28,9 +31,7 @@ namespace HikariLegalSRL.Services.Implementations
             _transaccionService = transaccionService;
         }
 
-        // RF-011: el historial completo solo lo consulta quien puede aprobar/rechazar
-        // (Administrador, vía facturacion.aprobar_probono); cualquier otro usuario solo ve
-        // las solicitudes que él mismo presentó.
+        // Quien puede aprobar/rechazar ve todo el historial; el resto, solo sus solicitudes.
         private async Task<bool> PuedeVerTodasAsync(string usuarioActualId)
         {
             var usuarioActual = await _context.Users.FindAsync(usuarioActualId);
@@ -175,11 +176,7 @@ namespace HikariLegalSRL.Services.Implementations
                 throw new ReglaNegocioException(ex.InnerException?.Message ?? ex.Message);
             }
 
-            // El id autogenerado de la solicitud solo existe después del primer SaveChanges
-            // (Registrar() solo agrega al DbContext, así que este segundo SaveChanges es el
-            // único punto donde de verdad se confirma en la base — no hay dos transacciones
-            // de negocio distintas, solo una segunda escritura para la bitácora una vez que
-            // ya existe el id real a referenciar).
+            // La bitácora se registra después del primer SaveChanges porque necesita el id generado.
             await _bitacoraAuditoriaService.Registrar(
                 usuarioId: usuarioActualId,
                 tipoAccion: "crear",
@@ -219,15 +216,8 @@ namespace HikariLegalSRL.Services.Implementations
             solicitud.ResueltoPorId = usuarioActualId;
             solicitud.FechaResolucion = DateTime.UtcNow;
 
-            // RF-011: aprobar la solicitud solo la deja disponible para respaldar una propuesta
-            // pro bono futura — ya no toca Cliente.ModalidadPago directamente (rediseñado
-            // 2026-09-18, a pedido del usuario: la versión anterior marcaba al cliente entero
-            // como pro bono para siempre, así que cualquier expediente futuro de ese cliente,
-            // sin relación con esta solicitud, también facturaba en cero). Quien crea o edita la
-            // propuesta la elige como "Pro Bono" y PropuestaService valida ahí que exista una
-            // solicitud aprobada y sin usar para ese mismo beneficiario, y la marca consumida
-            // (ver PropuestaService.ValidarYReservarSolicitudProBono). CerrarExpediente ahora
-            // decide el monto cero según Propuesta.ModalidadPago, no Cliente.ModalidadPago.
+            // Aprobar solo deja la solicitud disponible para respaldar una propuesta Pro Bono
+            // (ver PropuestaService.ValidarYReservarSolicitudProBono).
 
             await _bitacoraAuditoriaService.Registrar(
                 usuarioId: usuarioActualId,

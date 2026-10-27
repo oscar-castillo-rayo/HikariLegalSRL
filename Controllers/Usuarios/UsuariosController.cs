@@ -12,6 +12,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HikariLegalSRL.Controllers
 {
+    /// <summary>
+    /// Administra las cuentas de usuario: listado, creación, edición, activación y desactivación.
+    /// </summary>
     public class UsuariosController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;

@@ -11,6 +11,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Implementa IExpedienteService: contiene la lógica de los expedientes y sus tareas, entregables, horas, revisión y cierre.
+    /// </summary>
     public class ExpedienteService : IExpedienteService
     {
         private static readonly HashSet<string> ExtensionesPermitidas = new(StringComparer.OrdinalIgnoreCase)
@@ -48,10 +51,8 @@ namespace HikariLegalSRL.Services.Implementations
             _logger = logger;
         }
 
-        // RF-009: notifica cambio de estado de una tarea al colaborador asignado, al
-        // responsable del expediente (cartera) y a quien tenga permiso de supervisión
-        // (equivalente a "Administrador" pero por permiso, no por rol) — sin duplicar al
-        // propio usuario que ejecutó la acción.
+        // Notifica el cambio de estado al colaborador, al responsable del expediente y a quien
+        // supervisa, sin duplicar a quien ejecutó la acción.
         private async Task NotificarCambioEstadoTareaAsync(Tarea tarea, string usuarioActualId, string mensaje)
         {
             var destinatarios = new HashSet<string> { tarea.ColaboradorResponsableId, tarea.Expediente.ResponsableId };
@@ -79,13 +80,8 @@ namespace HikariLegalSRL.Services.Implementations
         private static decimal CombinarHorasMinutos(int? horas, int? minutos)
             => Math.Round((horas ?? 0) + (minutos ?? 0) / 60m, 2);
 
-        // Ronda que corresponde al trabajo actual. Mientras está en revisión, es la ronda del
-        // entregable que se está evaluando. En cualquier otro estado, si el último entregable
-        // ya tiene una revisión (fue aprobado o devuelto) esa ronda quedó cerrada y ahora se
-        // trabaja la siguiente; si el último entregable todavía NO tiene revisión, es el
-        // borrador de la ronda actual (creado al primer archivo adjuntado con
-        // AgregarArchivoEntregable, antes incluso de enviar la tarea a revisión), así que
-        // sigue siendo esa misma ronda — no una nueva — mientras se le sigan agregando archivos.
+        // Ronda en curso: la siguiente si el último entregable ya fue revisado, o la misma si
+        // todavía está en borrador o en revisión.
         private static int RondaActual(Tarea tarea)
         {
             if (tarea.Entregables.Count == 0)
@@ -131,9 +127,7 @@ namespace HikariLegalSRL.Services.Implementations
                 .Include(e => e.Tareas)
                 .AsQueryable();
 
-            // RF-007: el Administrador ve todos los expedientes; el Abogado/Asesor solo
-            // los de su cartera (donde es responsable); el Colaborador externo solo los
-            // que tienen alguna tarea asignada a él. No depende del rol, solo de los datos.
+            // Quien no puede ver todos solo ve los que lleva o donde tiene tareas asignadas.
             if (!puedeVerTodos)
             {
                 query = query.Where(e => e.ResponsableId == usuarioActualId
@@ -171,7 +165,7 @@ namespace HikariLegalSRL.Services.Implementations
             if (expediente is null)
                 return null;
 
-            // RF-007: mismo criterio de cartera que Listar().
+            // Mismo criterio de acceso que Listar().
             var puedeVerTodos = await PuedeGestionarTareaAjenaAsync(usuarioActualId);
             var tieneAcceso = puedeVerTodos
                 || expediente.ResponsableId == usuarioActualId
@@ -360,8 +354,7 @@ namespace HikariLegalSRL.Services.Implementations
             if (tarea.Expediente.Estado != EstadoExpediente.Abierto)
                 throw new ReglaNegocioException("Solo se pueden editar tareas de expedientes abiertos.");
 
-            // RF-008: el historial de revisión es inalterable una vez aprobado el entregable
-            // final; antes de eso (misma regla que para eliminar) sí se puede seguir editando.
+            // Una tarea aprobada es inalterable.
             if (tarea.Estado == EstadoTarea.Aprobada)
                 throw new ReglaNegocioException("No se puede editar una tarea ya aprobada.");
 
@@ -409,10 +402,7 @@ namespace HikariLegalSRL.Services.Implementations
 
             await _context.SaveChangesAsync();
 
-            // RF-007 (equivalente a nivel de tarea): notificar al nuevo colaborador cuando
-            // "Editar tarea" cambia a quién está asignada. El colaborador anterior no se
-            // notifica: al dejar de ser ColaboradorResponsableId simplemente deja de ver la
-            // tarea, no hace falta avisarle.
+            // Notifica al nuevo colaborador; el anterior simplemente deja de ver la tarea.
             if (colaboradorAnteriorId != tarea.ColaboradorResponsableId)
             {
                 await _notificacionService.Notificar(
@@ -438,9 +428,7 @@ namespace HikariLegalSRL.Services.Implementations
             if (tarea.Expediente.Estado != EstadoExpediente.Abierto)
                 throw new ReglaNegocioException("Solo se pueden eliminar tareas de expedientes abiertos.");
 
-            // RF-008: el historial de revisión es inalterable una vez aprobado el entregable
-            // final; antes de eso (incluso ya iniciada, con horas o entregables registrados)
-            // sí se puede eliminar por completo, para corregir una tarea creada por error.
+            // Una tarea aprobada es inalterable; antes se puede eliminar para corregir errores.
             if (tarea.Estado == EstadoTarea.Aprobada)
                 throw new ReglaNegocioException("No se puede eliminar una tarea ya aprobada.");
 
@@ -449,9 +437,8 @@ namespace HikariLegalSRL.Services.Implementations
             var horasRegistradas = Math.Round(tarea.RegistrosHoras.Sum(r => r.Minutos) / 60m, 2);
             var totalEntregables = tarea.Entregables.Count;
 
-            // Sin cascada automática en la base (FK en NoAction): hay que borrar primero las
-            // filas dependientes antes de la tarea misma. Los archivos físicos se borran solo
-            // cuando la transacción se confirma.
+            // Sin cascada en la base: se borran primero las filas dependientes, y los archivos
+            // físicos solo al confirmar la transacción.
             var rutasArchivos = new List<string>();
             foreach (var entregable in tarea.Entregables)
             {
@@ -520,7 +507,6 @@ namespace HikariLegalSRL.Services.Implementations
 
             await _context.SaveChangesAsync();
 
-            // RF-007: notificar al nuevo responsable asignado.
             await _notificacionService.Notificar(
                 nuevoResponsable.Id, TipoNotificacion.ReasignacionExpediente,
                 $"Ahora eres responsable del expediente #{expedienteId}.",
@@ -541,30 +527,16 @@ namespace HikariLegalSRL.Services.Implementations
             if (expediente.Estado != EstadoExpediente.Abierto)
                 throw new ReglaNegocioException("El expediente ya está cerrado.");
 
-            // RF-007 (criterio confirmado con el usuario, 2026-09-18: la lectura literal del
-            // RF-007 solo menciona "pendiente"/"en proceso", pero se decidió exigir que todas
-            // las tareas estén aprobadas, así que "devuelta" y "lista_revision" también bloquean).
-            // También se exige al menos una tarea: sin esto, un expediente recién abierto (sin
-            // tareas todavía) se podía cerrar de inmediato y facturar el monto completo sin
-            // ningún trabajo registrado.
+            // Exige al menos una tarea y que todas estén aprobadas; de lo contrario se podría
+            // cerrar y facturar un expediente sin trabajo registrado.
             if (expediente.Tareas.Count == 0 || expediente.Tareas.Any(t => t.Estado != EstadoTarea.Aprobada))
                 throw new ReglaNegocioException("No se puede cerrar el expediente: debe tener al menos una tarea, y todas deben estar en estado 'Aprobada'.");
 
             expediente.Estado = EstadoExpediente.Cerrado;
             expediente.FechaCierre = DateTime.UtcNow;
 
-            // RF-007/RF-011 (rediseñado 2026-09-18): si "pro bono" se define a nivel de Cliente,
-            // cualquier expediente futuro de ese mismo cliente —sin relación con el caso pro bono
-            // original— también facturaría en cero para siempre. Por eso el monto cero depende de
-            // la Propuesta que originó este expediente específico (ya validada contra una
-            // solicitud pro bono aprobada al crearla, ver PropuestaService), no del cliente.
-            //
-            // La modalidad de la factura también se toma de la Propuesta, no del Cliente: usar
-            // Cliente.ModalidadPago (la lectura literal de RF-007) generaba facturas con monto
-            // real pero etiquetadas "Pro bono" cuando el cliente había quedado con esa modalidad
-            // por un caso anterior sin relación — contradictorio y confirmado en pruebas. La
-            // modalidad que realmente aplicó a este expediente es la que se negoció y aceptó en
-            // su propia propuesta.
+            // El monto cero y la modalidad salen de la propuesta del expediente, no del cliente:
+            // un caso pro bono anterior no debe afectar la facturación de los siguientes.
             var esProBono = expediente.Propuesta.ModalidadPago == ModalidadPago.ProBono;
 
             var factura = new Factura
@@ -868,13 +840,8 @@ namespace HikariLegalSRL.Services.Implementations
             if (tarea.Estado is not (EstadoTarea.EnProceso or EstadoTarea.ListaRevision or EstadoTarea.Devuelta))
                 throw new ReglaNegocioException("Solo se pueden registrar horas en una tarea activa.");
 
-            // El rol depende del momento del flujo en que se registra, no de quién lo registra:
-            // mientras se trabaja la tarea (en proceso o recién devuelta) cuenta como colaborador;
-            // mientras está en revisión cuenta como revisor. Por eso quién puede registrar
-            // también depende del estado: en proceso/devuelta, solo el colaborador asignado;
-            // en revisión, solo quien puede revisar el expediente (el responsable de la
-            // cartera) — si no, un Abogado/Asesor nunca podría registrar sus horas de revisión
-            // sobre tareas de otros colaboradores en su propia cartera.
+            // El rol lo define el estado de la tarea: en revisión cuenta como revisor, en otro
+            // caso como colaborador.
             var rol = tarea.Estado == EstadoTarea.ListaRevision ? RolHoras.Revisor : RolHoras.Colaborador;
 
             var puedeRegistrar = rol == RolHoras.Revisor
@@ -946,15 +913,11 @@ namespace HikariLegalSRL.Services.Implementations
             if (tarea.Estado != EstadoTarea.ListaRevision)
                 throw new ReglaNegocioException("Solo se puede revisar una tarea que esté lista para revisión.");
 
-            // RF-008: el Administrador revisa cualquier expediente; el Abogado/Asesor solo
-            // los de su propia cartera (donde es el responsable asignado).
+            // Solo el responsable del expediente revisa, salvo quien puede gestionar tareas ajenas.
             if (!await PuedeGestionarTareaAjenaAsync(usuarioActualId) && tarea.Expediente.ResponsableId != usuarioActualId)
                 throw new ReglaNegocioException("Solo el responsable del expediente puede revisar sus entregables.");
 
-            // RF-008: por defecto nadie puede aprobar o devolver el entregable de su propia
-            // tarea (equivale a que nadie lo revise); el permiso expedientes.gestionar_tareas_propias
-            // permite excepciones puntuales (ej. un despacho pequeño donde el Abogado/Asesor
-            // también ejecuta tareas y no hay nadie más para revisarlo).
+            // Nadie revisa su propia tarea salvo con el permiso expedientes.gestionar_tareas_propias.
             if (tarea.ColaboradorResponsableId == usuarioActualId && !await PuedeGestionarTareasPropiasAsync(usuarioActualId))
                 throw new ReglaNegocioException("No puede aprobar o devolver el entregable de su propia tarea.");
 

@@ -8,6 +8,9 @@ namespace HikariLegalSRL.Controllers
         Duration = 0,
         Location = ResponseCacheLocation.None,
         NoStore = true)]
+    /// <summary>
+    /// Muestra la página de error que corresponde al código de estado HTTP de la respuesta.
+    /// </summary>
     public class ErrorController : Controller
     {
         [Route("Error/{statusCode:int}")]

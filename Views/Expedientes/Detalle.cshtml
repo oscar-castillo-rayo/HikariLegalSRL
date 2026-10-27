@@ -157,14 +157,10 @@
                         };
                         var vencida = t.Estado != EstadoTarea.Aprobada && t.FechaLimite.Date < HoraCostaRica.Hoy;
                         var esMiTarea = esAbierto && puedeCargar && (t.ColaboradorId == usuarioActualId || puedeGestionarAjenas);
-                        // Puede revisar (o registrar horas de revisión de) esta tarea puntual quien puede
-                        // revisar el expediente en general (cartera), salvo que sea su propia tarea: ahí
-                        // hace falta además el permiso expedientes.gestionar_tareas_propias, porque por
-                        // defecto nadie puede aprobarse/devolverse a sí mismo (RF-008).
+                        // En su propia tarea, revisar exige además expedientes.gestionar_tareas_propias.
                         var puedeRevisarEstaTarea = puedeRevisarCartera && (t.ColaboradorId != usuarioActualId || puedeGestionarTareasPropias);
-                        // Mientras la tarea está en revisión, las horas que se registran cuentan como
-                        // horas de revisión — por eso, además del propio colaborador, también puede
-                        // registrarlas quien puede revisar esta tarea en particular.
+                        // En revisión las horas cuentan como de revisión, así que también las registra
+                        // quien puede revisar la tarea.
                         var puedeRegistrarHoras = (esMiTarea && t.Estado is EstadoTarea.EnProceso or EstadoTarea.Devuelta)
                             || (esAbierto && t.Estado == EstadoTarea.ListaRevision && puedeRevisarEstaTarea);
                         <div class="card mb-2 expedientes-kanban-card @(vencida ? "border-danger" : "")">

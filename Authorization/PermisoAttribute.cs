@@ -3,8 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace HikariLegalSRL.Authorization
 {
-    // Sirve para poder usar el atributo [Permiso] en los controladores, para poder validar si un usuario tiene un permiso específico.
-    // (similar a lo que hace el atributo [Authorize] en los controladores)
+    // Como [Authorize], pero exige un permiso específico.
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
     public sealed class PermisoAttribute : AuthorizeAttribute
     {

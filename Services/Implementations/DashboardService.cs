@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Implementa IDashboardService: reúne los datos del resumen del dashboard.
+    /// </summary>
     public class DashboardService : IDashboardService
     {
         private readonly ApplicationDbContext _context;

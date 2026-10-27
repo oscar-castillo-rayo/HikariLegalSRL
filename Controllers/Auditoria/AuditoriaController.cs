@@ -8,6 +8,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HikariLegalSRL.Controllers.Auditoria
 {
+    /// <summary>
+    /// Expone la consulta de solo lectura de la bitácora de auditoría: listado con filtros y detalle de cada registro.
+    /// </summary>
     [Authorize]
     public class AuditoriaController : Controller
     {

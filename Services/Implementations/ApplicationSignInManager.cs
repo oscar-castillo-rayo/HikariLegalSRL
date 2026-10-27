@@ -5,6 +5,9 @@ using Microsoft.Extensions.Options;
 
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Extiende SignInManager para impedir el inicio de sesión de las cuentas desactivadas.
+    /// </summary>
     public class ApplicationSignInManager : SignInManager<ApplicationUser>
     {
         //Constructor conserva la funcionalidad del SignInManager original y agrega la verificación de la propiedad Activo

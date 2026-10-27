@@ -10,6 +10,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Implementa IPropuestaService: contiene la lógica de las propuestas y de sus cambios de estado.
+    /// </summary>
     public class PropuestaService : IPropuestaService
     {
         private readonly ApplicationDbContext _context;
@@ -398,9 +401,7 @@ namespace HikariLegalSRL.Services.Implementations
                 if (!serviciosCatalogo.TryGetValue(item.ServicioId!.Value, out var servicio))
                     throw new ReglaNegocioException("Uno de los servicios seleccionados no existe.");
 
-                // A diferencia de Crear, no se exige que el servicio siga activo: la propuesta
-                // pudo haberlo incluido cuando sí lo estaba, y el desplegable ya solo ofrece
-                // servicios activos más los que ya estaban en esta propuesta (ver ObtenerParaEditar).
+                // A diferencia de Crear, el servicio puede estar inactivo si ya estaba en la propuesta.
                 nuevosItems.Add(new PropuestaServicio
                 {
                     ServicioId = servicio.ServicioId,
@@ -631,12 +632,8 @@ namespace HikariLegalSRL.Services.Implementations
                 throw new ReglaNegocioException("No se puede continuar: el cliente está inactivo.");
         }
 
-        // RF-011: una propuesta solo puede marcarse Pro Bono si existe una SolicitudProBono
-        // aprobada y todavía sin usar para ese mismo cliente/prospecto — sin esto, cualquier
-        // usuario con permiso de crear/editar propuestas podría poner "Pro Bono" y facturar en
-        // cero sin que el Administrador haya aprobado nada, saltándose por completo el flujo de
-        // aprobación que exige RF-011. No consume la solicitud todavía (el llamador la vincula
-        // una vez que ya existe el PropuestaId real, ver Crear/Editar).
+        // Una propuesta Pro Bono exige una solicitud aprobada y sin usar del mismo cliente o
+        // prospecto. No la consume aún: el llamador la vincula cuando ya existe el PropuestaId.
         private async Task<SolicitudProBono?> ValidarYReservarSolicitudProBono(ModalidadPago modalidadPago, int? clienteId, int? prospectoId)
         {
             if (modalidadPago != ModalidadPago.ProBono)

@@ -10,6 +10,9 @@ using System.Text;
 
 namespace HikariLegalSRL.Controllers.Account
 {
+    /// <summary>
+    /// Gestiona la autenticación: inicio y cierre de sesión, recuperación y restablecimiento de contraseña y la pantalla de acceso denegado.
+    /// </summary>
     [AllowAnonymous]
     public class AccountController : Controller
     {

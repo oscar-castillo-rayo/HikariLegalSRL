@@ -2,6 +2,9 @@ using HikariLegalSRL.Data;
 
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Ejecuta en segundo plano, al iniciar la aplicación, la carga inicial de datos, con reintentos si falla.
+    /// </summary>
     public class DbSeedBackgroundService : BackgroundService
     {
         private const int MaxIntentos = 3;

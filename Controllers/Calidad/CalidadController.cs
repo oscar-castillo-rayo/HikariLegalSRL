@@ -11,6 +11,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HikariLegalSRL.Controllers.Calidad
 {
+    /// <summary>
+    /// Gestiona las evaluaciones de calidad de los expedientes cerrados: listado, detalle y registro de una evaluación por expediente.
+    /// </summary>
     [Authorize]
     public class CalidadController : Controller
     {

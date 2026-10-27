@@ -1,5 +1,8 @@
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Opciones de configuración del servidor SMTP para el envío de correos: servidor, puerto, credenciales y remitente.
+    /// </summary>
     public class SmtpSettings
     {
         public string Host { get; set; } = "smtp.gmail.com";

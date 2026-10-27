@@ -12,6 +12,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HikariLegalSRL.Controllers.Propuestas
 {
+    /// <summary>
+    /// Gestiona las propuestas de servicios: listado, detalle, creación, edición y cambio de estado a enviada, aceptada o rechazada.
+    /// </summary>
     [Authorize]
     public class PropuestasController : Controller
     {

@@ -2,6 +2,9 @@ using HikariLegalSRL.Models.DTOs;
 
 namespace HikariLegalSRL.Services.Interfaces
 {
+    /// <summary>
+    /// Define la obtención de los reportes de analítica de la firma.
+    /// </summary>
     public interface IReporteService
     {
         Task<ReporteConversionPropuestasDTO> ObtenerConversionPropuestas(string periodo, DateTime? desde, DateTime? hasta);

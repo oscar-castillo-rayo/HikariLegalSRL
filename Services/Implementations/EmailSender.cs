@@ -6,6 +6,9 @@ using MimeKit;
 
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Envía correos electrónicos por SMTP con la configuración de SmtpSettings, por ejemplo el de recuperación de contraseña.
+    /// </summary>
     public class EmailSender : IEmailSender
     {
         private readonly ILogger<EmailSender> _logger;

@@ -3,6 +3,9 @@ using HikariLegalSRL.ViewModels.Servicios;
 
 namespace HikariLegalSRL.Services.Interfaces
 {
+    /// <summary>
+    /// Define las operaciones del catálogo de servicios: listar, crear, editar, desactivar y reactivar.
+    /// </summary>
     public interface IServicioService
     {
         Task<List<ServicioListaDTO>> Listar(string? buscar);

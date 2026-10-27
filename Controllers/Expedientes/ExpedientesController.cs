@@ -10,6 +10,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HikariLegalSRL.Controllers.Expedientes
 {
+    /// <summary>
+    /// Gestiona los expedientes y sus tareas: planificación, tablero Kanban, registro de horas, entregables y su revisión, y cierre del expediente.
+    /// </summary>
     [Authorize]
     public class ExpedientesController : Controller
     {

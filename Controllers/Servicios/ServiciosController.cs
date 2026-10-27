@@ -11,6 +11,9 @@ using HikariLegalSRL.Models;
 
 namespace HikariLegalSRL.Controllers.Servicios
 {
+    /// <summary>
+    /// Administra el catálogo de servicios: listado, creación, edición, desactivación y reactivación.
+    /// </summary>
     [Authorize]
     public class ServiciosController : Controller
     {

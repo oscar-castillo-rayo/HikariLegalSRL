@@ -2,6 +2,9 @@ using HikariLegalSRL.Models.DTOs;
 
 namespace HikariLegalSRL.Services.Interfaces
 {
+    /// <summary>
+    /// Define las operaciones de las solicitudes pro bono: listar, consultar, registrar y resolver.
+    /// </summary>
     public interface IProBonoService
     {
         Task<List<OpcionComboDTO>> ObtenerProspectosActivos();

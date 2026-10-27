@@ -7,17 +7,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HikariLegalSRL.Services.Implementations
 {
+    /// <summary>
+    /// Implementa IBitacoraAuditoriaService: registra las acciones en la bitácora de auditoría y resuelve su consulta.
+    /// </summary>
     public class BitacoraAuditoriaService : IBitacoraAuditoriaService
     {
         public const int TamanoPagina = 25;
         private const int LongitudResumen = 60;
 
-        // Antes de esta fecha, "Expedientes" mezclaba ExpedienteId y TareaId, y "Prospectos"
-        // mezclaba ProspectoId y ActividadSeguimientoId, en el mismo campo RegistroAfectadoId
-        // (dos secuencias de autoincremento distintas, con ids que sí se solapan en la práctica:
-        // ver .claude/notas/notas.md). Resolver el nombre de esas filas antiguas podría mostrar
-        // el nombre equivocado. Desde este id ya se escriben "Tareas" y "Actividades" aparte, así
-        // que son inambiguas y sí se resuelven. El resto de módulos nunca fue ambiguo.
+        // Los registros anteriores a este id mezclan ids de Expedientes/Tareas y de
+        // Prospectos/Actividades; no se resuelve su nombre para no mostrar uno equivocado.
         private const long CorteModulosDesambiguados = 20389;
 
         private static readonly HashSet<string> ModulosAmbiguosAntesDelCorte = new() { "Expedientes", "Prospectos" };
@@ -164,10 +163,8 @@ namespace HikariLegalSRL.Services.Implementations
         private static bool EsResolvible(long bitacoraId, string moduloAfectado) =>
             !ModulosAmbiguosAntesDelCorte.Contains(moduloAfectado) || bitacoraId > CorteModulosDesambiguados;
 
-        // Resuelve, en lote, el nombre legible de la entidad afectada por cada fila (Id, Módulo,
-        // RegistroAfectadoId). Una consulta por módulo presente, nunca una por fila. Las claves
-        // que no correspondan a ningún módulo conocido, o cuyo id no exista, simplemente no
-        // aparecen en el resultado — el llamador debe tratarlo como "sin nombre", nunca como error.
+        // Resuelve en lote el nombre de la entidad afectada, con una consulta por módulo. Las
+        // claves sin módulo conocido o sin registro no aparecen en el resultado.
         private async Task<Dictionary<(string Modulo, string Id), string>> ResolverNombresEntidadesAsync(
             IEnumerable<(long BitacoraId, string Modulo, string Id)> filas)
         {
@@ -186,12 +183,8 @@ namespace HikariLegalSRL.Services.Implementations
                 .Select(valor => valor!.Value)
                 .ToList();
 
-            // Siempre se materializa con Select(...) + ToListAsync() antes de armar el diccionario:
-            // ToDictionaryAsync(clave, valor) con un valor que cruza una navegación (p.ej.
-            // f.Cliente.NombreEmpresaPersona) no lo traduce a SQL y evalúa el selector en memoria
-            // sobre la entidad sin esa navegación cargada (AsNoTracking, sin Include), y lanza
-            // NullReferenceException. Con Select(...) el cruce si se traduce, como en el resto del
-            // servicio (ver Consultar/ObtenerDetalle con b.Usuario.NombreCompleto).
+            // Se usa Select + ToListAsync en vez de ToDictionaryAsync: este último evalúa el valor
+            // en memoria y falla con NullReferenceException cuando cruza una navegación.
             async Task RegistrarAsync<TId>(string modulo, IQueryable<KeyValuePair<TId, string?>> consulta) where TId : notnull
             {
                 var filas = await consulta.ToListAsync();
