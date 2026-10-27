@@ -1,0 +1,10 @@
+.input-group > .btn-outline-secondary {
+    --bs-btn-active-bg: #e3e8ed;
+    --bs-btn-active-border-color: #e3e8ed;
+    --bs-btn-active-color: #1F3864;
+    --bs-btn-border-color: #e3e8ed;
+    --bs-btn-color: #6c757d;
+    --bs-btn-hover-bg: #e3e8ed;
+    --bs-btn-hover-border-color: #e3e8ed;
+    --bs-btn-hover-color: #1F3864;
+}

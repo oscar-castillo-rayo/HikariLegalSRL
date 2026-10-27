@@ -30,6 +30,29 @@
         }
     });
 
+    document.querySelectorAll('input[type="password"]').forEach(function (campo) {
+        const grupo = document.createElement('div');
+        grupo.className = 'input-group';
+        campo.parentNode.insertBefore(grupo, campo);
+        grupo.appendChild(campo);
+
+        const boton = document.createElement('button');
+        boton.type = 'button';
+        boton.className = 'btn btn-outline-secondary';
+        boton.innerHTML = '<i class="bi bi-eye" aria-hidden="true"></i>';
+        boton.setAttribute('aria-label', 'Mostrar contraseña');
+        boton.setAttribute('aria-pressed', 'false');
+        grupo.appendChild(boton);
+
+        boton.addEventListener('click', function () {
+            const visible = campo.type === 'password';
+            campo.type = visible ? 'text' : 'password';
+            boton.setAttribute('aria-pressed', String(visible));
+            boton.setAttribute('aria-label', visible ? 'Ocultar contraseña' : 'Mostrar contraseña');
+            boton.firstElementChild.className = visible ? 'bi bi-eye-slash' : 'bi bi-eye';
+        });
+    });
+
     document.querySelectorAll('i.bi').forEach(function (icono) {
         if (!icono.hasAttribute('aria-label')) {
             icono.setAttribute('aria-hidden', 'true');
