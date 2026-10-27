@@ -454,7 +454,7 @@ namespace HikariLegalSRL.Services.Implementations
                     var horasEst = horasEstimadas.GetValueOrDefault(e.ExpedienteId);
                     var minutosColab = minutosColaborador.GetValueOrDefault(e.ExpedienteId);
                     var minutosRev = minutosRevisor.GetValueOrDefault(e.ExpedienteId);
-                    var horasReal = Math.Round((minutosColab + minutosRev) / 60m, 2);
+                    var horasReal = (minutosColab + minutosRev) / 60m;
                     var valorHoraEst = !e.EsProBono && horasEst > 0 ? Math.Round(monto / horasEst, 2) : (decimal?)null;
                     var valorHoraReal = !e.EsProBono && horasReal > 0 ? Math.Round(monto / horasReal, 2) : (decimal?)null;
                     var eficiencia = horasEst > 0 && horasReal > 0 ? Math.Round(horasEst / horasReal * 100, 1) : (decimal?)null;
