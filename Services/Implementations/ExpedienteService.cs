@@ -545,7 +545,7 @@ namespace HikariLegalSRL.Services.Implementations
                 ClienteId = expediente.ClienteId,
                 ModalidadPago = expediente.Propuesta.ModalidadPago,
                 MontoTotal = esProBono ? 0 : expediente.Propuesta.MontoTotal,
-                Estado = EstadoFactura.Emitida,
+                Estado = esProBono ? EstadoFactura.Pagada : EstadoFactura.Emitida,
                 FechaEmision = DateTime.UtcNow
             };
             _context.Facturas.Add(factura);
